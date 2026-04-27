@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.2</title>
+  <title>AgSUS Monitora Web V2.3</title>
 
   <!-- Tipografia e ícones institucionais -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,34 +68,26 @@
       place-items:center;
       position:relative;
       overflow:hidden;
-      /* V2.3: imagem de fundo mais clara, menos opaca e mais fiel ao AgSUS Monitora original */
-      background:
-        linear-gradient(90deg,rgba(0,21,50,.50),rgba(0,45,92,.32)),
-        url("https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png");
+      background:url("https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png");
       background-size:cover;
       background-position:center;
+      background-repeat:no-repeat;
       padding:24px;
     }
     .login-screen::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      background:
-        radial-gradient(circle at 70% 25%,rgba(0,184,217,.10),transparent 26%),
-        radial-gradient(circle at 18% 65%,rgba(0,91,170,.10),transparent 35%);
-      pointer-events:none;
+      display:none;
     }
     .login-card{
       width:min(460px,calc(100vw - 34px));
-      background:rgba(246,250,255,.96);
-      border:1px solid rgba(255,255,255,.45);
+      background:rgba(255,255,255,.94);
+      border:1px solid rgba(255,255,255,.55);
       border-radius:28px;
-      box-shadow:0 30px 100px rgba(0,0,0,.32);
+      box-shadow:0 30px 100px rgba(0,0,0,.22);
       padding:34px 32px;
       position:relative;
       z-index:2;
       text-align:center;
-      backdrop-filter:blur(14px);
+      backdrop-filter:none;
     }
     .login-mark{
       width:112px;height:112px;margin:0 auto 18px;
@@ -1169,16 +1161,13 @@
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
   const SUPABASE_KEY = "sb_publishable_Z__In8_fZh4UcgLpCq9jzg_gFlp2nkF";
 
-  // Exemplo:
-  // const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
-  // const SUPABASE_KEY = "sb_publishable_...";
 
-  // Painéis externos padrão. Depois podemos migrar para tabela public.paineis_externos.
+  // Painéis externos padrão fixos no código. Preencha as URLs abaixo.
   const DEFAULT_PANELS = [
-    { codigo:"analises", titulo:"Análises", icone:"fa-chart-line", url:"", ativo:true },
-    { codigo:"recrutamento", titulo:"Recrutamento", icone:"fa-chart-pie", url:"", ativo:true },
-    { codigo:"contratacao", titulo:"Contratação", icone:"fa-desktop", url:"", ativo:true },
-    { codigo:"entrevistas", titulo:"Entrevistas", icone:"fa-arrow-up-right-from-square", url:"", ativo:true }
+    { codigo:"analises", titulo:"Análises", icone:"fa-chart-line", url:"https://script.google.com/macros/s/AKfycbz4AAh9gC_kVtIW5U0pm-TEdOmscGpA0ujhnh_CsSU6NPbGsjtzn8PnMPUmbcJ3j7Rh/exec", ativo:true },
+    { codigo:"recrutamento", titulo:"Recrutamento", icone:"fa-chart-pie", url:"COLE_A_URL_DO_PAINEL_RECRUTAMENTO", ativo:true },
+    { codigo:"contratacao", titulo:"Contratação", icone:"fa-desktop", url:"https://lookerstudio.google.com/embed/reporting/2d5f1d2f-d32a-4b4d-95bf-7c5a725a1b9a/page/p_d9w2owdmfd", ativo:true },
+    { codigo:"entrevistas", titulo:"Entrevistas", icone:"fa-arrow-up-right-from-square", url:"COLE_A_URL_DO_PAINEL_ENTREVISTAS", ativo:true }
   ];
 
   // =========================================================
@@ -1319,20 +1308,9 @@
   }
 
   async function loadPanels(){
-    // Tenta buscar tabela paineis_externos. Se não existir, usa DEFAULT_PANELS.
-    try{
-      const { data, error } = await sb.from("paineis_externos").select("*").eq("ativo", true).order("ordem", { ascending:true });
-      if(!error && Array.isArray(data) && data.length){
-        panels = data.map(p => ({
-          codigo: p.codigo,
-          titulo: p.titulo,
-          icone: p.icone || "↗",
-          url: p.url || "",
-          ativo: p.ativo !== false,
-          em_manutencao: !!p.em_manutencao
-        }));
-      }
-    }catch(e){}
+    // V2.3: usa os links fixos em DEFAULT_PANELS.
+    // Quando você criar a tabela paineis_externos no Supabase, podemos reativar a leitura dinâmica.
+    panels = [...DEFAULT_PANELS];
     buildNav();
     renderPanelAdmin();
   }
