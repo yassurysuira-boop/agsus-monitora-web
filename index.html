@@ -68,8 +68,9 @@
       place-items:center;
       position:relative;
       overflow:hidden;
+      /* V2.3: imagem de fundo mais clara, menos opaca e mais fiel ao AgSUS Monitora original */
       background:
-        linear-gradient(90deg,rgba(0,21,50,.92),rgba(0,45,92,.80)),
+        linear-gradient(90deg,rgba(0,21,50,.50),rgba(0,45,92,.32)),
         url("https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png");
       background-size:cover;
       background-position:center;
@@ -80,13 +81,13 @@
       position:absolute;
       inset:0;
       background:
-        radial-gradient(circle at 70% 25%,rgba(0,184,217,.20),transparent 26%),
-        radial-gradient(circle at 18% 65%,rgba(0,91,170,.20),transparent 35%);
+        radial-gradient(circle at 70% 25%,rgba(0,184,217,.10),transparent 26%),
+        radial-gradient(circle at 18% 65%,rgba(0,91,170,.10),transparent 35%);
       pointer-events:none;
     }
     .login-card{
       width:min(460px,calc(100vw - 34px));
-      background:rgba(246,250,255,.92);
+      background:rgba(246,250,255,.96);
       border:1px solid rgba(255,255,255,.45);
       border-radius:28px;
       box-shadow:0 30px 100px rgba(0,0,0,.32);
@@ -1162,7 +1163,7 @@
   </div>
 
 <script>
-  // =========================================================
+  // ===================================================
   // CONFIGURAÇÃO - PREENCHA AQUI
   // =========================================================
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
