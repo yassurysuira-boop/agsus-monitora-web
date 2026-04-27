@@ -3,7 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2</title>
+  <title>AgSUS Monitora Web V2.2</title>
+
+  <!-- Tipografia e ícones institucionais -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
   <!-- Dependências via CDN: não precisa instalar Node -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -784,6 +790,56 @@
     .modal-head h3{margin:0}
     .modal-body{padding:18px}
 
+
+    /* V2.2 - nitidez, contraste e integração no Google Sites */
+    html,body{
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      text-rendering:geometricPrecision;
+      -webkit-text-size-adjust:100%;
+      font-synthesis-weight:none;
+    }
+    body{
+      font-family:"Inter", "Segoe UI", Roboto, Arial, sans-serif;
+      font-weight:500;
+      color:#07162d;
+      background:#edf3f8;
+    }
+    .page-title h1,.login-card h1,.kpi b{
+      font-weight:800;
+      letter-spacing:-.035em;
+      color:#0b1b34;
+    }
+    .page-title p,.filter-sub,.table-meta,.loader-sub,.side-brand small{
+      color:#526780;
+      font-weight:700;
+    }
+    label,th,.kpi span,.btn,.chip,.nav button,.status-pill{
+      font-weight:800;
+      letter-spacing:.015em;
+    }
+    label,th{color:#172b46;}
+    td{font-weight:650;color:#0c1d36;}
+    .nav-ico{display:grid;place-items:center;line-height:1;font-size:16px;}
+    .nav-ico i{font-size:16px;width:18px;text-align:center;}
+    .sidebar{box-shadow:12px 0 28px rgba(0,36,72,.12);}
+    body.sidebar-collapsed .sidebar{padding-left:6px;padding-right:6px;}
+    body.sidebar-collapsed .nav button.active,body.sidebar-collapsed .nav button:hover{box-shadow:0 8px 20px rgba(255,255,255,.12);}
+    .card,.kpi{box-shadow:0 10px 26px rgba(15,35,60,.075);}
+    .risk-item,.alert,.external-placeholder{color:#344862;}
+    .obs{color:#435973;font-weight:650;}
+    .link{color:#005fec;text-underline-offset:3px;}
+    input,select,textarea{font-weight:600;color:#0c1d36;}
+    input::placeholder,textarea::placeholder{color:#7d8da3;opacity:1;}
+    .external-frame{height:calc(100vh - 112px);min-height:720px;display:block;border-radius:0;background:#fff;}
+    body.external-mode .top{display:none;}
+    body.external-mode .content{padding:0;}
+    body.external-mode #page-external .table-card{margin:0;border:0;border-radius:0;box-shadow:none;background:transparent;}
+    body.external-mode #page-external .table-head{display:none;}
+    body.external-mode .external-frame{height:100vh;min-height:100vh;border-radius:0;}
+    body.external-mode .external-placeholder{height:calc(100vh - 24px);display:grid;place-items:center;margin:12px;border-radius:16px;background:#fff;border:1px solid var(--line);}
+    body.external-mode .main{background:#edf3f8;}
+
     @media(max-width:1220px){
       .kpis{grid-template-columns:repeat(3,1fr)}
       .dashboard-grid,.lower-grid,.admin-grid{grid-template-columns:1fr}
@@ -812,7 +868,7 @@
   </style>
 </head>
 
-<body>
+<body class="sidebar-collapsed">
   <div id="toastBox" class="toast-box"></div>
 
   <div id="loader" class="loader">
@@ -1118,10 +1174,10 @@
 
   // Painéis externos padrão. Depois podemos migrar para tabela public.paineis_externos.
   const DEFAULT_PANELS = [
-    { codigo:"analises", titulo:"Análises", icone:"⌁", url:"", ativo:true },
-    { codigo:"recrutamento", titulo:"Recrutamento", icone:"◔", url:"", ativo:true },
-    { codigo:"contratacao", titulo:"Contratação", icone:"▣", url:"", ativo:true },
-    { codigo:"entrevistas", titulo:"Entrevistas", icone:"↗", url:"", ativo:true }
+    { codigo:"analises", titulo:"Análises", icone:"fa-chart-line", url:"", ativo:true },
+    { codigo:"recrutamento", titulo:"Recrutamento", icone:"fa-chart-pie", url:"", ativo:true },
+    { codigo:"contratacao", titulo:"Contratação", icone:"fa-desktop", url:"", ativo:true },
+    { codigo:"entrevistas", titulo:"Entrevistas", icone:"fa-arrow-up-right-from-square", url:"", ativo:true }
   ];
 
   // =========================================================
@@ -1316,8 +1372,8 @@
   function buildNav(){
     const nav = $("nav");
     const base = [
-      { view:"dashboard", label:"Saúde Indígena", ico:"✒" },
-      { view:"cores", label:"Equipe Cores", ico:"✎" }
+      { view:"dashboard", label:"Saúde Indígena", ico:"fa-feather-pointed" },
+      { view:"cores", label:"Equipe Cores", ico:"fa-pen-to-square" }
     ];
 
     let html = base.map(item => navButton(item.view,item.label,item.ico)).join("");
@@ -1326,13 +1382,29 @@
       if(p.ativo) html += navButton("panel:" + p.codigo, p.titulo, p.icone || "↗");
     });
 
-    html += navButton("config", "Configurações", "⚙");
+    html += navButton("config", "Configurações", "fa-gear");
     nav.innerHTML = html;
     setActiveNav(currentView);
   }
 
+
+  function navIconHTML(view, ico){
+    const byView = {
+      dashboard:"fa-feather-pointed",
+      cores:"fa-pen-to-square",
+      config:"fa-gear",
+      "panel:analises":"fa-chart-line",
+      "panel:recrutamento":"fa-chart-pie",
+      "panel:contratacao":"fa-desktop",
+      "panel:entrevistas":"fa-arrow-up-right-from-square"
+    };
+    const cls = byView[view] || (/^fa-/.test(String(ico || "")) ? ico : "");
+    if(cls) return `<i class="fa-solid ${attr(cls)}" aria-hidden="true"></i>`;
+    return esc(ico || "•");
+  }
+
   function navButton(view,label,ico){
-    return `<button data-view="${attr(view)}" onclick="navigate('${attr(view)}')"><span class="nav-ico">${esc(ico)}</span><span class="nav-text">${esc(label)}</span></button>`;
+    return `<button data-view="${attr(view)}" onclick="navigate('${attr(view)}')"><span class="nav-ico">${navIconHTML(view, ico)}</span><span class="nav-text">${esc(label)}</span></button>`;
   }
 
   function setActiveNav(view){
@@ -1342,6 +1414,7 @@
   }
 
   function navigate(view){
+    document.body.classList.remove("external-mode");
     currentView = view;
     setActiveNav(view);
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
@@ -1703,6 +1776,8 @@
   function openPanel(code){
     const panel = panels.find(p => p.codigo === code);
     if(!panel) return;
+    document.body.classList.add("external-mode");
+    document.body.classList.add("sidebar-collapsed");
 
     currentPanel = panel;
     $("page-external").classList.add("active");
