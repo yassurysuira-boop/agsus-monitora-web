@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.3</title>
+  <title>AgSUS Monitora Web V2.5</title>
 
   <!-- Tipografia e ícones institucionais -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,21 +68,27 @@
       place-items:center;
       position:relative;
       overflow:hidden;
-      background:url("https://i.postimg.cc/yY8f8Bqk/fundo-azul.png");
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.10), rgba(0,33,71,.08)),
+        url("https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png");
       background-size:cover;
       background-position:center;
       background-repeat:no-repeat;
       padding:24px;
     }
     .login-screen::after{
-      display:none;
+      content:"";
+      position:absolute;
+      inset:0;
+      background:rgba(255,255,255,.06);
+      pointer-events:none;
     }
     .login-card{
       width:min(460px,calc(100vw - 34px));
-      background:rgba(255,255,255,.94);
-      border:1px solid rgba(255,255,255,.55);
+      background:rgba(255,255,255,.95);
+      border:1px solid rgba(255,255,255,.58);
       border-radius:28px;
-      box-shadow:0 30px 100px rgba(0,0,0,.22);
+      box-shadow:0 30px 100px rgba(0,0,0,.20);
       padding:34px 32px;
       position:relative;
       z-index:2;
@@ -833,6 +839,41 @@
     body.external-mode .external-placeholder{height:calc(100vh - 24px);display:grid;place-items:center;margin:12px;border-radius:16px;background:#fff;border:1px solid var(--line);}
     body.external-mode .main{background:#edf3f8;}
 
+
+    /* V2.4 - cache de painéis externos: iframe não recarrega ao trocar de menu */
+    .external-frame-host{
+      width:100%;
+      min-height:620px;
+      background:#fff;
+      overflow:hidden;
+      border-radius:0 0 var(--radius) var(--radius);
+    }
+    .external-frame-host .external-frame{
+      width:100%;
+      height:calc(100vh - 150px);
+      min-height:620px;
+      border:0;
+      background:#fff;
+      border-radius:0;
+      display:block;
+    }
+    .external-frame-host .external-placeholder{
+      min-height:620px;
+      display:grid;
+      place-items:center;
+      text-align:center;
+    }
+    body.external-mode .external-frame-host{
+      height:100vh;
+      min-height:100vh;
+      border-radius:0;
+    }
+    body.external-mode .external-frame-host .external-frame{
+      height:100vh;
+      min-height:100vh;
+      border-radius:0;
+    }
+
     @media(max-width:1220px){
       .kpis{grid-template-columns:repeat(3,1fr)}
       .dashboard-grid,.lower-grid,.admin-grid{grid-template-columns:1fr}
@@ -1107,7 +1148,7 @@
               <h3>Recursos Visuais</h3>
               <div class="form-grid">
                 <div class="form-row full"><label>Logo / mascote</label><input id="cfgMascot" value="https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png"></div>
-                <div class="form-row full"><label>Imagem de fundo do login</label><input id="cfgLoginBg" value="https://i.postimg.cc/yY8f8Bqk/fundo-azul.png"></div>
+                <div class="form-row full"><label>Imagem de fundo do login</label><input id="cfgLoginBg" value="https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png"></div>
                 <div class="form-row"><label>Título</label><input id="cfgTitle" value="AgSUS Monitora"></div>
                 <div class="form-row"><label>Slogan</label><input id="cfgSlogan" value="Painel da Saúde Indígena"></div>
               </div>
@@ -1155,12 +1196,11 @@
   </div>
 
 <script>
-  // ===================================================
+  // =========================================================
   // CONFIGURAÇÃO - PREENCHA AQUI
   // =========================================================
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_Z__In8_fZh4UcgLpCq9jzg_gFlp2nkF";
-
+  const SUPABASE_KEY = "sb_publishable_Z__In8_fZh4UcgLpCq9jzg_gFlp2nkF"; 
 
   // Painéis externos padrão fixos no código. Preencha as URLs abaixo.
   const DEFAULT_PANELS = [
@@ -1179,6 +1219,8 @@
   let panels = [...DEFAULT_PANELS];
   let currentPanel = null;
   let currentView = "dashboard";
+  let externalFrames = {};
+  let activeExternalPanelCode = ""; 
   let statusChart = null;
   let chartsReady = false;
 
@@ -1752,9 +1794,74 @@
     navigate("cores");
   }
 
+  function ensureExternalMount(){
+    const mount = $("externalMount");
+    if(!mount) return null;
+
+    if(mount.dataset.initialized !== "1"){
+      mount.innerHTML = "";
+      mount.dataset.initialized = "1";
+      mount.className = "external-frame-host";
+    }
+
+    return mount;
+  }
+
+  function showExternalMessage(htmlMessage){
+    const mount = ensureExternalMount();
+    if(!mount) return;
+
+    Object.values(externalFrames).forEach(frame => {
+      if(frame) frame.style.display = "none";
+    });
+
+    let msg = $("externalMessage");
+    if(!msg){
+      msg = document.createElement("div");
+      msg.id = "externalMessage";
+      msg.className = "external-placeholder";
+      mount.appendChild(msg);
+    }
+
+    msg.innerHTML = htmlMessage;
+    msg.style.display = "grid";
+  }
+
+  function showExternalFrame(panel){
+    const mount = ensureExternalMount();
+    if(!mount) return;
+
+    let msg = $("externalMessage");
+    if(msg) msg.style.display = "none";
+
+    Object.values(externalFrames).forEach(frame => {
+      if(frame) frame.style.display = "none";
+    });
+
+    let frame = externalFrames[panel.codigo];
+
+    if(!frame){
+      frame = document.createElement("iframe");
+      frame.className = "external-frame";
+      frame.dataset.panelCode = panel.codigo;
+      frame.src = panel.url;
+      frame.loading = "eager";
+      frame.referrerPolicy = "no-referrer-when-downgrade";
+      mount.appendChild(frame);
+      externalFrames[panel.codigo] = frame;
+    } else if(frame.getAttribute("src") !== panel.url){
+      // Só recarrega se a URL realmente mudou.
+      frame.src = panel.url;
+    }
+
+    frame.style.display = "block";
+    activeExternalPanelCode = panel.codigo;
+  }
+
   function openPanel(code){
     const panel = panels.find(p => p.codigo === code);
     if(!panel) return;
+
     document.body.classList.add("external-mode");
     document.body.classList.add("sidebar-collapsed");
 
@@ -1763,28 +1870,39 @@
     document.querySelectorAll(".page").forEach(p => {
       if(p.id !== "page-external") p.classList.remove("active");
     });
+
     setPageTitle(panel.titulo, "Painel externo incorporado");
     $("externalTitle").textContent = panel.titulo;
     $("externalOpen").href = panel.url || "#";
 
     if(panel.em_manutencao){
-      $("externalMount").className = "external-placeholder";
-      $("externalMount").innerHTML = `<h2>Painel em manutenção</h2><p>Este painel está temporariamente indisponível.</p>`;
+      showExternalMessage(`<div><h2>Painel em manutenção</h2><p>Este painel está temporariamente indisponível.</p></div>`);
       return;
     }
 
-    if(!panel.url){
-      $("externalMount").className = "external-placeholder";
-      $("externalMount").innerHTML = `<h2>${esc(panel.titulo)}</h2><p>Cadastre a URL deste painel na constante DEFAULT_PANELS ou na tabela paineis_externos.</p>`;
+    if(!panel.url || panel.url.includes("COLE_A_URL")){
+      showExternalMessage(`<div><h2>${esc(panel.titulo)}</h2><p>Cadastre a URL deste painel no DEFAULT_PANELS.</p></div>`);
       return;
     }
 
-    $("externalMount").className = "";
-    $("externalMount").innerHTML = `<iframe class="external-frame" src="${attr(panel.url)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+    showExternalFrame(panel);
   }
 
   function reloadExternal(){
-    if(currentPanel) openPanel(currentPanel.codigo);
+    if(!currentPanel) return;
+
+    if(currentPanel.url && !currentPanel.url.includes("COLE_A_URL")){
+      const frame = externalFrames[currentPanel.codigo];
+      if(frame){
+        // Recarrega apenas quando o usuário clicar em Atualizar.
+        frame.src = currentPanel.url;
+      } else {
+        showExternalFrame(currentPanel);
+      }
+      return;
+    }
+
+    openPanel(currentPanel.codigo);
   }
 
   function renderPanelAdmin(){
