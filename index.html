@@ -1,840 +1,151 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>AgSUS Monitora Web V2.3</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://www.gstatic.com/charts/loader.js"></script>
-
-  <style>
-    :root{
-      --navy:#003b70;
-      --navy-2:#042a52;
-      --blue:#0d6efd;
-      --cyan:#00b8d9;
-      --green:#0ea76b;
-      --yellow:#f5b400;
-      --red:#e4323b;
-      --slate:#17233c;
-      --muted:#63748d;
-      --bg:#edf3f9;
-      --card:#ffffff;
-      --line:#d9e3ee;
-      --soft:#f6f9fc;
-      --shadow:0 14px 34px rgba(15,35,60,.09);
-      --radius:18px;
-      --sidebar:260px;
-      --sidebar-mini:64px;
-      --topbar:82px;
-    }
-
-    *{box-sizing:border-box}
-    html,body{height:100%;min-height:100%}
-    html{
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      text-rendering:geometricPrecision;
-      -webkit-text-size-adjust:100%;
-      font-synthesis-weight:none;
-    }
-    body{
-      margin:0;
-      font-family:"Inter",Segoe UI,Roboto,Arial,sans-serif;
-      color:#06142d;
-      background:var(--bg);
-      overflow-x:hidden;
-      font-weight:500;
-    }
-    body.dark{
-      --bg:#0b1424;
-      --card:#111d31;
-      --soft:#0c1729;
-      --line:#253754;
-      --slate:#eaf2ff;
-      --muted:#9fb1ca;
-      color:#eaf2ff;
-    }
-    body.large-text{font-size:17px}
-    body.reduce-motion *{animation:none!important;transition:none!important}
-    .hidden{display:none!important}
-
-    .login-screen{
-      min-height:100vh;
-      min-height:100dvh;
-      display:grid;
-      place-items:center;
-      position:relative;
-      overflow:hidden;
-      background:
-        linear-gradient(90deg,rgba(0,25,58,.28),rgba(0,49,99,.18)),
-        url("https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png");
-      background-size:cover;
-      background-position:center;
-      padding:24px;
-    }
-    .login-screen::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      background:rgba(0,30,70,.18);
-      pointer-events:none;
-    }
-    .login-card{
-      width:min(460px,calc(100vw - 34px));
-      background:rgba(246,250,255,.92);
-      border:1px solid rgba(255,255,255,.55);
-      border-radius:28px;
-      box-shadow:0 30px 100px rgba(0,0,0,.28);
-      padding:34px 32px;
-      position:relative;
-      z-index:2;
-      text-align:center;
-      backdrop-filter:blur(8px);
-    }
-    .login-mark{
-      width:112px;height:112px;margin:0 auto 18px;
-      border-radius:50%;
-      display:grid;place-items:center;
-      background:rgba(255,255,255,.36);
-      border:1px solid rgba(0,184,217,.28);
-      position:relative;
-    }
-    .login-mark::before{
-      content:"";
-      position:absolute;inset:-8px;
-      border-radius:50%;
-      border:3px solid transparent;
-      border-top-color:#00c2e8;
-      border-left-color:#00c2e8;
-      animation:spin 1.8s linear infinite;
-    }
-    .login-mark img{width:56px;height:56px;object-fit:contain}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .login-eyebrow{color:#008dea;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.14em}
-    .login-card h1{font-size:32px;margin:12px 0 4px;color:#0e1830;font-weight:800;letter-spacing:-.035em}
-    .login-card p{margin:0 0 22px;color:#65758d;font-weight:700}
-    .login-form{text-align:left;display:grid;gap:13px;margin-top:20px}
-    label{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:#172b46}
-    input,select,textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:#0c1d36;padding:0 14px;outline:none;font:inherit;font-weight:600}
-    textarea{padding:12px 14px;resize:vertical;min-height:86px}
-    input::placeholder,textarea::placeholder{color:#7d8da3;opacity:1}
-    input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(13,110,253,.15)}
-    .password-wrap{position:relative}
-    .password-wrap input{padding-right:48px}
-    .password-wrap button{position:absolute;right:8px;top:7px;height:32px;width:36px;border:0;background:transparent;cursor:pointer;color:#55708f}
-    .btn{border:0;border-radius:14px;min-height:44px;padding:0 18px;cursor:pointer;font-weight:900;color:#fff;background:linear-gradient(90deg,#004c93,#0b9be6);display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;white-space:nowrap;box-shadow:0 10px 22px rgba(0,77,145,.20)}
-    .btn:hover{filter:brightness(.98)}
-    .btn:disabled{opacity:.62;cursor:not-allowed}
-    .btn.secondary{background:#e9eff6;color:#18324f;box-shadow:none;border:1px solid #cfdbea}
-    .btn.outline{background:transparent;color:#00529b;border:1px solid #0d6efd;box-shadow:none}
-    .btn.green{background:#0b8f58}
-    .btn.red{background:#dc2626}
-    .btn.icon{min-width:44px;padding:0}
-    .alert{padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--soft);color:var(--slate);font-weight:800;line-height:1.35;font-size:13px}
-    .alert.ok{background:#e9fbf1;border-color:#b8edd1;color:#067044}
-    .alert.error{background:#fff1f2;border-color:#fecdd3;color:#be123c}
-    .alert.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
-    .login-foot{margin-top:18px;color:#00c2e8;font-size:12px;font-weight:900;letter-spacing:.12em}
-
-    .loader{position:fixed;inset:0;display:none;place-items:center;z-index:1000;background:rgba(2,8,23,.56);backdrop-filter:blur(2px)}
-    .loader.show{display:grid}
-    .loader-card{width:min(560px,calc(100vw - 36px));background:rgba(255,255,255,.96);border:1px solid rgba(0,184,217,.22);box-shadow:0 30px 80px rgba(0,0,0,.25);border-radius:18px;padding:22px 24px;color:#18324f;display:grid;grid-template-columns:52px 1fr 66px;gap:14px;align-items:center}
-    body.dark .loader-card{background:#101c30;color:#eaf2ff}
-    .loader-spin{width:44px;height:44px;border-radius:50%;border:4px solid #e6eef7;border-top-color:#00b8d9;animation:spin 1s linear infinite}
-    .loader-title{font-size:18px;font-weight:900;margin-bottom:4px}
-    .loader-sub{color:#62738b;font-weight:700;line-height:1.35}
-    .loader-pct{border:1px solid var(--line);background:var(--soft);border-radius:999px;text-align:center;padding:8px;font-weight:900}
-    .loader-bar{grid-column:1/-1;height:10px;background:#e4ebf4;border-radius:99px;overflow:hidden}
-    .loader-bar span{display:block;height:100%;width:0%;background:linear-gradient(90deg,#00c2e8,#004c93);transition:width .25s ease}
-
-    .app{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:var(--sidebar) 1fr}
-    body.sidebar-collapsed .app{grid-template-columns:var(--sidebar-mini) 1fr}
-    .sidebar{background:linear-gradient(180deg,#003b70,#032b52);color:#fff;min-height:100vh;position:sticky;top:0;overflow:auto;padding:18px 16px;z-index:20;box-shadow:12px 0 28px rgba(0,36,72,.12)}
-    .side-brand{text-align:center;border-bottom:1px solid rgba(255,255,255,.16);padding-bottom:22px;margin-bottom:18px}
-    .side-logo{width:126px;height:126px;margin:0 auto 8px;object-fit:contain;display:block}
-    .side-brand h2{font-size:17px;margin:0}
-    .side-brand small{color:#c7ddf7;font-weight:700}
-    body.sidebar-collapsed .sidebar{padding-left:6px;padding-right:6px}
-    body.sidebar-collapsed .side-brand{padding-bottom:10px;margin-bottom:10px}
-    body.sidebar-collapsed .side-logo{width:42px;height:42px}
-    body.sidebar-collapsed .side-brand h2,body.sidebar-collapsed .side-brand small,body.sidebar-collapsed .nav-text,body.sidebar-collapsed .side-user,body.sidebar-collapsed .side-logout span{display:none}
-    .nav{display:grid;gap:8px}
-    .nav button{min-height:54px;display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#d7e8ff;border-radius:12px;padding:0 14px;text-align:left;font-weight:900;cursor:pointer;font-size:15px}
-    .nav button.active,.nav button:hover{background:#fff;color:#003b70}
-    .nav-ico{width:20px;text-align:center;font-size:17px;flex:0 0 auto;display:grid;place-items:center;line-height:1}
-    .nav-ico i{font-size:16px;width:18px;text-align:center}
-    body.sidebar-collapsed .nav button{justify-content:center;padding:0;min-height:48px}
-    .side-user{margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.16);font-size:13px;color:#c7ddf7}
-    .side-user b{color:#fff;display:block;word-break:break-all;margin-top:7px}
-    .side-logout{width:100%;margin-top:14px;background:transparent;border:1px solid rgba(255,255,255,.85);color:#fff;border-radius:8px;padding:11px;cursor:pointer;font-weight:900}
-
-    .main{min-width:0;max-width:100vw;overflow:hidden}
-    .top{position:sticky;top:0;z-index:10;background:rgba(242,247,252,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px 14px 10px;min-height:var(--topbar)}
-    body.dark .top{background:rgba(11,20,36,.94)}
-    .title-row{display:flex;gap:12px;align-items:center;min-width:0}
-    .hamb{width:38px;height:38px;border-radius:50%;border:1px solid #0d6efd;color:#0d6efd;background:#fff;display:grid;place-items:center;cursor:pointer;font-weight:900;flex:0 0 auto}
-    .page-title{min-width:0}
-    .page-title h1{margin:0;font-size:30px;line-height:1.05;color:var(--slate);font-weight:800;letter-spacing:-.035em}
-    .page-title p{margin:5px 0 0;color:#526780;font-weight:700;font-size:13px}
-    .actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-    .status-pill{padding:10px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);color:#56708d;font-weight:900;display:flex;gap:8px;align-items:center}
-    .status-dot{width:10px;height:10px;border-radius:99px;background:var(--green);box-shadow:0 0 0 5px rgba(14,167,107,.14)}
-
-    .content{padding:14px 10px 34px;min-height:calc(100vh - var(--topbar))}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
-    .filter-card{padding:14px;margin-bottom:8px}
-    .filter-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .filter-title{display:flex;gap:10px;align-items:center;font-weight:900;color:#00457e;font-size:18px}
-    .filter-sub{margin:7px 0 0;color:#526780;font-weight:700;font-size:13px}
-    .filter-body{margin-top:13px;display:grid;grid-template-columns:1.2fr repeat(4,minmax(130px,1fr)) auto;gap:10px;align-items:end}
-    .section-label{display:flex;align-items:center;gap:10px;color:#00703c;text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:900;margin:8px 0 9px}
-    .section-label::after{content:"";height:1px;background:#117b59;flex:1;opacity:.7}
-
-    .kpis{display:grid;grid-template-columns:repeat(6,minmax(145px,1fr));gap:7px}
-    .kpi{background:var(--card);border:1px solid var(--line);border-top:4px solid #60758f;border-radius:16px;min-height:86px;display:grid;place-items:center;text-align:center;padding:11px;box-shadow:0 8px 20px rgba(15,35,60,.06)}
-    .kpi.blue{border-top-color:#0d6efd}.kpi.green{border-top-color:#0ea76b}.kpi.red{border-top-color:#e4323b}.kpi.yellow{border-top-color:#f5b400}.kpi.gray{border-top-color:#60758f}
-    .kpi span{font-size:12px;font-weight:900;color:#06142d;line-height:1.15}
-    body.dark .kpi span{color:#eaf2ff}
-    .kpi b{font-size:31px;line-height:1;margin-top:7px;display:block;color:#04142d;font-weight:800;letter-spacing:-.035em}
-    body.dark .kpi b{color:#fff}
-    .chip{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 11px;font-size:11px;font-weight:900;border:1px solid transparent}
-    .chip.red{background:#ffe1e3;color:#d41120;border-color:#ffc5ca}.chip.green{background:#dff8ea;color:#00824c;border-color:#bfeccd}.chip.blue{background:#dff0ff;color:#006ece;border-color:#b8dcff}.chip.cyan{background:#dff9ff;color:#008197;border-color:#b3eef9}.chip.yellow{background:#fff3c4;color:#7c5900;border-color:#ffe080}.chip.gray{background:#eef2f7;color:#334155;border-color:#d5dfec}
-
-    .dashboard-grid{display:grid;grid-template-columns:2fr 1.08fr;gap:10px;margin-top:8px}
-    .map-card{min-height:285px;display:grid;place-items:center;overflow:hidden}
-    #map{width:100%;height:285px}
-    .lower-grid{display:grid;grid-template-columns:2fr 1.08fr;gap:10px;margin-top:10px}
-    .panel-pad{padding:14px}
-    .panel-title{margin:0 0 12px;font-size:17px;color:var(--slate)}
-    .chart-wrap{min-height:210px;display:grid;place-items:center}
-    #statusChart{max-height:205px}
-    .risk-list{display:grid;gap:8px;max-height:224px;overflow:auto;padding-right:4px}
-    .risk-item{border:1px solid #ffd1d5;border-left:4px solid var(--red);background:#fffafa;border-radius:12px;padding:11px}
-    body.dark .risk-item{background:#151d2f}
-    .risk-item .top-line{display:flex;justify-content:space-between;gap:10px;align-items:center;font-weight:900}
-    .risk-item small{display:block;margin-top:7px;color:#53657d;font-weight:800}
-
-    .table-card{margin-top:10px;overflow:hidden}
-    .table-head{background:#003b70;color:#fff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .table-head h3{margin:0;font-size:16px;text-transform:uppercase;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
-    .table-head input{max-width:360px;min-height:36px;border-radius:999px;background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.35)}
-    .table-head input::placeholder{color:#d7e8ff}
-    .table-meta{color:#52657d;font-weight:800;padding:12px 14px;border-bottom:1px solid var(--line)}
-    .table-wrap{overflow:auto;max-height:calc(100vh - 245px);min-height:560px;background:var(--card)}
-    table{width:100%;min-width:1180px;border-collapse:collapse;font-size:13px}
-    th{position:sticky;top:0;z-index:2;background:#f5f8fc;color:#172b46;text-align:left;border-bottom:1px solid var(--line);padding:10px 9px;text-transform:uppercase;font-size:11px;letter-spacing:.04em;font-weight:900}
-    body.dark th{background:#142036;color:#dbeafe}
-    td{border-bottom:1px solid var(--line);padding:10px 9px;vertical-align:top;font-weight:650;color:#0c1d36}
-    tr:hover td{background:rgba(13,110,253,.05)}
-    .num{text-align:center}.green-text{color:#00824c}.red-text{color:#e4323b}
-    .link{color:#005fec;font-weight:900;text-decoration:none;text-underline-offset:3px}
-    .link:hover{text-decoration:underline}
-    .obs{max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#435973;font-weight:650;font-style:italic}
-
-    .page{display:none}.page.active{display:block}
-    #page-cores .table-card{min-height:calc(100vh - 120px)}
-    #page-cores .table-wrap{max-height:calc(100vh - 245px);min-height:620px}
-    #page-cores table{min-width:1280px}
-
-    .cores-toolbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px;border-bottom:1px solid var(--line)}
-    .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .form-grid .full{grid-column:1/-1}
-    .form-row{display:grid;gap:6px}
-    .admin-card{padding:18px}
-    .admin-card h3{margin:0 0 15px}
-
-    .external-frame{width:100%;height:calc(100vh - 132px);min-height:720px;border:0;background:#fff;border-radius:0 0 var(--radius) var(--radius);display:block}
-    .external-placeholder{padding:34px;text-align:center;color:#344862;font-weight:800}
-    body.external-mode .top{display:none}
-    body.external-mode .content{padding:0;min-height:100vh}
-    body.external-mode #page-external .table-card{margin:0;border:0;border-radius:0;box-shadow:none;background:transparent;min-height:100vh}
-    body.external-mode #page-external .table-head{display:none}
-    body.external-mode .external-frame{height:100vh;height:100dvh;min-height:100vh;border-radius:0}
-    body.external-mode .external-placeholder{height:calc(100vh - 24px);display:grid;place-items:center;margin:12px;border-radius:16px;background:#fff;border:1px solid var(--line)}
-    body.external-mode .main{background:#edf3f8}
-
-    .toast-box{position:fixed;top:18px;right:18px;z-index:1200;display:grid;gap:10px;width:min(390px,calc(100vw - 30px))}
-    .toast{border-radius:16px;padding:14px 16px;background:#fff;box-shadow:0 20px 50px rgba(0,0,0,.16);border:1px solid var(--line);font-weight:800;display:flex;gap:10px;align-items:flex-start}
-    .toast.ok{background:#22a957;color:#fff;border:0}.toast.error{background:#e4323b;color:#fff;border:0}.toast.warn{background:#f5b400;color:#2d2200;border:0}
-    .toast button{margin-left:auto;border:0;background:transparent;color:inherit;font-weight:900;cursor:pointer}
-
-    .modal{position:fixed;inset:0;z-index:1100;display:none;place-items:center;padding:20px;background:rgba(0,0,0,.55)}
-    .modal.show{display:grid}
-    .modal-card{width:min(1000px,calc(100vw - 28px));max-height:92vh;overflow:auto;background:var(--card);border-radius:22px;border:1px solid var(--line);box-shadow:0 30px 90px rgba(0,0,0,.32)}
-    .modal-head{position:sticky;top:0;z-index:2;background:var(--card);border-bottom:1px solid var(--line);padding:16px 18px;display:flex;justify-content:space-between;gap:12px;align-items:center}
-    .modal-head h3{margin:0}.modal-body{padding:18px}
-
-    @media(max-width:1220px){.kpis{grid-template-columns:repeat(3,1fr)}.dashboard-grid,.lower-grid,.admin-grid{grid-template-columns:1fr}.filter-body{grid-template-columns:1fr 1fr}}
-    @media(max-width:820px){.app{grid-template-columns:1fr}body.sidebar-collapsed .app{grid-template-columns:1fr}.sidebar{position:relative;min-height:auto}.side-brand{text-align:left;display:flex;align-items:center;gap:12px}.side-logo{margin:0;width:62px;height:62px}.nav{grid-template-columns:1fr 1fr}.top{position:relative;align-items:flex-start;flex-direction:column}.actions{justify-content:flex-start}.kpis{grid-template-columns:1fr 1fr}.filter-body{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
-    @media(max-width:540px){.kpis,.nav{grid-template-columns:1fr}.page-title h1{font-size:24px}.table-head{align-items:stretch;flex-direction:column}.table-head input{max-width:none}.login-card{padding:28px 20px}}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>AgSUS Monitora Web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+<style>
+:root{--navy:#003b70;--navy2:#042a52;--blue:#0d6efd;--cyan:#00b8d9;--green:#0ea76b;--yellow:#f5b400;--red:#e4323b;--slate:#17233c;--muted:#63748d;--bg:#edf3f9;--card:#fff;--line:#d9e3ee;--soft:#f6f9fc;--radius:18px;--sidebar:260px;--mini:64px;--login-bg:url("https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png")}
+*{box-sizing:border-box}html,body{height:100%;width:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:geometricPrecision}body{margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;color:#06142d;background:var(--bg);font-weight:650;overflow-x:hidden}body.dark{--bg:#0b1424;--card:#111d31;--soft:#0c1729;--line:#253754;--slate:#eaf2ff;--muted:#9fb1ca;color:#eaf2ff}body.large-text{font-size:17px}.hidden{display:none!important}
+.login-screen{min-height:100vh;display:grid;place-items:center;position:relative;overflow:hidden;background:#003b70;padding:24px;isolation:isolate}.login-screen:before{content:"";position:absolute;inset:0;background-image:var(--login-bg);background-size:cover;background-position:center;filter:saturate(.84) contrast(.98) brightness(.94);opacity:.96;transform:scale(1.01);z-index:-2}.login-screen:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,24,56,.26),rgba(0,45,92,.16)),radial-gradient(circle at 70% 25%,rgba(0,184,217,.08),transparent 28%);pointer-events:none;z-index:-1}.login-card{width:min(460px,calc(100vw - 34px));background:rgba(246,250,255,.94);border:1px solid rgba(255,255,255,.58);border-radius:28px;box-shadow:0 30px 100px rgba(0,0,0,.27);padding:34px 32px;text-align:center;backdrop-filter:blur(10px)}.login-mark{width:112px;height:112px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.50);border:1px solid rgba(0,184,217,.28);position:relative}.login-mark:before{content:"";position:absolute;inset:-8px;border-radius:50%;border:3px solid transparent;border-top-color:#00c2e8;border-left-color:#00c2e8;animation:spin 1.8s linear infinite}.login-mark img{width:58px;height:58px;object-fit:contain}@keyframes spin{to{transform:rotate(360deg)}}.login-eyebrow{color:#008dea;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.14em}.login-card h1{font-size:32px;margin:12px 0 4px;color:#0e1830;font-weight:900;letter-spacing:-.04em}.login-card p{margin:0 0 22px;color:#61728a;font-weight:800}.login-form{text-align:left;display:grid;gap:13px;margin-top:20px}.login-foot{margin-top:18px;color:#00c2e8;font-size:12px;font-weight:900;letter-spacing:.12em}
+label{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:#24354e}input,select,textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:#0c1d36;padding:0 14px;outline:none;font:inherit;font-weight:650}body.dark input,body.dark select,body.dark textarea{color:#eaf2ff}textarea{padding:12px 14px;resize:vertical;min-height:86px}input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(13,110,253,.15)}.password-wrap{position:relative}.password-wrap input{padding-right:48px}.password-wrap button{position:absolute;right:8px;top:7px;height:32px;width:36px;border:0;background:transparent;cursor:pointer;color:#55708f}.btn{border:0;border-radius:14px;min-height:44px;padding:0 18px;cursor:pointer;font-weight:900;color:#fff;background:linear-gradient(90deg,#004c93,#0b9be6);display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;white-space:nowrap;box-shadow:0 10px 22px rgba(0,77,145,.20)}.btn:disabled{opacity:.62;cursor:not-allowed}.btn.secondary{background:#e9eff6;color:#18324f;box-shadow:none;border:1px solid #cfdbea}.btn.outline{background:transparent;color:#00529b;border:1px solid #0d6efd;box-shadow:none}.btn.green{background:#0b8f58}.alert{padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--soft);color:var(--slate);font-weight:800;line-height:1.35;font-size:13px}.alert.error{background:#fff1f2;border-color:#fecdd3;color:#be123c}.alert.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
+.loader{position:fixed;inset:0;display:none;place-items:center;z-index:1000;background:rgba(2,8,23,.44);backdrop-filter:blur(2px)}.loader.show{display:grid}.loader-card{width:min(560px,calc(100vw - 36px));background:rgba(255,255,255,.96);border:1px solid rgba(0,184,217,.22);box-shadow:0 30px 80px rgba(0,0,0,.22);border-radius:18px;padding:22px 24px;color:#18324f;display:grid;grid-template-columns:52px 1fr 66px;gap:14px;align-items:center}.loader-spin{width:44px;height:44px;border-radius:50%;border:4px solid #e6eef7;border-top-color:#00b8d9;animation:spin 1s linear infinite}.loader-title{font-size:18px;font-weight:900;margin-bottom:4px}.loader-sub{color:#62738b;font-weight:800}.loader-pct{border:1px solid var(--line);background:var(--soft);border-radius:999px;text-align:center;padding:8px;font-weight:900}.loader-bar{grid-column:1/-1;height:10px;background:#e4ebf4;border-radius:99px;overflow:hidden}.loader-bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,#00c2e8,#004c93);transition:width .25s}
+.app{min-height:100vh;display:grid;grid-template-columns:var(--sidebar) 1fr}body.sidebar-collapsed .app{grid-template-columns:var(--mini) 1fr}.sidebar{background:linear-gradient(180deg,#003b70,#032b52);color:#fff;min-height:100vh;position:sticky;top:0;overflow:auto;padding:18px 16px;z-index:20;box-shadow:12px 0 28px rgba(0,36,72,.12)}body.sidebar-collapsed .sidebar{padding-left:6px;padding-right:6px}.side-brand{text-align:center;border-bottom:1px solid rgba(255,255,255,.16);padding-bottom:22px;margin-bottom:18px}.side-logo{width:126px;height:126px;margin:0 auto 8px;object-fit:contain;display:block}.side-brand h2{font-size:17px;margin:0;font-weight:900}.side-brand small{color:#c7ddf7;font-weight:800}body.sidebar-collapsed .side-brand{padding-bottom:10px;margin-bottom:10px}body.sidebar-collapsed .side-logo{width:42px;height:42px}body.sidebar-collapsed .side-brand h2,body.sidebar-collapsed .side-brand small,body.sidebar-collapsed .nav-text,body.sidebar-collapsed .side-user,body.sidebar-collapsed .side-logout span{display:none}.nav{display:grid;gap:8px}.nav button{min-height:54px;display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#d7e8ff;border-radius:12px;padding:0 14px;text-align:left;font-weight:900;cursor:pointer;font-size:15px}.nav button.active,.nav button:hover{background:#fff;color:#003b70}.nav-ico{width:20px;display:grid;place-items:center;font-size:16px;flex:0 0 auto}body.sidebar-collapsed .nav button{justify-content:center;padding:0;min-height:48px}.side-user{margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.16);font-size:13px;color:#c7ddf7}.side-user b{color:#fff;display:block;word-break:break-all;margin-top:7px}.side-logout{width:100%;margin-top:14px;background:transparent;border:1px solid rgba(255,255,255,.85);color:#fff;border-radius:8px;padding:11px;cursor:pointer;font-weight:900}
+.main{min-width:0}.top{position:sticky;top:0;z-index:10;background:rgba(242,247,252,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px 14px 10px}.title-row{display:flex;gap:12px;align-items:center;min-width:0}.hamb{width:38px;height:38px;border-radius:50%;border:1px solid #0d6efd;color:#0d6efd;background:#fff;display:grid;place-items:center;cursor:pointer;font-weight:900;flex:0 0 auto}.page-title h1{margin:0;font-size:30px;line-height:1.05;color:var(--slate);font-weight:900;letter-spacing:-.045em}.page-title p{margin:5px 0 0;color:#526780;font-weight:800;font-size:13px}.actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.status-pill{padding:10px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);color:#56708d;font-weight:900;display:flex;gap:8px;align-items:center}.status-dot{width:10px;height:10px;border-radius:99px;background:var(--green);box-shadow:0 0 0 5px rgba(14,167,107,.14)}
+.content{padding:14px 10px 34px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 26px rgba(15,35,60,.075)}.filter-card{padding:14px;margin-bottom:8px}.filter-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.filter-title{display:flex;gap:10px;align-items:center;font-weight:900;color:#00457e;font-size:18px}.filter-sub{margin:7px 0 0;color:#63748d;font-weight:800;font-size:13px}.filter-body{margin-top:13px;display:grid;grid-template-columns:1.2fr repeat(4,minmax(130px,1fr)) auto;gap:10px;align-items:end}.section-label{display:flex;align-items:center;gap:10px;color:#00703c;text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:900;margin:8px 0 9px}.section-label:after{content:"";height:1px;background:#117b59;flex:1;opacity:.7}.kpis{display:grid;grid-template-columns:repeat(6,minmax(145px,1fr));gap:7px}.kpi{background:var(--card);border:1px solid var(--line);border-top:4px solid #60758f;border-radius:16px;min-height:86px;display:grid;place-items:center;text-align:center;padding:11px;box-shadow:0 8px 20px rgba(15,35,60,.06)}.kpi.blue{border-top-color:#0d6efd}.kpi.green{border-top-color:#0ea76b}.kpi.red{border-top-color:#e4323b}.kpi.yellow{border-top-color:#f5b400}.kpi span{font-size:12px;font-weight:900;color:#06142d;line-height:1.15}.kpi b{font-size:31px;line-height:1;margin-top:7px;display:block;color:#04142d;font-weight:900;letter-spacing:-.035em}.chip{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 11px;font-size:11px;font-weight:900;border:1px solid transparent}.chip.red{background:#ffe1e3;color:#d41120;border-color:#ffc5ca}.chip.green{background:#dff8ea;color:#00824c;border-color:#bfeccd}.chip.blue{background:#dff0ff;color:#006ece;border-color:#b8dcff}.chip.cyan{background:#dff9ff;color:#008197;border-color:#b3eef9}.chip.yellow{background:#fff3c4;color:#7c5900;border-color:#ffe080}.chip.gray{background:#eef2f7;color:#334155;border-color:#d5dfec}
+.dashboard-grid{display:grid;grid-template-columns:2fr 1.08fr;gap:10px;margin-top:8px}.map-card{min-height:285px;display:grid;place-items:center;overflow:hidden}#map{width:100%;height:285px}.lower-grid{display:grid;grid-template-columns:2fr 1.08fr;gap:10px;margin-top:10px}.panel-pad{padding:14px}.panel-title{margin:0 0 12px;font-size:17px;color:var(--slate)}.chart-wrap{min-height:210px;display:grid;place-items:center}#statusChart{max-height:205px}.risk-list{display:grid;gap:8px;max-height:224px;overflow:auto;padding-right:4px}.risk-item{border:1px solid #ffd1d5;border-left:4px solid var(--red);background:#fffafa;border-radius:12px;padding:11px}.risk-item .top-line{display:flex;justify-content:space-between;gap:10px;align-items:center;font-weight:900}.risk-item small{display:block;margin-top:7px;color:#53657d;font-weight:800}
+.table-card{margin-top:10px;overflow:hidden}.table-head{background:#003b70;color:#fff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}.table-head h3{margin:0;font-size:16px;text-transform:uppercase;letter-spacing:.02em;display:flex;gap:8px;color:#fff}.table-head input{max-width:380px;min-height:36px;border-radius:999px;background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.35)}.table-head input::placeholder{color:#d7e8ff}.table-meta{color:#52657d;font-weight:800;padding:12px 14px;border-bottom:1px solid var(--line)}.table-wrap{overflow:auto;max-height:520px;background:var(--card)}#page-nucleo .table-wrap{max-height:calc(100vh - 220px);min-height:560px}table{width:100%;min-width:1180px;border-collapse:collapse;font-size:13px}th{position:sticky;top:0;z-index:2;background:#f5f8fc;color:#172b46;text-align:left;border-bottom:1px solid var(--line);padding:10px 9px;text-transform:uppercase;font-size:11px;letter-spacing:.04em;font-weight:900}td{border-bottom:1px solid var(--line);padding:10px 9px;vertical-align:top;font-weight:750;color:#0c1d36}tr:hover td{background:rgba(13,110,253,.05)}.num{text-align:center}.green-text{color:#00824c!important}.red-text{color:#e4323b!important}.link{color:#005fec;font-weight:900;text-decoration:none}.link:hover{text-decoration:underline}.obs{max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#435973;font-style:italic;font-weight:650}.page{display:none}.page.active{display:block}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid .full{grid-column:1/-1}.form-row{display:grid;gap:6px}.admin-card{padding:18px}.admin-card h3{margin:0 0 15px}.external-frame{width:100%;height:calc(100vh - 112px);min-height:720px;border:0;background:#fff;border-radius:0;display:block}.external-placeholder{min-height:calc(100vh - 112px);padding:34px;text-align:center;color:#63748d;font-weight:800;display:grid;place-items:center;background:#fff}body.external-mode .top{display:none}body.external-mode .content{padding:0}body.external-mode #page-external .table-card{margin:0;border:0;border-radius:0;box-shadow:none;background:transparent}body.external-mode #page-external .table-head{display:none}body.external-mode .external-frame{height:100vh;min-height:100vh}body.external-mode .external-placeholder{height:100vh;min-height:100vh;margin:0;border-radius:0}body.external-mode .main{background:#edf3f8}
+.toast-box{position:fixed;top:18px;right:18px;z-index:1200;display:grid;gap:10px;width:min(390px,calc(100vw - 30px))}.toast{border-radius:16px;padding:14px 16px;background:#fff;box-shadow:0 20px 50px rgba(0,0,0,.16);border:1px solid var(--line);font-weight:800;display:flex;gap:10px;align-items:flex-start}.toast.ok{background:#22a957;color:#fff;border:0}.toast.error{background:#e4323b;color:#fff;border:0}.toast.warn{background:#f5b400;color:#2d2200;border:0}.toast button{margin-left:auto;border:0;background:transparent;color:inherit;font-weight:900;cursor:pointer}.modal{position:fixed;inset:0;z-index:1100;display:none;place-items:center;padding:20px;background:rgba(0,0,0,.55)}.modal.show{display:grid}.modal-card{width:min(1000px,calc(100vw - 28px));max-height:92vh;overflow:auto;background:var(--card);border-radius:22px;border:1px solid var(--line);box-shadow:0 30px 90px rgba(0,0,0,.32)}.modal-head{position:sticky;top:0;z-index:2;background:var(--card);border-bottom:1px solid var(--line);padding:16px 18px;display:flex;justify-content:space-between;gap:12px;align-items:center}.modal-head h3{margin:0}.modal-body{padding:18px}
+@media(max-width:1220px){.kpis{grid-template-columns:repeat(3,1fr)}.dashboard-grid,.lower-grid,.admin-grid{grid-template-columns:1fr}.filter-body{grid-template-columns:1fr 1fr}}@media(max-width:820px){.app,body.sidebar-collapsed .app{grid-template-columns:1fr}.sidebar{position:relative;min-height:auto}.side-brand{text-align:left;display:flex;align-items:center;gap:12px}.side-logo{margin:0;width:62px;height:62px}.nav{grid-template-columns:1fr 1fr}.top{position:relative;align-items:flex-start;flex-direction:column}.actions{justify-content:flex-start}.kpis{grid-template-columns:1fr 1fr}.filter-body{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}body.external-mode .sidebar{display:none}body.external-mode .app{grid-template-columns:1fr}}@media(max-width:540px){.kpis,.nav{grid-template-columns:1fr}.page-title h1{font-size:24px}.table-head{align-items:stretch;flex-direction:column}.table-head input{max-width:none}.login-card{padding:28px 20px}}
+</style>
 </head>
-
 <body class="sidebar-collapsed">
-  <div id="toastBox" class="toast-box"></div>
+<div id="toastBox" class="toast-box"></div>
+<div id="loader" class="loader"><div class="loader-card"><div class="loader-spin"></div><div><div id="loaderTitle" class="loader-title">Carregando</div><div id="loaderSub" class="loader-sub">Aguarde...</div></div><div id="loaderPct" class="loader-pct">0%</div><div class="loader-bar"><span id="loaderBar"></span></div></div></div>
 
-  <div id="loader" class="loader">
-    <div class="loader-card">
-      <div class="loader-spin"></div>
-      <div>
-        <div id="loaderTitle" class="loader-title">Carregando</div>
-        <div id="loaderSub" class="loader-sub">Aguarde...</div>
-      </div>
-      <div id="loaderPct" class="loader-pct">0%</div>
-      <div class="loader-bar"><span id="loaderBar"></span></div>
+<section id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-mark"><img id="loginLogo" src="https://i.postimg.cc/xTdv9yhz/logo-1.png" alt="AgSUS" onerror="this.style.display='none'"></div>
+    <div class="login-eyebrow">Acesso ao painel</div><h1 id="loginTitle">AgSUS Monitora</h1><p id="loginSlogan">Painel da Saúde Indígena</p>
+    <div id="configMsg" class="alert error hidden"></div><div id="loginMsg" class="alert hidden"></div>
+    <div class="login-form">
+      <label>Usuário</label><input id="loginEmail" type="email" placeholder="E-mail" autocomplete="email"/>
+      <label>Senha</label><div class="password-wrap"><input id="loginPassword" type="password" placeholder="Senha de Acesso" autocomplete="current-password" onkeydown="if(event.key==='Enter') login()"/><button type="button" onclick="togglePassword()"><i class="fa-solid fa-eye"></i></button></div>
+      <button id="loginBtn" class="btn" onclick="login()">Iniciar sessão</button>
     </div>
+    <div id="loginFoot" class="login-foot">© 2026 COGIP</div>
   </div>
+</section>
 
-  <section id="loginScreen" class="login-screen">
-    <div class="login-card">
-      <div class="login-mark">
-        <img src="https://i.postimg.cc/xTdv9yhz/logo-1.png" alt="AgSUS" onerror="this.style.display='none'">
-      </div>
-      <div class="login-eyebrow">Acesso ao painel</div>
-      <h1>AgSUS Monitora</h1>
-      <p>Painel da Saúde Indígena</p>
+<section id="appScreen" class="app hidden">
+<aside class="sidebar">
+  <div class="side-brand"><img id="sideLogo" class="side-logo" src="https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png" alt="AgSUS Monitora"><h2 id="sideTitle">AgSUS Monitora</h2><small id="sideSlogan">Painel da Saúde Indígena</small></div>
+  <nav id="nav" class="nav"></nav>
+  <div class="side-user">Usuário<b id="userEmail">-</b><small id="userProfile" style="display:block;margin-top:4px;color:#c7ddf7"></small></div>
+  <button class="side-logout" onclick="logout()">⇱ <span>Sair do Sistema</span></button>
+</aside>
+<main class="main">
+<header class="top">
+  <div class="title-row"><button class="hamb" onclick="toggleSidebar()">☰</button><div class="page-title"><h1 id="pageTitle">Saúde Indígena</h1><p id="pageSubtitle">Monitoramento DSEI/CASAI</p></div></div>
+  <div class="actions"><span id="updatedPill" class="status-pill hidden"><span class="status-dot"></span><span id="updatedText">Atualizado</span></span><button class="btn secondary" onclick="toggleTheme()">☾ Tema</button><button class="btn secondary" onclick="toggleFullscreen()">⛶ Tela</button><button class="btn secondary" onclick="toggleAccessibility()">◉ Acessibilidade</button><button class="btn outline" onclick="refreshData()">↻ Atualizar</button><button class="btn green" onclick="exportCSV()">⇩ Exportar</button></div>
+</header>
+<div class="content">
+<section id="page-dashboard" class="page active">
+  <div class="filter-card card"><div class="filter-head"><div><div class="filter-title">🔎 Filtros do monitoramento</div><p class="filter-sub">Refine unidade, status e risco sem poluir a tela principal.</p></div><button id="filterToggleBtn" class="btn secondary" onclick="toggleFilters()">⌄ Mostrar filtros</button></div><div id="filterBody" class="filter-body hidden"><div><label>Pesquisar</label><input id="filterSearch" placeholder="Edital, unidade, processo, etapa..." oninput="applyFilters()"/></div><div><label>Unidade</label><select id="filterUnidade" onchange="applyFilters()"></select></div><div><label>Status</label><select id="filterStatus" onchange="applyFilters()"></select></div><div><label>Risco</label><select id="filterRisco" onchange="applyFilters()"></select></div><div><label>UF</label><select id="filterUf" onchange="applyFilters()"></select></div><button class="btn secondary" onclick="clearFilters()">Limpar</button></div></div>
+  <div class="section-label">Processos Seletivos</div>
+  <div class="kpis"><div class="kpi"><span>Processos Seletivos</span><b id="kProcessos">0</b></div><div class="kpi blue"><span>Vagas Imediatas Previstas</span><b id="kVagas">0</b></div><div class="kpi green"><span>Contratações de Vagas Imediatas + CR</span><b id="kContratados">0</b></div><div class="kpi red"><span>Vagas Ociosas</span><b id="kOciosas">0</b></div><div class="kpi yellow"><span>Processos Seletivos Críticos <span class="chip gray">CRÍTICO: OFF</span></span><b id="kCriticos">0</b></div><div class="kpi"><span>Inscritos</span><b id="kInscritos">0</b></div></div>
+  <div class="dashboard-grid"><div class="card map-card"><div id="map"></div></div><div class="card panel-pad"><h3 class="panel-title">Resumo por status</h3><div id="statusSummary"></div></div></div>
+  <div class="lower-grid"><div class="card panel-pad"><h3 class="panel-title">Status Operacional</h3><div class="chart-wrap"><canvas id="statusChart"></canvas></div></div><div class="card panel-pad"><h3 class="panel-title" style="color:var(--red)">Atenção (Médio/Alto)</h3><div id="riskList" class="risk-list"></div></div></div>
+  <div class="table-card card"><div class="table-head"><h3><i class="fa-solid fa-table-list"></i> Detalhes</h3><input id="tableSearch" placeholder="Pesquisar..." oninput="applyFilters()"/></div><div id="tableMeta" class="table-meta">Nenhum registro carregado.</div><div class="table-wrap"><table><thead><tr><th>Unidade</th><th>Edital</th><th>Início</th><th>Encerramento</th><th class="num">Vagas</th><th class="num">Contratados</th><th class="num">Ociosas</th><th>Status</th><th>Etapa</th><th>Risco</th><th>Observações</th></tr></thead><tbody id="monitorRows"></tbody></table></div></div>
+</section>
 
-      <div id="configMsg" class="alert error hidden"></div>
-      <div id="loginMsg" class="alert hidden"></div>
+<section id="page-nucleo" class="page">
+  <div class="table-card card"><div class="table-head"><h3><i class="fa-solid fa-pen-to-square"></i> Núcleo CORES</h3><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><input id="coresSearch" placeholder="Pesquisar edital, unidade, status..." oninput="renderNucleo()"/><button id="btnNovo" class="btn green" onclick="openEditModal()">+ Novo</button></div></div><div class="table-meta">Controle de editais com edição e trilha de auditoria no Supabase.</div><div class="table-wrap"><table><thead><tr><th>Destino</th><th>Unidade</th><th>Edital</th><th>Status</th><th>Etapa</th><th class="num">Vagas</th><th class="num">Contratados</th><th class="num">Ociosas</th><th>Risco</th><th>Ações</th></tr></thead><tbody id="coresRows"></tbody></table></div></div>
+</section>
 
-      <div class="login-form">
-        <label for="loginEmail">Usuário</label>
-        <input id="loginEmail" type="email" placeholder="E-mail" autocomplete="email" />
+<section id="page-external" class="page"><div class="table-card card"><div class="table-head"><h3 id="externalTitle">Painel Externo</h3><div style="display:flex;gap:8px;align-items:center"><button class="btn secondary" onclick="reloadExternal()">↻ Atualizar</button><a id="externalOpen" class="btn green" target="_blank" rel="noopener">Abrir em nova guia</a></div></div><div id="externalMount" class="external-placeholder">Selecione um painel externo no menu.</div></div></section>
 
-        <label for="loginPassword">Senha</label>
-        <div class="password-wrap">
-          <input id="loginPassword" type="password" placeholder="Senha de Acesso" autocomplete="current-password" onkeydown="if(event.key==='Enter') login()" />
-          <button type="button" onclick="togglePassword()" aria-label="Mostrar senha">◉</button>
-        </div>
+<section id="page-config" class="page">
+<div class="admin-grid">
+  <div class="admin-card card"><h3>Configuração da Base</h3><div class="form-row"><label>ID / referência da base</label><input id="cfgMonitId" value="MONIT_001"></div></div>
+  <div class="admin-card card"><h3>Aviso Global</h3><div class="form-grid"><div class="form-row"><label>Tipo</label><select id="cfgBroadcastType"><option value="info">Info</option><option value="alerta">Alerta</option><option value="critico">Crítico</option></select></div><div class="form-row"><label>Mensagem</label><input id="cfgBroadcastMsg" placeholder="Mensagem global"></div></div></div>
+  <div class="admin-card card"><h3>Recursos Visuais</h3><div class="form-grid"><div class="form-row full"><label>Logo / mascote</label><input id="cfgMascot"></div><div class="form-row full"><label>Logo do login</label><input id="cfgLoginLogo"></div><div class="form-row full"><label>Imagem de fundo do login</label><input id="cfgLoginBg"></div><div class="form-row"><label>Título</label><input id="cfgTitle"></div><div class="form-row"><label>Slogan</label><input id="cfgSlogan"></div><div class="form-row full"><label>Texto do rodapé</label><input id="cfgFooterText"></div></div></div>
+  <div class="admin-card card"><h3>Painéis Externos</h3><div id="panelAdmin"></div></div>
+  <div class="admin-card card" style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px"><button class="btn secondary" onclick="applyConfigFromForm()">Pré-visualizar</button><button class="btn green" onclick="saveAdminSettings()">Salvar configurações</button></div>
+</div>
+</section>
+</div>
+</main>
+</section>
 
-        <button id="loginBtn" class="btn" onclick="login()">Iniciar sessão</button>
-      </div>
-
-      <div class="login-foot">© 2026 COGIP</div>
-    </div>
-  </section>
-
-  <section id="appScreen" class="app hidden">
-    <aside class="sidebar">
-      <div class="side-brand">
-        <img class="side-logo" src="https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png" alt="AgSUS Monitora" onerror="this.src='https://i.postimg.cc/xTdv9yhz/logo-1.png'">
-        <h2>AgSUS Monitora</h2>
-        <small>Painel da Saúde Indígena</small>
-      </div>
-
-      <nav id="nav" class="nav"></nav>
-
-      <div class="side-user">
-        Usuário
-        <b id="userEmail">-</b>
-      </div>
-      <button class="side-logout" onclick="logout()">⇱ <span>Sair do Sistema</span></button>
-    </aside>
-
-    <main class="main">
-      <header class="top">
-        <div class="title-row">
-          <button class="hamb" onclick="toggleSidebar()" title="Recolher/expandir menu">☰</button>
-          <div class="page-title">
-            <h1 id="pageTitle">Saúde Indígena</h1>
-            <p id="pageSubtitle">Monitoramento DSEI/CASAI</p>
-          </div>
-        </div>
-
-        <div class="actions">
-          <span id="updatedPill" class="status-pill hidden"><span class="status-dot"></span><span id="updatedText">Atualizado</span></span>
-          <button class="btn secondary" onclick="toggleTheme()">☾ Tema</button>
-          <button class="btn secondary" onclick="toggleFullscreen()">⛶ Tela</button>
-          <button class="btn secondary" onclick="toggleAccessibility()">◉ Acessibilidade</button>
-          <button class="btn outline" onclick="refreshData()">↻ Atualizar</button>
-          <button class="btn green" onclick="exportCSV()">⇩ Exportar</button>
-        </div>
-      </header>
-
-      <div class="content">
-        <section id="page-dashboard" class="page active">
-          <div class="filter-card card">
-            <div class="filter-head">
-              <div>
-                <div class="filter-title">🔎 Filtros do monitoramento</div>
-                <p class="filter-sub">Refine unidade, status e risco sem poluir a tela principal.</p>
-              </div>
-              <button id="filterToggleBtn" class="btn secondary" onclick="toggleFilters()">⌄ Mostrar filtros</button>
-            </div>
-            <div id="filterBody" class="filter-body hidden">
-              <div>
-                <label>Pesquisar</label>
-                <input id="filterSearch" placeholder="Edital, unidade, processo, etapa..." oninput="applyFilters()" />
-              </div>
-              <div>
-                <label>Unidade</label>
-                <select id="filterUnidade" onchange="applyFilters()"></select>
-              </div>
-              <div>
-                <label>Status</label>
-                <select id="filterStatus" onchange="applyFilters()"></select>
-              </div>
-              <div>
-                <label>Risco</label>
-                <select id="filterRisco" onchange="applyFilters()"></select>
-              </div>
-              <div>
-                <label>UF</label>
-                <select id="filterUf" onchange="applyFilters()"></select>
-              </div>
-              <button class="btn secondary" onclick="clearFilters()">Limpar</button>
-            </div>
-          </div>
-
-          <div class="section-label">Processos Seletivos</div>
-
-          <div class="kpis">
-            <div class="kpi gray"><span>Processos Seletivos</span><b id="kProcessos">0</b></div>
-            <div class="kpi blue"><span>Vagas Imediatas Previstas</span><b id="kVagas">0</b></div>
-            <div class="kpi green"><span>Contratações de Vagas Imediatas + CR</span><b id="kContratados">0</b></div>
-            <div class="kpi red"><span>Vagas Ociosas</span><b id="kOciosas">0</b></div>
-            <div class="kpi yellow"><span>Processos Seletivos Críticos <span id="panicChip" class="chip gray">CRÍTICO: OFF</span></span><b id="kCriticos">0</b></div>
-            <div class="kpi gray"><span>Inscritos</span><b id="kInscritos">0</b></div>
-          </div>
-
-          <div class="dashboard-grid">
-            <div class="card map-card"><div id="map"></div></div>
-            <div class="card panel-pad">
-              <h3 class="panel-title">Resumo por status</h3>
-              <div id="statusSummary"></div>
-            </div>
-          </div>
-
-          <div class="lower-grid">
-            <div class="card panel-pad">
-              <h3 class="panel-title">Status Operacional</h3>
-              <div class="chart-wrap"><canvas id="statusChart"></canvas></div>
-            </div>
-            <div class="card panel-pad">
-              <h3 class="panel-title" style="color:var(--red)">Atenção (Médio/Alto)</h3>
-              <div id="riskList" class="risk-list"></div>
-            </div>
-          </div>
-
-          <div class="table-card card">
-            <div class="table-head">
-              <h3>▦ Detalhes</h3>
-              <input id="tableSearch" placeholder="Pesquisar..." oninput="applyFilters()" />
-            </div>
-            <div id="tableMeta" class="table-meta">Nenhum registro carregado.</div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Unidade</th><th>Edital</th><th>Início</th><th>Encerramento</th><th class="num">Vagas</th><th class="num">Contratados</th><th class="num">Ociosas</th><th>Status</th><th>Etapa</th><th>Risco</th><th>Observações</th>
-                  </tr>
-                </thead>
-                <tbody id="monitorRows"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section id="page-cores" class="page">
-          <div class="table-card card">
-            <div class="table-head">
-              <h3>▣ Controle Núcleo CORES</h3>
-              <div style="display:flex;gap:10px;align-items:center">
-                <input id="coresSearch" placeholder="Pesquisar edital, unidade, status..." oninput="renderCores()" />
-                <button class="btn green" onclick="openEditModal()">+ Novo</button>
-              </div>
-            </div>
-            <div class="table-meta">Controle de editais com registro de alterações no Supabase.</div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Destino</th><th>Unidade</th><th>Edital</th><th>Status</th><th>Etapa</th><th class="num">Vagas</th><th class="num">Contratados</th><th class="num">Ociosas</th><th>Risco</th><th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="coresRows"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section id="page-external" class="page">
-          <div class="table-card card">
-            <div class="table-head">
-              <h3 id="externalTitle">Painel Externo</h3>
-              <div style="display:flex;gap:8px;align-items:center">
-                <button class="btn secondary" onclick="reloadExternal()">↻ Atualizar</button>
-                <a id="externalOpen" class="btn green" target="_blank" rel="noopener">Abrir em nova guia</a>
-              </div>
-            </div>
-            <div id="externalMount" class="external-placeholder">Selecione um painel externo no menu.</div>
-          </div>
-        </section>
-
-        <section id="page-config" class="page">
-          <div class="admin-grid">
-            <div class="admin-card card"><h3>Configuração de Planilha</h3><div class="form-row"><label>ID / referência da base</label><input id="cfgMonitId" value="MONIT_001" readonly></div></div>
-            <div class="admin-card card"><h3>Aviso Global (Broadcast)</h3><div class="form-grid"><div class="form-row"><label>Tipo</label><select id="cfgBroadcastType"><option>Info</option><option>Alerta</option><option>Crítico</option></select></div><div class="form-row"><label>Mensagem</label><input id="cfgBroadcastMsg" placeholder="Mensagem global"></div></div></div>
-            <div class="admin-card card"><h3>Recursos Visuais</h3><div class="form-grid"><div class="form-row full"><label>Logo / mascote</label><input id="cfgMascot" value="https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png"></div><div class="form-row full"><label>Imagem de fundo do login</label><input id="cfgLoginBg" value="https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png"></div><div class="form-row"><label>Título</label><input id="cfgTitle" value="AgSUS Monitora"></div><div class="form-row"><label>Slogan</label><input id="cfgSlogan" value="Painel da Saúde Indígena"></div></div></div>
-            <div class="admin-card card"><h3>Painéis Externos</h3><div id="panelAdmin"></div></div>
-          </div>
-        </section>
-      </div>
-    </main>
-  </section>
-
-  <div id="editModal" class="modal">
-    <div class="modal-card">
-      <div class="modal-head"><h3 id="editModalTitle">Editar edital</h3><button class="btn secondary" onclick="closeEditModal()">Fechar</button></div>
-      <div class="modal-body">
-        <div class="form-grid">
-          <input type="hidden" id="mId">
-          <div class="form-row"><label>Processo</label><input id="mProcesso"></div>
-          <div class="form-row"><label>Edital</label><input id="mEdital"></div>
-          <div class="form-row"><label>Unidade</label><input id="mUnidade"></div>
-          <div class="form-row"><label>UF</label><input id="mUf" maxlength="2"></div>
-          <div class="form-row"><label>Ciclo</label><input id="mCiclo"></div>
-          <div class="form-row"><label>Vagas</label><input id="mVagas" type="number" min="0"></div>
-          <div class="form-row"><label>Contratados</label><input id="mContratados" type="number" min="0"></div>
-          <div class="form-row"><label>Inscritos</label><input id="mInscritos" type="number" min="0"></div>
-          <div class="form-row"><label>Status</label><input id="mStatus"></div>
-          <div class="form-row"><label>Etapa</label><input id="mEtapa"></div>
-          <div class="form-row"><label>Risco</label><select id="mRisco"><option>Baixo</option><option>Médio</option><option>Alto</option></select></div>
-          <div class="form-row"><label>Responsável</label><input id="mResponsavel"></div>
-          <div class="form-row full"><label>Link do edital</label><input id="mLink"></div>
-          <div class="form-row full"><label>Observações</label><textarea id="mObs"></textarea></div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px"><button class="btn secondary" onclick="closeEditModal()">Cancelar</button><button class="btn green" onclick="saveEdital()">Salvar no Supabase</button></div>
-      </div>
-    </div>
-  </div>
+<div id="editModal" class="modal"><div class="modal-card"><div class="modal-head"><h3 id="editModalTitle">Editar edital</h3><button class="btn secondary" onclick="closeEditModal()">Fechar</button></div><div class="modal-body"><div class="form-grid"><input type="hidden" id="mId"><div class="form-row"><label>Processo</label><input id="mProcesso"></div><div class="form-row"><label>Edital</label><input id="mEdital"></div><div class="form-row"><label>Unidade</label><input id="mUnidade"></div><div class="form-row"><label>UF</label><input id="mUf" maxlength="2"></div><div class="form-row"><label>Ciclo</label><input id="mCiclo"></div><div class="form-row"><label>Vagas</label><input id="mVagas" type="number" min="0"></div><div class="form-row"><label>Contratados</label><input id="mContratados" type="number" min="0"></div><div class="form-row"><label>Inscritos</label><input id="mInscritos" type="number" min="0"></div><div class="form-row"><label>Status</label><input id="mStatus"></div><div class="form-row"><label>Etapa</label><input id="mEtapa"></div><div class="form-row"><label>Risco</label><select id="mRisco"><option>Baixo</option><option>Médio</option><option>Alto</option></select></div><div class="form-row"><label>Responsável</label><input id="mResponsavel"></div><div class="form-row full"><label>Link do edital</label><input id="mLink"></div><div class="form-row full"><label>Observações</label><textarea id="mObs"></textarea></div></div><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px"><button class="btn secondary" onclick="closeEditModal()">Cancelar</button><button class="btn green" onclick="saveEdital()">Salvar no Supabase</button></div></div></div></div>
 
 <script>
-  const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_Z__In8_fZh4UcgLpCq9jzg_gFlp2nkF";
+const SUPABASE_URL="https://vmjicwysdvnborqpczvl.supabase.co";
+const SUPABASE_KEY="sb_publishable_Z__In8_fZh4UcgLpCq9jzg_gFlp2nkF";
 
-  const DEFAULT_PANELS = [
-    { codigo:"analises", titulo:"Análises", icone:"fa-chart-line", url:"", ativo:true, em_manutencao:true, tipo_abertura:"iframe" },
-    { codigo:"recrutamento", titulo:"Recrutamento", icone:"fa-chart-pie", url:"", ativo:true, em_manutencao:true, tipo_abertura:"iframe" },
-    { codigo:"contratacao", titulo:"Contratação", icone:"fa-desktop", url:"", ativo:true, em_manutencao:true, tipo_abertura:"iframe" },
-    { codigo:"entrevistas", titulo:"Entrevistas", icone:"fa-arrow-up-right-from-square", url:"", ativo:true, em_manutencao:true, tipo_abertura:"iframe" }
-  ];
+const DEFAULT_CONFIG={app_title:"AgSUS Monitora",app_slogan:"Painel da Saúde Indígena",footer_text:"© 2026 COGIP",monit_id:"MONIT_001",login_bg_url:"https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png",login_logo_url:"https://i.postimg.cc/xTdv9yhz/logo-1.png",mascot_url:"https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png",broadcast_type:"info",broadcast_msg:""};
+const DEFAULT_PANELS=[{codigo:"analises",titulo:"Análises",icone:"fa-chart-line",url:"",ordem:1,ativo:true,em_manutencao:false,tipo_abertura:"iframe"},{codigo:"recrutamento",titulo:"Recrutamento",icone:"fa-chart-pie",url:"",ordem:2,ativo:true,em_manutencao:true,tipo_abertura:"iframe"},{codigo:"contratacao",titulo:"Contratação",icone:"fa-desktop",url:"",ordem:3,ativo:true,em_manutencao:false,tipo_abertura:"iframe"},{codigo:"entrevistas",titulo:"Entrevistas",icone:"fa-arrow-up-right-from-square",url:"",ordem:4,ativo:true,em_manutencao:true,tipo_abertura:"iframe"}];
 
-  let sb = null;
-  let rows = [];
-  let filtered = [];
-  let panels = [...DEFAULT_PANELS];
-  let currentPanel = null;
-  let currentView = "dashboard";
-  let statusChart = null;
-  let chartsReady = false;
-  let profile = null;
-  let iframeCache = {};
+let sb=null,sessionUser=null,userProfile=null,appConfig={...DEFAULT_CONFIG},rows=[],filtered=[],panels=[...DEFAULT_PANELS],currentPanel=null,currentView="dashboard",statusChart=null,chartsReady=false;
+const externalCache=new Map();
+google.charts.load("current",{packages:["geochart"]});google.charts.setOnLoadCallback(()=>{chartsReady=true;if(rows.length)renderMap()});
 
-  google.charts.load("current", { packages:["geochart"] });
-  google.charts.setOnLoadCallback(() => { chartsReady = true; if(rows.length) renderMap(); });
-
-  function $(id){ return document.getElementById(id); }
-  function n(v){ const x = Number(v || 0); return Number.isFinite(x) ? x : 0; }
-  function txt(v){ return String(v ?? "").trim(); }
-  function low(v){ return txt(v).toLowerCase(); }
-  function fmt(v){ return n(v).toLocaleString("pt-BR"); }
-  function esc(v){ return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
-  function attr(v){ return esc(v).replaceAll("`","&#096;"); }
-
-  function toast(message, type="ok"){
-    const box = $("toastBox");
-    const el = document.createElement("div");
-    el.className = "toast " + type;
-    el.innerHTML = `<div>${esc(message)}</div><button onclick="this.parentElement.remove()">×</button>`;
-    box.appendChild(el);
-    setTimeout(() => { try{ el.remove(); }catch(e){} }, 4200);
-  }
-  function loader(show,title="Carregando",sub="Aguarde...",pct=0){
-    $("loader").classList.toggle("show", !!show);
-    $("loaderTitle").textContent = title;
-    $("loaderSub").textContent = sub;
-    $("loaderPct").textContent = Math.round(pct) + "%";
-    $("loaderBar").style.width = Math.max(0,Math.min(100,pct)) + "%";
-  }
-  function showAlert(id,msg,type=""){
-    const el = $(id);
-    el.textContent = msg || "";
-    el.className = "alert " + type;
-    el.classList.toggle("hidden", !msg);
-  }
-
-  function initSupabase(){
-    if(!SUPABASE_URL || SUPABASE_URL.includes("COLE_AQUI") || !SUPABASE_KEY || SUPABASE_KEY.includes("COLE_AQUI")){
-      showAlert("configMsg", "Configure SUPABASE_URL e SUPABASE_KEY no arquivo index.html.", "error");
-      return false;
-    }
-    if(!window.supabase){
-      showAlert("configMsg", "Não foi possível carregar a biblioteca do Supabase. Verifique a internet.", "error");
-      return false;
-    }
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    return true;
-  }
-
-  async function boot(){
-    if(!initSupabase()) return;
-    buildNav();
-    renderPanelAdmin();
-    const { data } = await sb.auth.getSession();
-    if(data && data.session){
-      openApp(data.session.user);
-      await loadAll();
-    }
-  }
-
-  function togglePassword(){ const p = $("loginPassword"); p.type = p.type === "password" ? "text" : "password"; }
-
-  async function login(){
-    if(!sb && !initSupabase()) return;
-    const email = txt($("loginEmail").value);
-    const password = $("loginPassword").value;
-    if(!email || !password){ showAlert("loginMsg","Informe usuário e senha.","warn"); return; }
-    $("loginBtn").disabled = true;
-    $("loginBtn").textContent = "Entrando...";
-    loader(true,"Autenticando","Validando credenciais com segurança e preparando o ambiente...",10);
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if(error){
-      loader(false);
-      $("loginBtn").disabled = false;
-      $("loginBtn").textContent = "Iniciar sessão";
-      showAlert("loginMsg","Falha no login: " + error.message,"error");
-      return;
-    }
-    loader(true,"Carregando ambiente","Aplicando navegação, permissões, preferências e dados principais...",42);
-    openApp(data.user);
-    await loadAll();
-    loader(false);
-    toast("Login realizado. Ambiente carregado com melhor desempenho e acessibilidade.");
-    $("loginBtn").disabled = false;
-    $("loginBtn").textContent = "Iniciar sessão";
-  }
-
-  async function logout(){
-    if(sb) await sb.auth.signOut();
-    rows = []; filtered = []; profile = null; iframeCache = {};
-    $("appScreen").classList.add("hidden");
-    $("loginScreen").classList.remove("hidden");
-    $("loginPassword").value = "";
-  }
-
-  function openApp(user){
-    $("loginScreen").classList.add("hidden");
-    $("appScreen").classList.remove("hidden");
-    $("userEmail").textContent = user && user.email ? user.email : "-";
-  }
-
-  async function loadAll(){
-    await loadProfile();
-    await loadPanels();
-    await loadData();
-  }
-
-  async function loadProfile(){
-    try{
-      const { data, error } = await sb.from("app_usuarios").select("*").maybeSingle();
-      if(!error && data) profile = data;
-    }catch(e){ profile = null; }
-  }
-  function can(perm){
-    if(!profile) return true;
-    if(profile.perfil === "master") return true;
-    if(perm === "ind") return !!profile.p_ind;
-    if(perm === "cores") return !!profile.p_cores;
-    if(perm === "paineis") return !!profile.p_paineis;
-    if(perm === "config") return !!profile.p_config;
-    if(perm === "auditoria") return !!profile.p_auditoria;
-    return false;
-  }
-
-  async function loadPanels(){
-    try{
-      const { data, error } = await sb.from("paineis_externos").select("*").eq("ativo", true).order("ordem", { ascending:true });
-      if(!error && Array.isArray(data) && data.length){
-        panels = data.map(p => ({ codigo:p.codigo, titulo:p.titulo, icone:p.icone || "fa-arrow-up-right-from-square", url:p.url || "", ativo:p.ativo !== false, em_manutencao:!!p.em_manutencao, tipo_abertura:p.tipo_abertura || "iframe" }));
-      }
-    }catch(e){}
-    buildNav();
-    renderPanelAdmin();
-  }
-
-  async function loadData(){
-    loader(true,"Atualizando","Sincronizando dados do monitoramento...",55);
-    const { data, error } = await sb.from("monitoramento_indigena").select("*").eq("ativo", true).order("risco", { ascending:true }).order("unidade", { ascending:true });
-    if(error){ loader(false); toast("Erro ao carregar dados: " + error.message, "error"); return; }
-    rows = Array.isArray(data) ? data : [];
-    populateFilters();
-    applyFilters();
-    setUpdated();
-    loader(false);
-  }
-
-  function setUpdated(){ const now = new Date(); $("updatedText").textContent = "Atualizado em " + now.toLocaleString("pt-BR"); $("updatedPill").classList.remove("hidden"); }
-  function refreshData(){ loadAll(); }
-
-  function buildNav(){
-    const nav = $("nav");
-    const base = [
-      { view:"dashboard", label:"Saúde Indígena", ico:"fa-feather-pointed", show:can("ind") },
-      { view:"cores", label:"Núcleo CORES", ico:"fa-pen-to-square", show:can("cores") }
-    ];
-    let html = base.filter(x => x.show).map(item => navButton(item.view,item.label,item.ico)).join("");
-    if(can("paineis")) panels.forEach(p => { if(p.ativo) html += navButton("panel:" + p.codigo, p.titulo, p.icone || "fa-arrow-up-right-from-square"); });
-    if(can("config")) html += navButton("config", "Configurações", "fa-gear");
-    nav.innerHTML = html;
-    setActiveNav(currentView);
-  }
-  function navIconHTML(view, ico){
-    const byView = { dashboard:"fa-feather-pointed", cores:"fa-pen-to-square", config:"fa-gear", "panel:analises":"fa-chart-line", "panel:recrutamento":"fa-chart-pie", "panel:contratacao":"fa-desktop", "panel:entrevistas":"fa-arrow-up-right-from-square" };
-    const cls = byView[view] || (/^fa-/.test(String(ico || "")) ? ico : "");
-    if(cls) return `<i class="fa-solid ${attr(cls)}" aria-hidden="true"></i>`;
-    return esc(ico || "•");
-  }
-  function navButton(view,label,ico){ return `<button data-view="${attr(view)}" onclick="navigate('${attr(view)}')"><span class="nav-ico">${navIconHTML(view, ico)}</span><span class="nav-text">${esc(label)}</span></button>`; }
-  function setActiveNav(view){ document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view)); }
-
-  function navigate(view){
-    document.body.classList.remove("external-mode");
-    currentView = view;
-    setActiveNav(view);
-    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-    if(view === "dashboard"){
-      $("page-dashboard").classList.add("active"); setPageTitle("Saúde Indígena","Monitoramento DSEI/CASAI"); renderAll(); return;
-    }
-    if(view === "cores"){
-      $("page-cores").classList.add("active"); setPageTitle("Núcleo CORES","Controle de Editais (Inserir/Editar)"); renderCores(); return;
-    }
-    if(view === "config"){
-      $("page-config").classList.add("active"); setPageTitle("Configurações","Parametrização do Sistema"); return;
-    }
-    if(view.startsWith("panel:")){ openPanel(view.split(":")[1]); }
-  }
-  function setPageTitle(title,sub){ $("pageTitle").textContent = title; $("pageSubtitle").textContent = sub; document.title = title + " - AgSUS Monitora"; }
-  function toggleSidebar(){ document.body.classList.toggle("sidebar-collapsed"); setTimeout(() => { if(currentView === "dashboard") renderMap(); }, 220); }
-  function toggleFilters(){ $("filterBody").classList.toggle("hidden"); $("filterToggleBtn").textContent = $("filterBody").classList.contains("hidden") ? "⌄ Mostrar filtros" : "⌃ Ocultar filtros"; }
-  function unique(field){ return [...new Set(rows.map(r => txt(r[field])).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt-BR")); }
-  function setOptions(id, values, first){ const el = $(id); const cur = el.value; el.innerHTML = `<option value="">${first}</option>` + values.map(v => `<option value="${attr(v)}">${esc(v)}</option>`).join(""); if(values.includes(cur)) el.value = cur; }
-  function populateFilters(){ setOptions("filterUnidade", unique("unidade"), "Todas"); setOptions("filterStatus", unique("status"), "Todos"); setOptions("filterRisco", unique("risco"), "Todos"); setOptions("filterUf", unique("uf"), "Todas"); }
-  function clearFilters(){ ["filterSearch","filterUnidade","filterStatus","filterRisco","filterUf","tableSearch"].forEach(id => $(id).value = ""); applyFilters(); }
-
-  function applyFilters(){
-    const q = low($("filterSearch").value), qt = low($("tableSearch").value), unidade = txt($("filterUnidade").value), status = txt($("filterStatus").value), risco = txt($("filterRisco").value), uf = txt($("filterUf").value);
-    filtered = rows.filter(r => {
-      const hay = [r.processo,r.edital,r.unidade,r.ciclo,r.uf,r.status,r.etapa,r.responsavel,r.cargos,r.risco,r.observacoes,r.observacoes_internas,r.link_edital].map(low).join(" | ");
-      return (!q || hay.includes(q)) && (!qt || hay.includes(qt)) && (!unidade || txt(r.unidade) === unidade) && (!status || txt(r.status) === status) && (!risco || txt(r.risco) === risco) && (!uf || txt(r.uf) === uf);
-    }).sort(compareRows);
-    renderAll();
-  }
-  function compareRows(a,b){ const rank = { "Alto":0, "Médio":1, "Medio":1, "Baixo":2 }; const ar = rank[txt(a.risco)] ?? 9; const br = rank[txt(b.risco)] ?? 9; if(ar !== br) return ar - br; return n(b.vagas_ociosas) - n(a.vagas_ociosas); }
-  function sum(field){ return filtered.reduce((acc,r) => acc + n(r[field]), 0); }
-  function renderAll(){ renderKpis(); renderStatusSummary(); renderChart(); renderMap(); renderRisks(); renderTable(); if(currentView === "cores") renderCores(); }
-  function renderKpis(){ $("kProcessos").textContent = fmt(filtered.length); $("kVagas").textContent = fmt(sum("vagas_total")); $("kContratados").textContent = fmt(sum("contratados")); $("kOciosas").textContent = fmt(sum("vagas_ociosas")); $("kInscritos").textContent = fmt(sum("inscritos")); $("kCriticos").textContent = fmt(filtered.filter(r => ["alto","médio","medio"].includes(low(r.risco))).length); }
-  function group(field){ const out = {}; filtered.forEach(r => { const k = txt(r[field]) || "Não informado"; out[k] = (out[k] || 0) + 1; }); return Object.entries(out).sort((a,b) => b[1]-a[1]); }
-  function renderStatusSummary(){ $("statusSummary").innerHTML = group("status").map(([k,v]) => { const cls = low(k).includes("conclu") ? "green" : low(k).includes("andamento") ? "blue" : low(k).includes("elabora") ? "cyan" : low(k).includes("cancel") ? "red" : "gray"; return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:9px 0"><b>${esc(k)}</b><span class="chip ${cls}">${fmt(v)}</span></div>`; }).join("") || `<div class="alert">Sem dados.</div>`; }
-  function renderChart(){
-    const canvas = $("statusChart"); if(!canvas || !window.Chart) return;
-    const entries = group("status"), labels = entries.map(x => x[0]), values = entries.map(x => x[1]);
-    const colors = labels.map(label => { const l = low(label); if(l.includes("conclu")) return "#0ea76b"; if(l.includes("andamento")) return "#0d6efd"; if(l.includes("elabora")) return "#00b8d9"; if(l.includes("cancel")) return "#e4323b"; return "#7d8da5"; });
-    if(statusChart) statusChart.destroy();
-    statusChart = new Chart(canvas, { type:"doughnut", data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:0 }] }, options:{ responsive:true, maintainAspectRatio:false, cutout:"68%", plugins:{ legend:{ position:"top", labels:{ usePointStyle:true, boxWidth:10, font:{ weight:"bold" } } } }, onClick:(evt, items) => { if(!items.length) return; $("filterStatus").value = labels[items[0].index]; applyFilters(); } } });
-  }
-  function renderMap(){
-    if(!chartsReady || !window.google || !google.visualization) return;
-    const el = $("map"); if(!el || currentView !== "dashboard") return;
-    const groups = {};
-    filtered.forEach(r => { const uf = txt(r.uf).toUpperCase(); if(!uf) return; const key = "BR-" + uf; groups[key] = (groups[key] || 0) + 1; });
-    const dt = new google.visualization.DataTable(); dt.addColumn("string","UF"); dt.addColumn("number","Processos"); dt.addColumn({ type:"string", role:"tooltip" });
-    Object.entries(groups).forEach(([key,value]) => dt.addRow([key, value, `UF: ${key.replace("BR-","")}\nProcessos: ${value}`]));
-    if(!dt.getNumberOfRows()){ el.innerHTML = "<div class='alert'>Sem UF para plotar no mapa.</div>"; return; }
-    const chart = new google.visualization.GeoChart(el);
-    google.visualization.events.addListener(chart, "select", () => { const sel = chart.getSelection(); if(!sel.length) return; const uf = dt.getValue(sel[0].row,0).replace("BR-",""); $("filterUf").value = uf; applyFilters(); });
-    chart.draw(dt, { region:"BR", resolution:"provinces", displayMode:"regions", colorAxis:{ colors:["#dbeafe","#003b70"] }, datalessRegionColor:"#edf2f7", backgroundColor:"transparent", legend:"none" });
-  }
-  function renderRisks(){
-    const critical = filtered.filter(r => ["alto","médio","medio"].includes(low(r.risco))).slice(0,30);
-    $("riskList").innerHTML = critical.map(r => { const isHigh = low(r.risco) === "alto"; return `<div class="risk-item"><div class="top-line"><span>${esc(r.edital || "-")}</span><span class="chip ${isHigh ? "red":"yellow"}">${esc(r.risco || "-")}</span></div><small>${esc(r.etapa || "Etapa não informada")} <span style="float:right">${esc(r.unidade || "")}</span></small></div>`; }).join("") || `<div class="alert">Nenhum processo crítico com os filtros atuais.</div>`;
-  }
-  function statusChip(status){ const l = low(status); const cls = l.includes("conclu") ? "green" : l.includes("andamento") ? "blue" : l.includes("elabora") ? "cyan" : l.includes("cancel") ? "red" : "gray"; return `<span class="chip ${cls}">${esc(status || "-")}</span>`; }
-  function riscoChip(risco){ const l = low(risco); const cls = l === "alto" ? "red" : (l === "médio" || l === "medio") ? "yellow" : "green"; return `<span class="chip ${cls}">${esc(risco || "-")}</span>`; }
-  function renderTable(){
-    $("tableMeta").textContent = `Exibindo ${fmt(filtered.length)} de ${fmt(rows.length)} registros após os filtros.`;
-    $("monitorRows").innerHTML = filtered.map(r => { const link = txt(r.link_edital); const edital = link ? `<a class="link" href="${attr(link)}" target="_blank" rel="noopener">${esc(r.edital || "-")} ↗</a>` : esc(r.edital || "-"); return `<tr><td>${esc(r.unidade)}</td><td>${edital}</td><td>${esc(r.data_inicio || "")}</td><td>${esc(r.data_fim || "")}</td><td class="num">${fmt(r.vagas_total)}</td><td class="num green-text">${fmt(r.contratados)}</td><td class="num red-text">${fmt(r.vagas_ociosas)}</td><td>${statusChip(r.status)}</td><td>${esc(r.etapa)}</td><td>${riscoChip(r.risco)}</td><td><div class="obs" title="${attr(r.observacoes || "-")}">${esc(r.observacoes || "-")}</div></td></tr>`; }).join("") || `<tr><td colspan="11" style="text-align:center;padding:22px">Nenhum registro encontrado com os filtros atuais.</td></tr>`;
-  }
-  function renderCores(){
-    const q = low($("coresSearch").value);
-    const data = rows.filter(r => { if(!q) return true; const hay = [r.edital,r.unidade,r.status,r.etapa,r.risco,r.processo].map(low).join(" | "); return hay.includes(q); }).sort(compareRows);
-    $("coresRows").innerHTML = data.map(r => `<tr><td>Saúde Indígena</td><td>${esc(r.unidade)}</td><td><a class="link" href="${attr(r.link_edital || "#")}" target="_blank" rel="noopener">${esc(r.edital || "-")}</a></td><td>${statusChip(r.status)}</td><td>${esc(r.etapa)}</td><td class="num">${fmt(r.vagas_total)}</td><td class="num green-text">${fmt(r.contratados)}</td><td class="num red-text">${fmt(r.vagas_ociosas)}</td><td>${riscoChip(r.risco)}</td><td><button class="btn outline" onclick="openEditModal('${attr(r.id)}')">Editar</button></td></tr>`).join("") || `<tr><td colspan="10" style="text-align:center;padding:22px">Nenhum registro encontrado.</td></tr>`;
-  }
-  function openEditModal(id){
-    const r = id ? rows.find(x => String(x.id) === String(id)) : {};
-    $("editModalTitle").textContent = id ? "Editar edital" : "Novo edital";
-    $("mId").value = r?.id || ""; $("mProcesso").value = r?.processo || ""; $("mEdital").value = r?.edital || ""; $("mUnidade").value = r?.unidade || ""; $("mUf").value = r?.uf || ""; $("mCiclo").value = r?.ciclo || ""; $("mVagas").value = r?.vagas_total || 0; $("mContratados").value = r?.contratados || 0; $("mInscritos").value = r?.inscritos || 0; $("mStatus").value = r?.status || ""; $("mEtapa").value = r?.etapa || ""; $("mRisco").value = r?.risco || "Baixo"; $("mResponsavel").value = r?.responsavel || ""; $("mLink").value = r?.link_edital || ""; $("mObs").value = r?.observacoes || "";
-    $("editModal").classList.add("show");
-  }
-  function closeEditModal(){ $("editModal").classList.remove("show"); }
-  async function saveEdital(){
-    const id = txt($("mId").value);
-    const payload = { processo:txt($("mProcesso").value), edital:txt($("mEdital").value), unidade:txt($("mUnidade").value), uf:txt($("mUf").value).toUpperCase(), ciclo:txt($("mCiclo").value), vagas_total:n($("mVagas").value), contratados:n($("mContratados").value), inscritos:n($("mInscritos").value), status:txt($("mStatus").value), etapa:txt($("mEtapa").value), risco:txt($("mRisco").value), responsavel:txt($("mResponsavel").value), link_edital:txt($("mLink").value), observacoes:txt($("mObs").value), ativo:true, vagas_ociosas:Math.max(0,n($("mVagas").value)-n($("mContratados").value)) };
-    if(!payload.edital || !payload.unidade){ toast("Informe pelo menos edital e unidade.", "warn"); return; }
-    loader(true,"Núcleo CORES","Salvando edital no Supabase...",70);
-    let result = id ? await sb.from("monitoramento_indigena").update(payload).eq("id", id).select().single() : await sb.from("monitoramento_indigena").insert(payload).select().single();
-    if(result.error){ loader(false); toast("Erro ao salvar: " + result.error.message, "error"); return; }
-    closeEditModal(); await loadData(); loader(false); toast("Registro salvo com sucesso."); navigate("cores");
-  }
-
-  function openPanel(code){
-    const panel = panels.find(p => p.codigo === code);
-    if(!panel) return;
-    document.body.classList.add("external-mode");
-    document.body.classList.add("sidebar-collapsed");
-    currentPanel = panel;
-    $("page-external").classList.add("active");
-    document.querySelectorAll(".page").forEach(p => { if(p.id !== "page-external") p.classList.remove("active"); });
-    setPageTitle(panel.titulo, "Painel externo incorporado");
-    $("externalTitle").textContent = panel.titulo;
-    $("externalOpen").href = panel.url || "#";
-    const mount = $("externalMount");
-    if(panel.em_manutencao){ mount.className = "external-placeholder"; mount.innerHTML = `<div><h2>Módulo em Manutenção</h2><p>A AgSUS está atualizando esta base de dados.<br>Por favor, tente novamente mais tarde.</p></div>`; return; }
-    if(!panel.url){ mount.className = "external-placeholder"; mount.innerHTML = `<div><h2>${esc(panel.titulo)}</h2><p>Cadastre a URL deste painel na tabela paineis_externos.</p></div>`; return; }
-    mount.className = "";
-    const cacheKey = panel.codigo + "::" + panel.url;
-    if(!iframeCache[cacheKey]) iframeCache[cacheKey] = `<iframe class="external-frame" src="${attr(panel.url)}" loading="eager" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
-    mount.innerHTML = iframeCache[cacheKey];
-  }
-  function reloadExternal(){
-    if(!currentPanel) return;
-    Object.keys(iframeCache).forEach(k => { if(k.startsWith(currentPanel.codigo + "::")) delete iframeCache[k]; });
-    openPanel(currentPanel.codigo);
-  }
-  function renderPanelAdmin(){
-    const box = $("panelAdmin"); if(!box) return;
-    box.innerHTML = panels.map((p,i) => `<div class="form-row" style="margin-bottom:12px"><label>${esc(p.titulo)}</label><input value="${attr(p.url || "")}" placeholder="URL do painel ${i+1}" onchange="panels[${i}].url=this.value"></div>`).join("") + `<p style="color:var(--muted);font-weight:800">Os links oficiais agora devem ser alterados na tabela paineis_externos do Supabase.</p>`;
-  }
-  function toggleTheme(){ document.body.classList.toggle("dark"); setTimeout(renderMap, 120); }
-  function toggleAccessibility(){ document.body.classList.toggle("large-text"); toast(document.body.classList.contains("large-text") ? "Texto ampliado ativado." : "Texto ampliado desativado."); }
-  function toggleFullscreen(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
-  function exportCSV(){
-    const headers = ["unidade","uf","edital","processo","ciclo","vagas_total","contratados","vagas_ociosas","inscritos","status","etapa","risco","responsavel","observacoes","link_edital"];
-    const csv = [headers.join(";"), ...filtered.map(r => headers.map(h => String(r[h] ?? "").replaceAll("\n"," ").replaceAll("\r"," ").replaceAll(";"," ").replaceAll('"',"'")).join(";"))].join("\n");
-    const blob = new Blob(["\ufeff" + csv], { type:"text/csv;charset=utf-8;" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "agsus_monitora_saude_indigena.csv"; a.click(); URL.revokeObjectURL(a.href);
-  }
-  window.addEventListener("resize", () => { clearTimeout(window.__mapResize); window.__mapResize = setTimeout(renderMap, 220); });
-  boot();
+const $=id=>document.getElementById(id),txt=v=>String(v??"").trim(),low=v=>txt(v).toLowerCase(),n=v=>{let x=Number(v||0);return Number.isFinite(x)?x:0},fmt=v=>n(v).toLocaleString("pt-BR"),isTrue=v=>v===true||String(v).toLowerCase()==="true"||String(v)==="1";
+function esc(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}function attr(v){return esc(v).replaceAll("`","&#096;")}function cssUrl(u){return `url("${String(u||"").replace(/["\\]/g,"")}")`}
+function toast(m,t="ok"){let e=document.createElement("div");e.className="toast "+t;e.innerHTML=`<div>${esc(m)}</div><button onclick="this.parentElement.remove()">×</button>`;$("toastBox").appendChild(e);setTimeout(()=>e.remove(),4800)}
+function loader(s,title="Carregando",sub="Aguarde...",pct=0){$("loader").classList.toggle("show",!!s);$("loaderTitle").textContent=title;$("loaderSub").textContent=sub;$("loaderPct").textContent=Math.round(pct)+"%";$("loaderBar").style.width=Math.max(0,Math.min(100,pct))+"%"}
+function showAlert(id,msg,type=""){$(id).textContent=msg||"";$(id).className="alert "+type;$(id).classList.toggle("hidden",!msg)}
+function initSupabase(){if(!SUPABASE_URL||!SUPABASE_KEY||SUPABASE_KEY.includes("COLE_AQUI")){showAlert("configMsg","Configure a SUPABASE_KEY completa no arquivo index.html antes de publicar.","error");return false}if(!window.supabase){showAlert("configMsg","Biblioteca Supabase não carregou.","error");return false}sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);return true}
+async function boot(){applyConfigVisuals();if(!initSupabase())return;await loadPublicConfigSafe();let {data}=await sb.auth.getSession();if(data?.session){sessionUser=data.session.user;openApp(sessionUser);await loadAll()}}
+async function loadPublicConfigSafe(){try{let {data,error}=await sb.from("configuracoes").select("chave,valor,descricao");if(!error&&Array.isArray(data)){data.forEach(r=>{if(r.chave)appConfig[r.chave]=r.valor??""});applyConfigVisuals();fillAdminConfigForm()}}catch(e){}}
+function applyConfigVisuals(){let c={...DEFAULT_CONFIG,...appConfig};document.title=c.app_title||DEFAULT_CONFIG.app_title;document.documentElement.style.setProperty("--login-bg",cssUrl(c.login_bg_url||DEFAULT_CONFIG.login_bg_url));if($("loginLogo")&&c.login_logo_url)$("loginLogo").src=c.login_logo_url;if($("sideLogo")&&c.mascot_url)$("sideLogo").src=c.mascot_url;if($("loginTitle"))$("loginTitle").textContent=c.app_title;if($("sideTitle"))$("sideTitle").textContent=c.app_title;if($("loginSlogan"))$("loginSlogan").textContent=c.app_slogan;if($("sideSlogan"))$("sideSlogan").textContent=c.app_slogan;if($("loginFoot"))$("loginFoot").textContent=c.footer_text}
+function fillAdminConfigForm(){let c={...DEFAULT_CONFIG,...appConfig},m={cfgMonitId:"monit_id",cfgBroadcastType:"broadcast_type",cfgBroadcastMsg:"broadcast_msg",cfgMascot:"mascot_url",cfgLoginLogo:"login_logo_url",cfgLoginBg:"login_bg_url",cfgTitle:"app_title",cfgSlogan:"app_slogan",cfgFooterText:"footer_text"};Object.entries(m).forEach(([id,k])=>{if($(id))$(id).value=c[k]??""})}
+function applyConfigFromForm(){appConfig={...appConfig,monit_id:txt($("cfgMonitId").value),broadcast_type:txt($("cfgBroadcastType").value),broadcast_msg:txt($("cfgBroadcastMsg").value),mascot_url:txt($("cfgMascot").value),login_logo_url:txt($("cfgLoginLogo").value),login_bg_url:txt($("cfgLoginBg").value),app_title:txt($("cfgTitle").value),app_slogan:txt($("cfgSlogan").value),footer_text:txt($("cfgFooterText").value)};applyConfigVisuals();toast("Pré-visualização aplicada.")}
+function can(p){if(!userProfile)return false;if(userProfile.perfil==="master")return true;return p==="ind"?!!userProfile.p_ind:p==="cores"?!!userProfile.p_cores:p==="paineis"?!!userProfile.p_paineis:p==="config"?!!userProfile.p_config:p==="auditoria"?!!userProfile.p_auditoria:false}
+async function loadUserProfile(){try{let {data,error}=await sb.from("app_usuarios").select("email,nome,perfil,p_ind,p_cores,p_paineis,p_config,p_auditoria,ativo").ilike("email",sessionUser.email).eq("ativo",true).maybeSingle();userProfile=(!error&&data)?data:{email:sessionUser.email,nome:sessionUser.email,perfil:"leitor",p_ind:true,p_cores:false,p_paineis:false,p_config:false,p_auditoria:false,ativo:true};$("userProfile").textContent=userProfile.perfil?`Perfil: ${userProfile.perfil}`:""}catch(e){userProfile={email:sessionUser.email,perfil:"leitor",p_ind:true}}}
+function togglePassword(){let p=$("loginPassword");p.type=p.type==="password"?"text":"password"}
+async function login(){if(!sb&&!initSupabase())return;let email=txt($("loginEmail").value),password=$("loginPassword").value;if(!email||!password)return showAlert("loginMsg","Informe usuário e senha.","warn");$("loginBtn").disabled=true;$("loginBtn").textContent="Entrando...";loader(true,"Autenticando","Validando credenciais...",10);let {data,error}=await sb.auth.signInWithPassword({email,password});if(error){loader(false);$("loginBtn").disabled=false;$("loginBtn").textContent="Iniciar sessão";return showAlert("loginMsg","Falha no login: "+error.message,"error")}sessionUser=data.user;openApp(sessionUser);loader(true,"Carregando ambiente","Aplicando navegação e dados principais...",42);await loadAll();loader(false);toast("Login realizado.");$("loginBtn").disabled=false;$("loginBtn").textContent="Iniciar sessão"}
+async function logout(){if(sb)await sb.auth.signOut();sessionUser=null;userProfile=null;rows=[];filtered=[];currentView="dashboard";currentPanel=null;externalCache.clear();$("appScreen").classList.add("hidden");$("loginScreen").classList.remove("hidden");$("loginPassword").value="";document.body.classList.remove("external-mode")}
+function openApp(user){$("loginScreen").classList.add("hidden");$("appScreen").classList.remove("hidden");$("userEmail").textContent=user?.email||"-"}
+async function loadAll(){await loadPublicConfigSafe();await loadUserProfile();await loadPanels();await loadData();buildNav();let start=can("ind")?"dashboard":can("cores")?"nucleo":can("paineis")&&panels.length?"panel:"+panels[0].codigo:"config";navigate(start)}
+async function loadPanels(){try{let {data,error}=await sb.from("paineis_externos").select("codigo,titulo,icone,url,ordem,ativo,em_manutencao,tipo_abertura").order("ordem",{ascending:true});panels=(!error&&Array.isArray(data)&&data.length)?data.map(p=>({codigo:p.codigo,titulo:p.titulo,icone:p.icone||"fa-arrow-up-right-from-square",url:p.url||"",ordem:p.ordem||999,ativo:p.ativo!==false,em_manutencao:!!p.em_manutencao,tipo_abertura:p.tipo_abertura||"iframe"})):[...DEFAULT_PANELS]}catch(e){panels=[...DEFAULT_PANELS]}renderPanelAdmin()}
+async function loadData(){loader(true,"Atualizando","Sincronizando dados...",55);let {data,error}=await sb.from("monitoramento_indigena").select("*").eq("ativo",true).limit(5000);if(error){loader(false);return toast("Erro ao carregar dados: "+error.message,"error")}rows=Array.isArray(data)?data:[];populateFilters();applyFilters();setUpdated();loader(false)}
+function setUpdated(){$("updatedText").textContent="Atualizado em "+new Date().toLocaleString("pt-BR");$("updatedPill").classList.remove("hidden")}function refreshData(){loadAll()}
+function buildNav(){let html="";if(can("ind"))html+=navButton("dashboard","Saúde Indígena","fa-feather-pointed");if(can("cores"))html+=navButton("nucleo","Núcleo CORES","fa-pen-to-square");if(can("paineis"))panels.forEach(p=>{if(p.ativo)html+=navButton("panel:"+p.codigo,p.titulo,p.icone)});if(can("config"))html+=navButton("config","Configurações","fa-gear");$("nav").innerHTML=html||`<div class="alert warn">Sem permissões ativas.</div>`;setActiveNav(currentView)}
+function navButton(view,label,ico){return `<button data-view="${attr(view)}" onclick="navigate('${attr(view)}')"><span class="nav-ico"><i class="fa-solid ${attr(ico)}"></i></span><span class="nav-text">${esc(label)}</span></button>`}
+function setActiveNav(v){document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===v))}
+function navigate(v){if(v==="dashboard"&&!can("ind"))return toast("Sem permissão.","warn");if(v==="nucleo"&&!can("cores"))return toast("Sem permissão.","warn");if(v==="config"&&!can("config"))return toast("Sem permissão.","warn");if(v.startsWith("panel:")&&!can("paineis"))return toast("Sem permissão.","warn");currentView=v;setActiveNav(v);document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));if(v==="dashboard"){document.body.classList.remove("external-mode");$("page-dashboard").classList.add("active");setPageTitle("Saúde Indígena","Monitoramento DSEI/CASAI");return renderAll()}if(v==="nucleo"){document.body.classList.remove("external-mode");$("page-nucleo").classList.add("active");setPageTitle("Núcleo CORES","Controle de Editais (Inserir/Editar)");return renderNucleo()}if(v==="config"){document.body.classList.remove("external-mode");$("page-config").classList.add("active");setPageTitle("Configurações","Parametrização do Sistema");fillAdminConfigForm();return renderPanelAdmin()}if(v.startsWith("panel:"))return openPanel(v.split(":")[1])}
+function setPageTitle(t,s){$("pageTitle").textContent=t;$("pageSubtitle").textContent=s;document.title=t+" - "+(appConfig.app_title||"AgSUS Monitora")}function toggleSidebar(){document.body.classList.toggle("sidebar-collapsed");setTimeout(()=>{if(currentView==="dashboard")renderMap()},220)}function toggleFilters(){$("filterBody").classList.toggle("hidden");$("filterToggleBtn").textContent=$("filterBody").classList.contains("hidden")?"⌄ Mostrar filtros":"⌃ Ocultar filtros"}
+function unique(f){return[...new Set(rows.map(r=>txt(r[f])).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"))}function setOptions(id,values,first){let el=$(id),cur=el.value;el.innerHTML=`<option value="">${first}</option>`+values.map(v=>`<option value="${attr(v)}">${esc(v)}</option>`).join("");if(values.includes(cur))el.value=cur}function populateFilters(){setOptions("filterUnidade",unique("unidade"),"Todas");setOptions("filterStatus",unique("status"),"Todos");setOptions("filterRisco",unique("risco"),"Todos");setOptions("filterUf",unique("uf"),"Todas")}function clearFilters(){["filterSearch","filterUnidade","filterStatus","filterRisco","filterUf","tableSearch"].forEach(id=>$(id).value="");applyFilters()}
+function applyFilters(){let q=low($("filterSearch").value),qt=low($("tableSearch").value),un=txt($("filterUnidade").value),st=txt($("filterStatus").value),ri=txt($("filterRisco").value),uf=txt($("filterUf").value);filtered=rows.filter(r=>{let h=[r.processo,r.edital,r.unidade,r.ciclo,r.uf,r.status,r.etapa,r.responsavel,r.cargos,r.risco,r.observacoes,r.observacoes_internas,r.link_edital].map(low).join(" | ");return(!q||h.includes(q))&&(!qt||h.includes(qt))&&(!un||txt(r.unidade)===un)&&(!st||txt(r.status)===st)&&(!ri||txt(r.risco)===ri)&&(!uf||txt(r.uf).toUpperCase()===uf.toUpperCase())}).sort(compareRows);renderAll()}
+function compareRows(a,b){let rank={Alto:0,Médio:1,Medio:1,Baixo:2},ar=rank[txt(a.risco)]??9,br=rank[txt(b.risco)]??9;if(ar!==br)return ar-br;return n(b.vagas_ociosas)-n(a.vagas_ociosas)}function sum(f){return filtered.reduce((a,r)=>a+n(r[f]),0)}function group(f){let o={};filtered.forEach(r=>{let k=txt(r[f])||"Não informado";o[k]=(o[k]||0)+1});return Object.entries(o).sort((a,b)=>b[1]-a[1])}
+function renderAll(){renderKpis();renderStatusSummary();renderChart();renderMap();renderRisks();renderTable();if(currentView==="nucleo")renderNucleo()}function renderKpis(){$("kProcessos").textContent=fmt(filtered.length);$("kVagas").textContent=fmt(sum("vagas_total"));$("kContratados").textContent=fmt(sum("contratados"));$("kOciosas").textContent=fmt(sum("vagas_ociosas"));$("kInscritos").textContent=fmt(sum("inscritos"));$("kCriticos").textContent=fmt(filtered.filter(r=>["alto","médio","medio"].includes(low(r.risco))).length)}
+function renderStatusSummary(){$("statusSummary").innerHTML=group("status").map(([k,v])=>{let l=low(k),c=l.includes("conclu")?"green":l.includes("andamento")?"blue":l.includes("elabora")?"cyan":l.includes("cancel")?"red":"gray";return`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:9px 0"><b>${esc(k)}</b><span class="chip ${c}">${fmt(v)}</span></div>`}).join("")||`<div class="alert">Sem dados.</div>`}
+function renderChart(){let canvas=$("statusChart");if(!canvas||!window.Chart)return;let e=group("status"),labels=e.map(x=>x[0]),values=e.map(x=>x[1]),colors=labels.map(s=>{let l=low(s);return l.includes("conclu")?"#0ea76b":l.includes("andamento")?"#0d6efd":l.includes("elabora")?"#00b8d9":l.includes("cancel")?"#e4323b":"#7d8da5"});if(statusChart)statusChart.destroy();statusChart=new Chart(canvas,{type:"doughnut",data:{labels,datasets:[{data:values,backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:"68%",plugins:{legend:{position:"top",labels:{usePointStyle:true,boxWidth:10,font:{weight:"bold"}}}},onClick:(ev,it)=>{if(!it.length)return;$("filterStatus").value=labels[it[0].index];applyFilters()}}})}
+function renderMap(){if(!chartsReady||!window.google||!google.visualization||currentView!=="dashboard")return;let el=$("map"),g={};filtered.forEach(r=>{let uf=txt(r.uf).toUpperCase();if(uf)g["BR-"+uf]=(g["BR-"+uf]||0)+1});let dt=new google.visualization.DataTable();dt.addColumn("string","UF");dt.addColumn("number","Processos");dt.addColumn({type:"string",role:"tooltip"});Object.entries(g).forEach(([k,v])=>dt.addRow([k,v,`UF: ${k.replace("BR-","")}\nProcessos: ${v}`]));if(!dt.getNumberOfRows()){el.innerHTML="<div class='alert'>Sem UF para plotar no mapa.</div>";return}let chart=new google.visualization.GeoChart(el);google.visualization.events.addListener(chart,"select",()=>{let s=chart.getSelection();if(!s.length)return;$("filterUf").value=dt.getValue(s[0].row,0).replace("BR-","");applyFilters()});chart.draw(dt,{region:"BR",resolution:"provinces",displayMode:"regions",colorAxis:{colors:["#dbeafe","#003b70"]},datalessRegionColor:"#edf2f7",backgroundColor:"transparent",legend:"none"})}
+function renderRisks(){let c=filtered.filter(r=>["alto","médio","medio"].includes(low(r.risco))).slice(0,30);$("riskList").innerHTML=c.map(r=>`<div class="risk-item"><div class="top-line"><span>${esc(r.edital||"-")}</span><span class="chip ${low(r.risco)==="alto"?"red":"yellow"}">${esc(r.risco||"-")}</span></div><small>${esc(r.etapa||"Etapa não informada")} <span style="float:right">${esc(r.unidade||"")}</span></small></div>`).join("")||`<div class="alert">Nenhum processo crítico com os filtros atuais.</div>`}
+function statusChip(s){let l=low(s),c=l.includes("conclu")?"green":l.includes("andamento")?"blue":l.includes("elabora")?"cyan":l.includes("cancel")?"red":"gray";return`<span class="chip ${c}">${esc(s||"-")}</span>`}function riscoChip(r){let l=low(r),c=l==="alto"?"red":(l==="médio"||l==="medio")?"yellow":"green";return`<span class="chip ${c}">${esc(r||"-")}</span>`}
+function renderTable(){$("tableMeta").textContent=`Exibindo ${fmt(filtered.length)} de ${fmt(rows.length)} registros após os filtros.`;$("monitorRows").innerHTML=filtered.map(r=>{let link=txt(r.link_edital),ed=link?`<a class="link" href="${attr(link)}" target="_blank" rel="noopener">${esc(r.edital||"-")} ↗</a>`:esc(r.edital||"-");return`<tr><td>${esc(r.unidade)}</td><td>${ed}</td><td>${esc(r.data_inicio||"")}</td><td>${esc(r.data_fim||"")}</td><td class="num">${fmt(r.vagas_total)}</td><td class="num green-text">${fmt(r.contratados)}</td><td class="num red-text">${fmt(r.vagas_ociosas)}</td><td>${statusChip(r.status)}</td><td>${esc(r.etapa)}</td><td>${riscoChip(r.risco)}</td><td><div class="obs" title="${attr(r.observacoes||"-")}">${esc(r.observacoes||"-")}</div></td></tr>`}).join("")||`<tr><td colspan="11" style="text-align:center;padding:22px">Nenhum registro encontrado.</td></tr>`}
+function renderNucleo(){let q=low($("coresSearch").value),data=rows.filter(r=>!q||[r.edital,r.unidade,r.status,r.etapa,r.risco,r.processo].map(low).join(" | ").includes(q)).sort(compareRows);$("coresRows").innerHTML=data.map(r=>{let link=txt(r.link_edital),ed=link?`<a class="link" href="${attr(link)}" target="_blank" rel="noopener">${esc(r.edital||"-")}</a>`:esc(r.edital||"-");return`<tr><td>Saúde Indígena</td><td>${esc(r.unidade)}</td><td>${ed}</td><td>${statusChip(r.status)}</td><td>${esc(r.etapa)}</td><td class="num">${fmt(r.vagas_total)}</td><td class="num green-text">${fmt(r.contratados)}</td><td class="num red-text">${fmt(r.vagas_ociosas)}</td><td>${riscoChip(r.risco)}</td><td><button class="btn outline" onclick="openEditModal('${attr(r.id)}')">Editar</button></td></tr>`}).join("")||`<tr><td colspan="10" style="text-align:center;padding:22px">Nenhum registro encontrado.</td></tr>`}
+function openEditModal(id){if(!can("cores"))return toast("Sem permissão para editar.","warn");let r=id?rows.find(x=>String(x.id)===String(id)):{};$("editModalTitle").textContent=id?"Editar edital":"Novo edital";["Id","Processo","Edital","Unidade","Uf","Ciclo","Vagas","Contratados","Inscritos","Status","Etapa","Risco","Responsavel","Link","Obs"].forEach(x=>{let el=$("m"+x);if(el)el.value=""});$("mId").value=r?.id||"";$("mProcesso").value=r?.processo||"";$("mEdital").value=r?.edital||"";$("mUnidade").value=r?.unidade||"";$("mUf").value=r?.uf||"";$("mCiclo").value=r?.ciclo||"";$("mVagas").value=r?.vagas_total||0;$("mContratados").value=r?.contratados||0;$("mInscritos").value=r?.inscritos||0;$("mStatus").value=r?.status||"";$("mEtapa").value=r?.etapa||"";$("mRisco").value=r?.risco||"Baixo";$("mResponsavel").value=r?.responsavel||"";$("mLink").value=r?.link_edital||"";$("mObs").value=r?.observacoes||"";$("editModal").classList.add("show")}function closeEditModal(){$("editModal").classList.remove("show")}
+async function saveEdital(){let id=txt($("mId").value),p={processo:txt($("mProcesso").value),edital:txt($("mEdital").value),unidade:txt($("mUnidade").value),uf:txt($("mUf").value).toUpperCase(),ciclo:txt($("mCiclo").value),vagas_total:n($("mVagas").value),contratados:n($("mContratados").value),inscritos:n($("mInscritos").value),status:txt($("mStatus").value),etapa:txt($("mEtapa").value),risco:txt($("mRisco").value),responsavel:txt($("mResponsavel").value),link_edital:txt($("mLink").value),observacoes:txt($("mObs").value),ativo:true,vagas_ociosas:Math.max(0,n($("mVagas").value)-n($("mContratados").value))};if(!p.edital||!p.unidade)return toast("Informe edital e unidade.","warn");loader(true,"Núcleo CORES","Salvando edital...",70);let res=id?await sb.from("monitoramento_indigena").update(p).eq("id",id).select().single():await sb.from("monitoramento_indigena").insert(p).select().single();if(res.error){loader(false);return toast("Erro ao salvar: "+res.error.message,"error")}closeEditModal();await loadData();loader(false);toast("Registro salvo com sucesso.");navigate("nucleo")}
+function openPanel(code){let p=panels.find(x=>x.codigo===code);if(!p)return;currentPanel=p;document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$("page-external").classList.add("active");document.body.classList.add("external-mode","sidebar-collapsed");setPageTitle(p.titulo,"Painel externo incorporado");$("externalTitle").textContent=p.titulo;$("externalOpen").href=p.url||"#";setActiveNav("panel:"+p.codigo);let m=$("externalMount");if(p.em_manutencao){m.className="external-placeholder";m.innerHTML=`<div><i class="fa-solid fa-screwdriver-wrench" style="font-size:72px;color:#555"></i><h2>Módulo em Manutenção</h2><p>A AgSUS está atualizando esta base de dados.<br>Por favor, tente novamente mais tarde.</p></div>`;return}if(!p.url){m.className="external-placeholder";m.innerHTML=`<div><h2>${esc(p.titulo)}</h2><p>Cadastre a URL deste painel na tabela paineis_externos.</p></div>`;return}m.className="";let f=externalCache.get(p.codigo);if(!f){f=document.createElement("iframe");f.className="external-frame";f.src=p.url;f.loading="lazy";f.allowFullscreen=true;f.setAttribute("allow","fullscreen; clipboard-read; clipboard-write");f.setAttribute("referrerpolicy","no-referrer-when-downgrade");externalCache.set(p.codigo,f)}m.innerHTML="";m.appendChild(f)}
+function reloadExternal(){if(!currentPanel)return;if(externalCache.has(currentPanel.codigo)){let f=externalCache.get(currentPanel.codigo);f.src=f.src}else openPanel(currentPanel.codigo)}
+function renderPanelAdmin(){let box=$("panelAdmin");if(!box)return;box.innerHTML=panels.map((p,i)=>`<div class="form-grid" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:12px"><input type="hidden" id="panelCodigo${i}" value="${attr(p.codigo)}"><div class="form-row"><label>Título</label><input id="panelTitulo${i}" value="${attr(p.titulo||"")}"></div><div class="form-row"><label>Ícone</label><input id="panelIcone${i}" value="${attr(p.icone||"")}"></div><div class="form-row full"><label>URL</label><input id="panelUrl${i}" value="${attr(p.url||"")}" placeholder="URL do painel"></div><div class="form-row"><label>Ordem</label><input id="panelOrdem${i}" type="number" value="${attr(p.ordem||i+1)}"></div><div class="form-row"><label>Ativo</label><select id="panelAtivo${i}"><option value="true" ${p.ativo?"selected":""}>Sim</option><option value="false" ${!p.ativo?"selected":""}>Não</option></select></div><div class="form-row"><label>Manutenção</label><select id="panelManut${i}"><option value="false" ${!p.em_manutencao?"selected":""}>Não</option><option value="true" ${p.em_manutencao?"selected":""}>Sim</option></select></div><div class="form-row"><label>Abertura</label><select id="panelAbertura${i}"><option value="iframe" ${p.tipo_abertura!=="nova_guia"?"selected":""}>iframe</option><option value="nova_guia" ${p.tipo_abertura==="nova_guia"?"selected":""}>nova guia</option></select></div></div>`).join("")||`<div class="alert warn">Nenhum painel cadastrado.</div>`}
+async function saveAdminSettings(){if(!can("config"))return toast("Sem permissão.","warn");applyConfigFromForm();loader(true,"Configurações","Salvando parâmetros...",62);let cr=[["app_slogan",appConfig.app_slogan,"Slogan do sistema"],["app_title",appConfig.app_title,"Título do sistema"],["broadcast_msg",appConfig.broadcast_msg,"Mensagem do aviso global"],["broadcast_type",appConfig.broadcast_type,"Tipo do aviso global"],["footer_text",appConfig.footer_text,"Texto do rodapé"],["login_bg_url",appConfig.login_bg_url,"Imagem de fundo do login"],["login_logo_url",appConfig.login_logo_url,"Logo do login"],["mascot_url",appConfig.mascot_url,"Logo / mascote do menu lateral"],["monit_id",appConfig.monit_id,"ID / referência da base"]].map(([chave,valor,descricao])=>({chave,valor,descricao,atualizado_em:new Date().toISOString()}));let cfg=await sb.from("configuracoes").upsert(cr,{onConflict:"chave"});if(cfg.error){loader(false);return toast("Erro nas configurações: "+cfg.error.message,"error")}let pr=panels.map((p,i)=>({codigo:txt($(`panelCodigo${i}`).value)||p.codigo,titulo:txt($(`panelTitulo${i}`).value)||p.titulo,icone:txt($(`panelIcone${i}`).value)||p.icone,url:txt($(`panelUrl${i}`).value),ordem:n($(`panelOrdem${i}`).value)||i+1,ativo:isTrue($(`panelAtivo${i}`).value),em_manutencao:isTrue($(`panelManut${i}`).value),tipo_abertura:txt($(`panelAbertura${i}`).value)||"iframe",atualizado_em:new Date().toISOString()}));let pnl=await sb.from("paineis_externos").upsert(pr,{onConflict:"codigo"});if(pnl.error){loader(false);return toast("Config salva, erro nos painéis: "+pnl.error.message,"warn")}await loadPanels();loader(false);toast("Configurações salvas.")}
+function toggleTheme(){document.body.classList.toggle("dark");setTimeout(renderMap,120)}function toggleAccessibility(){document.body.classList.toggle("large-text");toast(document.body.classList.contains("large-text")?"Texto ampliado ativado.":"Texto ampliado desativado.")}function toggleFullscreen(){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()}
+function exportCSV(){let h=["unidade","uf","edital","processo","ciclo","vagas_total","contratados","vagas_ociosas","inscritos","status","etapa","risco","responsavel","observacoes","link_edital"],csv=[h.join(";"),...filtered.map(r=>h.map(k=>String(r[k]??"").replaceAll("\n"," ").replaceAll("\r"," ").replaceAll(";"," ").replaceAll('"',"'")).join(";"))].join("\n"),blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="agsus_monitora_saude_indigena.csv";a.click();URL.revokeObjectURL(a.href)}
+window.addEventListener("resize",()=>{clearTimeout(window.__mapResize);window.__mapResize=setTimeout(renderMap,220)});
+boot();
 </script>
 </body>
 </html>
