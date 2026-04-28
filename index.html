@@ -2,16 +2,14 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.5</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>AgSUS Monitora Web V2.3</title>
 
-  <!-- Tipografia e ícones institucionais -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-  <!-- Dependências via CDN: não precisa instalar Node -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
@@ -31,22 +29,30 @@
       --card:#ffffff;
       --line:#d9e3ee;
       --soft:#f6f9fc;
-      --shadow:0 18px 45px rgba(15,35,60,.10);
+      --shadow:0 14px 34px rgba(15,35,60,.09);
       --radius:18px;
       --sidebar:260px;
       --sidebar-mini:64px;
+      --topbar:82px;
     }
 
     *{box-sizing:border-box}
-    html,body{height:100%}
+    html,body{height:100%;min-height:100%}
+    html{
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      text-rendering:geometricPrecision;
+      -webkit-text-size-adjust:100%;
+      font-synthesis-weight:none;
+    }
     body{
       margin:0;
-      font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;
+      font-family:"Inter",Segoe UI,Roboto,Arial,sans-serif;
       color:#06142d;
       background:var(--bg);
       overflow-x:hidden;
+      font-weight:500;
     }
-
     body.dark{
       --bg:#0b1424;
       --card:#111d31;
@@ -56,50 +62,48 @@
       --muted:#9fb1ca;
       color:#eaf2ff;
     }
-
     body.large-text{font-size:17px}
     body.reduce-motion *{animation:none!important;transition:none!important}
     .hidden{display:none!important}
 
-    /* LOGIN */
     .login-screen{
       min-height:100vh;
+      min-height:100dvh;
       display:grid;
       place-items:center;
       position:relative;
       overflow:hidden;
       background:
-        linear-gradient(90deg, rgba(255,255,255,.10), rgba(0,33,71,.08)),
+        linear-gradient(90deg,rgba(0,25,58,.28),rgba(0,49,99,.18)),
         url("https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png");
       background-size:cover;
       background-position:center;
-      background-repeat:no-repeat;
       padding:24px;
     }
     .login-screen::after{
       content:"";
       position:absolute;
       inset:0;
-      background:rgba(255,255,255,.06);
+      background:rgba(0,30,70,.18);
       pointer-events:none;
     }
     .login-card{
       width:min(460px,calc(100vw - 34px));
-      background:rgba(255,255,255,.95);
-      border:1px solid rgba(255,255,255,.58);
+      background:rgba(246,250,255,.92);
+      border:1px solid rgba(255,255,255,.55);
       border-radius:28px;
-      box-shadow:0 30px 100px rgba(0,0,0,.20);
+      box-shadow:0 30px 100px rgba(0,0,0,.28);
       padding:34px 32px;
       position:relative;
       z-index:2;
       text-align:center;
-      backdrop-filter:none;
+      backdrop-filter:blur(8px);
     }
     .login-mark{
       width:112px;height:112px;margin:0 auto 18px;
       border-radius:50%;
       display:grid;place-items:center;
-      background:rgba(255,255,255,.45);
+      background:rgba(255,255,255,.36);
       border:1px solid rgba(0,184,217,.28);
       position:relative;
     }
@@ -114,70 +118,19 @@
     }
     .login-mark img{width:56px;height:56px;object-fit:contain}
     @keyframes spin{to{transform:rotate(360deg)}}
-    .login-eyebrow{
-      color:#008dea;
-      font-size:13px;
-      font-weight:900;
-      text-transform:uppercase;
-      letter-spacing:.14em;
-    }
-    .login-card h1{
-      font-size:32px;
-      margin:12px 0 4px;
-      color:#0e1830;
-    }
-    .login-card p{
-      margin:0 0 22px;
-      color:#65758d;
-      font-weight:700;
-    }
+    .login-eyebrow{color:#008dea;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.14em}
+    .login-card h1{font-size:32px;margin:12px 0 4px;color:#0e1830;font-weight:800;letter-spacing:-.035em}
+    .login-card p{margin:0 0 22px;color:#65758d;font-weight:700}
     .login-form{text-align:left;display:grid;gap:13px;margin-top:20px}
-    label{
-      font-size:12px;
-      font-weight:900;
-      text-transform:uppercase;
-      letter-spacing:.07em;
-      color:#324155;
-    }
-    input,select,textarea{
-      width:100%;
-      min-height:44px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      background:var(--card);
-      color:inherit;
-      padding:0 14px;
-      outline:none;
-      font:inherit;
-    }
+    label{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:#172b46}
+    input,select,textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:#0c1d36;padding:0 14px;outline:none;font:inherit;font-weight:600}
     textarea{padding:12px 14px;resize:vertical;min-height:86px}
-    input:focus,select:focus,textarea:focus{
-      border-color:var(--blue);
-      box-shadow:0 0 0 4px rgba(13,110,253,.15);
-    }
+    input::placeholder,textarea::placeholder{color:#7d8da3;opacity:1}
+    input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(13,110,253,.15)}
     .password-wrap{position:relative}
     .password-wrap input{padding-right:48px}
-    .password-wrap button{
-      position:absolute;right:8px;top:7px;
-      height:32px;width:36px;border:0;background:transparent;cursor:pointer;color:#55708f;
-    }
-    .btn{
-      border:0;
-      border-radius:14px;
-      min-height:44px;
-      padding:0 18px;
-      cursor:pointer;
-      font-weight:900;
-      color:#fff;
-      background:linear-gradient(90deg,#004c93,#0b9be6);
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      text-decoration:none;
-      white-space:nowrap;
-      box-shadow:0 10px 22px rgba(0,77,145,.20);
-    }
+    .password-wrap button{position:absolute;right:8px;top:7px;height:32px;width:36px;border:0;background:transparent;cursor:pointer;color:#55708f}
+    .btn{border:0;border-radius:14px;min-height:44px;padding:0 18px;cursor:pointer;font-weight:900;color:#fff;background:linear-gradient(90deg,#004c93,#0b9be6);display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;white-space:nowrap;box-shadow:0 10px 22px rgba(0,77,145,.20)}
     .btn:hover{filter:brightness(.98)}
     .btn:disabled{opacity:.62;cursor:not-allowed}
     .btn.secondary{background:#e9eff6;color:#18324f;box-shadow:none;border:1px solid #cfdbea}
@@ -185,720 +138,144 @@
     .btn.green{background:#0b8f58}
     .btn.red{background:#dc2626}
     .btn.icon{min-width:44px;padding:0}
-    .alert{
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid var(--line);
-      background:var(--soft);
-      color:var(--slate);
-      font-weight:800;
-      line-height:1.35;
-      font-size:13px;
-    }
+    .alert{padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--soft);color:var(--slate);font-weight:800;line-height:1.35;font-size:13px}
     .alert.ok{background:#e9fbf1;border-color:#b8edd1;color:#067044}
     .alert.error{background:#fff1f2;border-color:#fecdd3;color:#be123c}
     .alert.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
-    .login-foot{
-      margin-top:18px;
-      color:#00c2e8;
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:.12em;
-    }
+    .login-foot{margin-top:18px;color:#00c2e8;font-size:12px;font-weight:900;letter-spacing:.12em}
 
-    /* LOADER */
-    .loader{
-      position:fixed;
-      inset:0;
-      display:none;
-      place-items:center;
-      z-index:1000;
-      background:rgba(2,8,23,.56);
-      backdrop-filter:blur(2px);
-    }
+    .loader{position:fixed;inset:0;display:none;place-items:center;z-index:1000;background:rgba(2,8,23,.56);backdrop-filter:blur(2px)}
     .loader.show{display:grid}
-    .loader-card{
-      width:min(560px,calc(100vw - 36px));
-      background:rgba(255,255,255,.96);
-      border:1px solid rgba(0,184,217,.22);
-      box-shadow:0 30px 80px rgba(0,0,0,.25);
-      border-radius:18px;
-      padding:22px 24px;
-      color:#18324f;
-      display:grid;
-      grid-template-columns:52px 1fr 66px;
-      gap:14px;
-      align-items:center;
-    }
+    .loader-card{width:min(560px,calc(100vw - 36px));background:rgba(255,255,255,.96);border:1px solid rgba(0,184,217,.22);box-shadow:0 30px 80px rgba(0,0,0,.25);border-radius:18px;padding:22px 24px;color:#18324f;display:grid;grid-template-columns:52px 1fr 66px;gap:14px;align-items:center}
     body.dark .loader-card{background:#101c30;color:#eaf2ff}
-    .loader-spin{
-      width:44px;height:44px;border-radius:50%;
-      border:4px solid #e6eef7;
-      border-top-color:#00b8d9;
-      animation:spin 1s linear infinite;
-    }
+    .loader-spin{width:44px;height:44px;border-radius:50%;border:4px solid #e6eef7;border-top-color:#00b8d9;animation:spin 1s linear infinite}
     .loader-title{font-size:18px;font-weight:900;margin-bottom:4px}
     .loader-sub{color:#62738b;font-weight:700;line-height:1.35}
-    .loader-pct{
-      border:1px solid var(--line);
-      background:var(--soft);
-      border-radius:999px;
-      text-align:center;
-      padding:8px;
-      font-weight:900;
-    }
-    .loader-bar{
-      grid-column:1/-1;
-      height:10px;
-      background:#e4ebf4;
-      border-radius:99px;
-      overflow:hidden;
-    }
-    .loader-bar span{
-      display:block;height:100%;width:0%;
-      background:linear-gradient(90deg,#00c2e8,#004c93);
-      transition:width .25s ease;
-    }
+    .loader-pct{border:1px solid var(--line);background:var(--soft);border-radius:999px;text-align:center;padding:8px;font-weight:900}
+    .loader-bar{grid-column:1/-1;height:10px;background:#e4ebf4;border-radius:99px;overflow:hidden}
+    .loader-bar span{display:block;height:100%;width:0%;background:linear-gradient(90deg,#00c2e8,#004c93);transition:width .25s ease}
 
-    /* APP */
-    .app{
-      min-height:100vh;
-      display:grid;
-      grid-template-columns:var(--sidebar) 1fr;
-    }
+    .app{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:var(--sidebar) 1fr}
     body.sidebar-collapsed .app{grid-template-columns:var(--sidebar-mini) 1fr}
-    .sidebar{
-      background:linear-gradient(180deg,#003b70,#032b52);
-      color:#fff;
-      min-height:100vh;
-      position:sticky;
-      top:0;
-      overflow:auto;
-      padding:18px 16px;
-      z-index:20;
-    }
-    .side-brand{
-      text-align:center;
-      border-bottom:1px solid rgba(255,255,255,.16);
-      padding-bottom:22px;
-      margin-bottom:18px;
-    }
-    .side-logo{
-      width:126px;height:126px;
-      margin:0 auto 8px;
-      object-fit:contain;
-      display:block;
-    }
+    .sidebar{background:linear-gradient(180deg,#003b70,#032b52);color:#fff;min-height:100vh;position:sticky;top:0;overflow:auto;padding:18px 16px;z-index:20;box-shadow:12px 0 28px rgba(0,36,72,.12)}
+    .side-brand{text-align:center;border-bottom:1px solid rgba(255,255,255,.16);padding-bottom:22px;margin-bottom:18px}
+    .side-logo{width:126px;height:126px;margin:0 auto 8px;object-fit:contain;display:block}
     .side-brand h2{font-size:17px;margin:0}
     .side-brand small{color:#c7ddf7;font-weight:700}
-    body.sidebar-collapsed .side-brand{
-      padding-bottom:10px;margin-bottom:10px;
-    }
-    body.sidebar-collapsed .side-logo{
-      width:42px;height:42px;
-    }
-    body.sidebar-collapsed .side-brand h2,
-    body.sidebar-collapsed .side-brand small,
-    body.sidebar-collapsed .nav-text,
-    body.sidebar-collapsed .side-user,
-    body.sidebar-collapsed .side-logout span{
-      display:none;
-    }
-    .nav{
-      display:grid;
-      gap:8px;
-    }
-    .nav button{
-      min-height:54px;
-      display:flex;
-      align-items:center;
-      gap:12px;
-      border:0;
-      background:transparent;
-      color:#d7e8ff;
-      border-radius:12px;
-      padding:0 14px;
-      text-align:left;
-      font-weight:900;
-      cursor:pointer;
-      font-size:15px;
-    }
-    .nav button.active,.nav button:hover{
-      background:#fff;
-      color:#003b70;
-    }
-    .nav-ico{
-      width:20px;
-      text-align:center;
-      font-size:17px;
-      flex:0 0 auto;
-    }
-    body.sidebar-collapsed .nav button{
-      justify-content:center;
-      padding:0;
-      min-height:48px;
-    }
-    .side-user{
-      margin-top:24px;
-      padding-top:18px;
-      border-top:1px solid rgba(255,255,255,.16);
-      font-size:13px;
-      color:#c7ddf7;
-    }
-    .side-user b{
-      color:#fff;
-      display:block;
-      word-break:break-all;
-      margin-top:7px;
-    }
-    .side-logout{
-      width:100%;
-      margin-top:14px;
-      background:transparent;
-      border:1px solid rgba(255,255,255,.85);
-      color:#fff;
-      border-radius:8px;
-      padding:11px;
-      cursor:pointer;
-      font-weight:900;
-    }
+    body.sidebar-collapsed .sidebar{padding-left:6px;padding-right:6px}
+    body.sidebar-collapsed .side-brand{padding-bottom:10px;margin-bottom:10px}
+    body.sidebar-collapsed .side-logo{width:42px;height:42px}
+    body.sidebar-collapsed .side-brand h2,body.sidebar-collapsed .side-brand small,body.sidebar-collapsed .nav-text,body.sidebar-collapsed .side-user,body.sidebar-collapsed .side-logout span{display:none}
+    .nav{display:grid;gap:8px}
+    .nav button{min-height:54px;display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#d7e8ff;border-radius:12px;padding:0 14px;text-align:left;font-weight:900;cursor:pointer;font-size:15px}
+    .nav button.active,.nav button:hover{background:#fff;color:#003b70}
+    .nav-ico{width:20px;text-align:center;font-size:17px;flex:0 0 auto;display:grid;place-items:center;line-height:1}
+    .nav-ico i{font-size:16px;width:18px;text-align:center}
+    body.sidebar-collapsed .nav button{justify-content:center;padding:0;min-height:48px}
+    .side-user{margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.16);font-size:13px;color:#c7ddf7}
+    .side-user b{color:#fff;display:block;word-break:break-all;margin-top:7px}
+    .side-logout{width:100%;margin-top:14px;background:transparent;border:1px solid rgba(255,255,255,.85);color:#fff;border-radius:8px;padding:11px;cursor:pointer;font-weight:900}
 
-    .main{min-width:0}
-    .top{
-      position:sticky;
-      top:0;
-      z-index:10;
-      background:rgba(242,247,252,.94);
-      backdrop-filter:blur(10px);
-      border-bottom:1px solid var(--line);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:16px;
-      padding:14px 18px 14px 10px;
-    }
+    .main{min-width:0;max-width:100vw;overflow:hidden}
+    .top{position:sticky;top:0;z-index:10;background:rgba(242,247,252,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px 14px 10px;min-height:var(--topbar)}
     body.dark .top{background:rgba(11,20,36,.94)}
     .title-row{display:flex;gap:12px;align-items:center;min-width:0}
-    .hamb{
-      width:38px;height:38px;border-radius:50%;
-      border:1px solid #0d6efd;
-      color:#0d6efd;
-      background:#fff;
-      display:grid;place-items:center;
-      cursor:pointer;
-      font-weight:900;
-      flex:0 0 auto;
-    }
+    .hamb{width:38px;height:38px;border-radius:50%;border:1px solid #0d6efd;color:#0d6efd;background:#fff;display:grid;place-items:center;cursor:pointer;font-weight:900;flex:0 0 auto}
     .page-title{min-width:0}
-    .page-title h1{
-      margin:0;
-      font-size:30px;
-      line-height:1.05;
-      color:var(--slate);
-    }
-    .page-title p{
-      margin:5px 0 0;
-      color:#5d718c;
-      font-weight:800;
-      font-size:13px;
-    }
-    .actions{
-      display:flex;
-      gap:9px;
-      align-items:center;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
-    .status-pill{
-      padding:10px 14px;
-      border-radius:999px;
-      background:#fff;
-      border:1px solid var(--line);
-      color:#56708d;
-      font-weight:900;
-      display:flex;
-      gap:8px;
-      align-items:center;
-    }
-    .status-dot{
-      width:10px;height:10px;border-radius:99px;background:var(--green);
-      box-shadow:0 0 0 5px rgba(14,167,107,.14);
-    }
+    .page-title h1{margin:0;font-size:30px;line-height:1.05;color:var(--slate);font-weight:800;letter-spacing:-.035em}
+    .page-title p{margin:5px 0 0;color:#526780;font-weight:700;font-size:13px}
+    .actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .status-pill{padding:10px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);color:#56708d;font-weight:900;display:flex;gap:8px;align-items:center}
+    .status-dot{width:10px;height:10px;border-radius:99px;background:var(--green);box-shadow:0 0 0 5px rgba(14,167,107,.14)}
 
-    .content{
-      padding:14px 10px 34px;
-    }
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-    }
-    .filter-card{
-      padding:14px;
-      margin-bottom:8px;
-    }
-    .filter-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-    }
-    .filter-title{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      font-weight:900;
-      color:#00457e;
-      font-size:18px;
-    }
-    .filter-sub{
-      margin:7px 0 0;
-      color:#63748d;
-      font-weight:800;
-      font-size:13px;
-    }
-    .filter-body{
-      margin-top:13px;
-      display:grid;
-      grid-template-columns:1.2fr repeat(4, minmax(130px,1fr)) auto;
-      gap:10px;
-      align-items:end;
-    }
+    .content{padding:14px 10px 34px;min-height:calc(100vh - var(--topbar))}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .filter-card{padding:14px;margin-bottom:8px}
+    .filter-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .filter-title{display:flex;gap:10px;align-items:center;font-weight:900;color:#00457e;font-size:18px}
+    .filter-sub{margin:7px 0 0;color:#526780;font-weight:700;font-size:13px}
+    .filter-body{margin-top:13px;display:grid;grid-template-columns:1.2fr repeat(4,minmax(130px,1fr)) auto;gap:10px;align-items:end}
+    .section-label{display:flex;align-items:center;gap:10px;color:#00703c;text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:900;margin:8px 0 9px}
+    .section-label::after{content:"";height:1px;background:#117b59;flex:1;opacity:.7}
 
-    .section-label{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      color:#00703c;
-      text-transform:uppercase;
-      letter-spacing:.16em;
-      font-size:12px;
-      font-weight:900;
-      margin:8px 0 9px;
-    }
-    .section-label::after{
-      content:"";
-      height:1px;
-      background:#117b59;
-      flex:1;
-      opacity:.7;
-    }
-
-    .kpis{
-      display:grid;
-      grid-template-columns:repeat(6,minmax(145px,1fr));
-      gap:7px;
-    }
-    .kpi{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-top:4px solid #60758f;
-      border-radius:16px;
-      min-height:86px;
-      display:grid;
-      place-items:center;
-      text-align:center;
-      padding:11px;
-      box-shadow:0 8px 20px rgba(15,35,60,.06);
-    }
-    .kpi.blue{border-top-color:#0d6efd}
-    .kpi.green{border-top-color:#0ea76b}
-    .kpi.red{border-top-color:#e4323b}
-    .kpi.yellow{border-top-color:#f5b400}
-    .kpi.gray{border-top-color:#60758f}
-    .kpi span{
-      font-size:12px;
-      font-weight:900;
-      color:#06142d;
-      line-height:1.15;
-    }
+    .kpis{display:grid;grid-template-columns:repeat(6,minmax(145px,1fr));gap:7px}
+    .kpi{background:var(--card);border:1px solid var(--line);border-top:4px solid #60758f;border-radius:16px;min-height:86px;display:grid;place-items:center;text-align:center;padding:11px;box-shadow:0 8px 20px rgba(15,35,60,.06)}
+    .kpi.blue{border-top-color:#0d6efd}.kpi.green{border-top-color:#0ea76b}.kpi.red{border-top-color:#e4323b}.kpi.yellow{border-top-color:#f5b400}.kpi.gray{border-top-color:#60758f}
+    .kpi span{font-size:12px;font-weight:900;color:#06142d;line-height:1.15}
     body.dark .kpi span{color:#eaf2ff}
-    .kpi b{
-      font-size:31px;
-      line-height:1;
-      margin-top:7px;
-      display:block;
-      color:#04142d;
-    }
+    .kpi b{font-size:31px;line-height:1;margin-top:7px;display:block;color:#04142d;font-weight:800;letter-spacing:-.035em}
     body.dark .kpi b{color:#fff}
-    .chip{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:999px;
-      padding:5px 11px;
-      font-size:11px;
-      font-weight:900;
-      border:1px solid transparent;
-    }
-    .chip.red{background:#ffe1e3;color:#d41120;border-color:#ffc5ca}
-    .chip.green{background:#dff8ea;color:#00824c;border-color:#bfeccd}
-    .chip.blue{background:#dff0ff;color:#006ece;border-color:#b8dcff}
-    .chip.cyan{background:#dff9ff;color:#008197;border-color:#b3eef9}
-    .chip.yellow{background:#fff3c4;color:#7c5900;border-color:#ffe080}
-    .chip.gray{background:#eef2f7;color:#334155;border-color:#d5dfec}
+    .chip{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 11px;font-size:11px;font-weight:900;border:1px solid transparent}
+    .chip.red{background:#ffe1e3;color:#d41120;border-color:#ffc5ca}.chip.green{background:#dff8ea;color:#00824c;border-color:#bfeccd}.chip.blue{background:#dff0ff;color:#006ece;border-color:#b8dcff}.chip.cyan{background:#dff9ff;color:#008197;border-color:#b3eef9}.chip.yellow{background:#fff3c4;color:#7c5900;border-color:#ffe080}.chip.gray{background:#eef2f7;color:#334155;border-color:#d5dfec}
 
-    .dashboard-grid{
-      display:grid;
-      grid-template-columns:2fr 1.08fr;
-      gap:10px;
-      margin-top:8px;
-    }
-    .map-card{
-      min-height:285px;
-      display:grid;
-      place-items:center;
-      overflow:hidden;
-    }
-    #map{
-      width:100%;
-      height:285px;
-    }
-    .lower-grid{
-      display:grid;
-      grid-template-columns:2fr 1.08fr;
-      gap:10px;
-      margin-top:10px;
-    }
+    .dashboard-grid{display:grid;grid-template-columns:2fr 1.08fr;gap:10px;margin-top:8px}
+    .map-card{min-height:285px;display:grid;place-items:center;overflow:hidden}
+    #map{width:100%;height:285px}
+    .lower-grid{display:grid;grid-template-columns:2fr 1.08fr;gap:10px;margin-top:10px}
     .panel-pad{padding:14px}
-    .panel-title{
-      margin:0 0 12px;
-      font-size:17px;
-      color:var(--slate);
-    }
-    .chart-wrap{
-      min-height:210px;
-      display:grid;
-      place-items:center;
-    }
+    .panel-title{margin:0 0 12px;font-size:17px;color:var(--slate)}
+    .chart-wrap{min-height:210px;display:grid;place-items:center}
     #statusChart{max-height:205px}
-    .risk-list{
-      display:grid;
-      gap:8px;
-      max-height:224px;
-      overflow:auto;
-      padding-right:4px;
-    }
-    .risk-item{
-      border:1px solid #ffd1d5;
-      border-left:4px solid var(--red);
-      background:#fffafa;
-      border-radius:12px;
-      padding:11px;
-    }
+    .risk-list{display:grid;gap:8px;max-height:224px;overflow:auto;padding-right:4px}
+    .risk-item{border:1px solid #ffd1d5;border-left:4px solid var(--red);background:#fffafa;border-radius:12px;padding:11px}
     body.dark .risk-item{background:#151d2f}
-    .risk-item .top-line{
-      display:flex;justify-content:space-between;gap:10px;align-items:center;
-      font-weight:900;
-    }
-    .risk-item small{
-      display:block;
-      margin-top:7px;
-      color:#53657d;
-      font-weight:800;
-    }
+    .risk-item .top-line{display:flex;justify-content:space-between;gap:10px;align-items:center;font-weight:900}
+    .risk-item small{display:block;margin-top:7px;color:#53657d;font-weight:800}
 
-    .table-card{
-      margin-top:10px;
-      overflow:hidden;
-    }
-    .table-head{
-      background:#003b70;
-      color:#fff;
-      padding:12px 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-    }
-    .table-head h3{
-      margin:0;
-      font-size:16px;
-      text-transform:uppercase;
-      letter-spacing:.02em;
-      display:flex;
-      align-items:center;
-      gap:8px;
-    }
-    .table-head input{
-      max-width:360px;
-      min-height:36px;
-      border-radius:999px;
-      background:rgba(255,255,255,.16);
-      color:#fff;
-      border-color:rgba(255,255,255,.35);
-    }
+    .table-card{margin-top:10px;overflow:hidden}
+    .table-head{background:#003b70;color:#fff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .table-head h3{margin:0;font-size:16px;text-transform:uppercase;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+    .table-head input{max-width:360px;min-height:36px;border-radius:999px;background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.35)}
     .table-head input::placeholder{color:#d7e8ff}
-    .table-meta{
-      color:#52657d;
-      font-weight:800;
-      padding:12px 14px;
-      border-bottom:1px solid var(--line);
-    }
-    .table-wrap{
-      overflow:auto;
-      max-height:520px;
-      background:var(--card);
-    }
-    table{
-      width:100%;
-      min-width:1180px;
-      border-collapse:collapse;
-      font-size:13px;
-    }
-    th{
-      position:sticky;
-      top:0;
-      z-index:2;
-      background:#f5f8fc;
-      color:#1d2f47;
-      text-align:left;
-      border-bottom:1px solid var(--line);
-      padding:10px 9px;
-      text-transform:uppercase;
-      font-size:11px;
-      letter-spacing:.04em;
-    }
+    .table-meta{color:#52657d;font-weight:800;padding:12px 14px;border-bottom:1px solid var(--line)}
+    .table-wrap{overflow:auto;max-height:calc(100vh - 245px);min-height:560px;background:var(--card)}
+    table{width:100%;min-width:1180px;border-collapse:collapse;font-size:13px}
+    th{position:sticky;top:0;z-index:2;background:#f5f8fc;color:#172b46;text-align:left;border-bottom:1px solid var(--line);padding:10px 9px;text-transform:uppercase;font-size:11px;letter-spacing:.04em;font-weight:900}
     body.dark th{background:#142036;color:#dbeafe}
-    td{
-      border-bottom:1px solid var(--line);
-      padding:10px 9px;
-      vertical-align:top;
-      font-weight:700;
-    }
+    td{border-bottom:1px solid var(--line);padding:10px 9px;vertical-align:top;font-weight:650;color:#0c1d36}
     tr:hover td{background:rgba(13,110,253,.05)}
-    .num{text-align:center}
-    .green-text{color:#00824c}
-    .red-text{color:#e4323b}
-    .link{
-      color:#006dff;
-      font-weight:900;
-      text-decoration:none;
-    }
+    .num{text-align:center}.green-text{color:#00824c}.red-text{color:#e4323b}
+    .link{color:#005fec;font-weight:900;text-decoration:none;text-underline-offset:3px}
     .link:hover{text-decoration:underline}
-    .obs{
-      max-width:280px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      color:#66758b;
-      font-style:italic;
-    }
+    .obs{max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#435973;font-weight:650;font-style:italic}
 
-    /* Páginas */
-    .page{display:none}
-    .page.active{display:block}
+    .page{display:none}.page.active{display:block}
+    #page-cores .table-card{min-height:calc(100vh - 120px)}
+    #page-cores .table-wrap{max-height:calc(100vh - 245px);min-height:620px}
+    #page-cores table{min-width:1280px}
 
-    .cores-toolbar{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-      padding:14px;
-      border-bottom:1px solid var(--line);
-    }
-
-    .admin-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:16px;
-    }
-    .form-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-    }
+    .cores-toolbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px;border-bottom:1px solid var(--line)}
+    .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .form-grid .full{grid-column:1/-1}
     .form-row{display:grid;gap:6px}
     .admin-card{padding:18px}
     .admin-card h3{margin:0 0 15px}
-    .external-frame{
-      width:100%;
-      height:calc(100vh - 150px);
-      min-height:620px;
-      border:0;
-      background:#fff;
-      border-radius:0 0 var(--radius) var(--radius);
-    }
-    .external-placeholder{
-      padding:34px;
-      text-align:center;
-      color:#63748d;
-      font-weight:800;
-    }
 
-    .toast-box{
-      position:fixed;
-      top:18px;
-      right:18px;
-      z-index:1200;
-      display:grid;
-      gap:10px;
-      width:min(390px,calc(100vw - 30px));
-    }
-    .toast{
-      border-radius:16px;
-      padding:14px 16px;
-      background:#fff;
-      box-shadow:0 20px 50px rgba(0,0,0,.16);
-      border:1px solid var(--line);
-      font-weight:800;
-      display:flex;
-      gap:10px;
-      align-items:flex-start;
-    }
-    .toast.ok{background:#22a957;color:#fff;border:0}
-    .toast.error{background:#e4323b;color:#fff;border:0}
-    .toast.warn{background:#f5b400;color:#2d2200;border:0}
-    .toast button{
-      margin-left:auto;border:0;background:transparent;color:inherit;font-weight:900;cursor:pointer;
-    }
+    .external-frame{width:100%;height:calc(100vh - 132px);min-height:720px;border:0;background:#fff;border-radius:0 0 var(--radius) var(--radius);display:block}
+    .external-placeholder{padding:34px;text-align:center;color:#344862;font-weight:800}
+    body.external-mode .top{display:none}
+    body.external-mode .content{padding:0;min-height:100vh}
+    body.external-mode #page-external .table-card{margin:0;border:0;border-radius:0;box-shadow:none;background:transparent;min-height:100vh}
+    body.external-mode #page-external .table-head{display:none}
+    body.external-mode .external-frame{height:100vh;height:100dvh;min-height:100vh;border-radius:0}
+    body.external-mode .external-placeholder{height:calc(100vh - 24px);display:grid;place-items:center;margin:12px;border-radius:16px;background:#fff;border:1px solid var(--line)}
+    body.external-mode .main{background:#edf3f8}
 
-    .modal{
-      position:fixed;
-      inset:0;
-      z-index:1100;
-      display:none;
-      place-items:center;
-      padding:20px;
-      background:rgba(0,0,0,.55);
-    }
+    .toast-box{position:fixed;top:18px;right:18px;z-index:1200;display:grid;gap:10px;width:min(390px,calc(100vw - 30px))}
+    .toast{border-radius:16px;padding:14px 16px;background:#fff;box-shadow:0 20px 50px rgba(0,0,0,.16);border:1px solid var(--line);font-weight:800;display:flex;gap:10px;align-items:flex-start}
+    .toast.ok{background:#22a957;color:#fff;border:0}.toast.error{background:#e4323b;color:#fff;border:0}.toast.warn{background:#f5b400;color:#2d2200;border:0}
+    .toast button{margin-left:auto;border:0;background:transparent;color:inherit;font-weight:900;cursor:pointer}
+
+    .modal{position:fixed;inset:0;z-index:1100;display:none;place-items:center;padding:20px;background:rgba(0,0,0,.55)}
     .modal.show{display:grid}
-    .modal-card{
-      width:min(1000px,calc(100vw - 28px));
-      max-height:92vh;
-      overflow:auto;
-      background:var(--card);
-      border-radius:22px;
-      border:1px solid var(--line);
-      box-shadow:0 30px 90px rgba(0,0,0,.32);
-    }
-    .modal-head{
-      position:sticky;
-      top:0;
-      z-index:2;
-      background:var(--card);
-      border-bottom:1px solid var(--line);
-      padding:16px 18px;
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      align-items:center;
-    }
-    .modal-head h3{margin:0}
-    .modal-body{padding:18px}
+    .modal-card{width:min(1000px,calc(100vw - 28px));max-height:92vh;overflow:auto;background:var(--card);border-radius:22px;border:1px solid var(--line);box-shadow:0 30px 90px rgba(0,0,0,.32)}
+    .modal-head{position:sticky;top:0;z-index:2;background:var(--card);border-bottom:1px solid var(--line);padding:16px 18px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+    .modal-head h3{margin:0}.modal-body{padding:18px}
 
-
-    /* V2.2 - nitidez, contraste e integração no Google Sites */
-    html,body{
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      text-rendering:geometricPrecision;
-      -webkit-text-size-adjust:100%;
-      font-synthesis-weight:none;
-    }
-    body{
-      font-family:"Inter", "Segoe UI", Roboto, Arial, sans-serif;
-      font-weight:500;
-      color:#07162d;
-      background:#edf3f8;
-    }
-    .page-title h1,.login-card h1,.kpi b{
-      font-weight:800;
-      letter-spacing:-.035em;
-      color:#0b1b34;
-    }
-    .page-title p,.filter-sub,.table-meta,.loader-sub,.side-brand small{
-      color:#526780;
-      font-weight:700;
-    }
-    label,th,.kpi span,.btn,.chip,.nav button,.status-pill{
-      font-weight:800;
-      letter-spacing:.015em;
-    }
-    label,th{color:#172b46;}
-    td{font-weight:650;color:#0c1d36;}
-    .nav-ico{display:grid;place-items:center;line-height:1;font-size:16px;}
-    .nav-ico i{font-size:16px;width:18px;text-align:center;}
-    .sidebar{box-shadow:12px 0 28px rgba(0,36,72,.12);}
-    body.sidebar-collapsed .sidebar{padding-left:6px;padding-right:6px;}
-    body.sidebar-collapsed .nav button.active,body.sidebar-collapsed .nav button:hover{box-shadow:0 8px 20px rgba(255,255,255,.12);}
-    .card,.kpi{box-shadow:0 10px 26px rgba(15,35,60,.075);}
-    .risk-item,.alert,.external-placeholder{color:#344862;}
-    .obs{color:#435973;font-weight:650;}
-    .link{color:#005fec;text-underline-offset:3px;}
-    input,select,textarea{font-weight:600;color:#0c1d36;}
-    input::placeholder,textarea::placeholder{color:#7d8da3;opacity:1;}
-    .external-frame{height:calc(100vh - 112px);min-height:720px;display:block;border-radius:0;background:#fff;}
-    body.external-mode .top{display:none;}
-    body.external-mode .content{padding:0;}
-    body.external-mode #page-external .table-card{margin:0;border:0;border-radius:0;box-shadow:none;background:transparent;}
-    body.external-mode #page-external .table-head{display:none;}
-    body.external-mode .external-frame{height:100vh;min-height:100vh;border-radius:0;}
-    body.external-mode .external-placeholder{height:calc(100vh - 24px);display:grid;place-items:center;margin:12px;border-radius:16px;background:#fff;border:1px solid var(--line);}
-    body.external-mode .main{background:#edf3f8;}
-
-
-    /* V2.4 - cache de painéis externos: iframe não recarrega ao trocar de menu */
-    .external-frame-host{
-      width:100%;
-      min-height:620px;
-      background:#fff;
-      overflow:hidden;
-      border-radius:0 0 var(--radius) var(--radius);
-    }
-    .external-frame-host .external-frame{
-      width:100%;
-      height:calc(100vh - 150px);
-      min-height:620px;
-      border:0;
-      background:#fff;
-      border-radius:0;
-      display:block;
-    }
-    .external-frame-host .external-placeholder{
-      min-height:620px;
-      display:grid;
-      place-items:center;
-      text-align:center;
-    }
-    body.external-mode .external-frame-host{
-      height:100vh;
-      min-height:100vh;
-      border-radius:0;
-    }
-    body.external-mode .external-frame-host .external-frame{
-      height:100vh;
-      min-height:100vh;
-      border-radius:0;
-    }
-
-    @media(max-width:1220px){
-      .kpis{grid-template-columns:repeat(3,1fr)}
-      .dashboard-grid,.lower-grid,.admin-grid{grid-template-columns:1fr}
-      .filter-body{grid-template-columns:1fr 1fr}
-    }
-    @media(max-width:820px){
-      .app{grid-template-columns:1fr}
-      body.sidebar-collapsed .app{grid-template-columns:1fr}
-      .sidebar{position:relative;min-height:auto}
-      .side-brand{text-align:left;display:flex;align-items:center;gap:12px}
-      .side-logo{margin:0;width:62px;height:62px}
-      .nav{grid-template-columns:1fr 1fr}
-      .top{position:relative;align-items:flex-start;flex-direction:column}
-      .actions{justify-content:flex-start}
-      .kpis{grid-template-columns:1fr 1fr}
-      .filter-body{grid-template-columns:1fr}
-      .form-grid{grid-template-columns:1fr}
-    }
-    @media(max-width:540px){
-      .kpis,.nav{grid-template-columns:1fr}
-      .page-title h1{font-size:24px}
-      .table-head{align-items:stretch;flex-direction:column}
-      .table-head input{max-width:none}
-      .login-card{padding:28px 20px}
-    }
+    @media(max-width:1220px){.kpis{grid-template-columns:repeat(3,1fr)}.dashboard-grid,.lower-grid,.admin-grid{grid-template-columns:1fr}.filter-body{grid-template-columns:1fr 1fr}}
+    @media(max-width:820px){.app{grid-template-columns:1fr}body.sidebar-collapsed .app{grid-template-columns:1fr}.sidebar{position:relative;min-height:auto}.side-brand{text-align:left;display:flex;align-items:center;gap:12px}.side-logo{margin:0;width:62px;height:62px}.nav{grid-template-columns:1fr 1fr}.top{position:relative;align-items:flex-start;flex-direction:column}.actions{justify-content:flex-start}.kpis{grid-template-columns:1fr 1fr}.filter-body{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
+    @media(max-width:540px){.kpis,.nav{grid-template-columns:1fr}.page-title h1{font-size:24px}.table-head{align-items:stretch;flex-direction:column}.table-head input{max-width:none}.login-card{padding:28px 20px}}
   </style>
 </head>
 
@@ -1058,17 +435,7 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Unidade</th>
-                    <th>Edital</th>
-                    <th>Início</th>
-                    <th>Encerramento</th>
-                    <th class="num">Vagas</th>
-                    <th class="num">Contratados</th>
-                    <th class="num">Ociosas</th>
-                    <th>Status</th>
-                    <th>Etapa</th>
-                    <th>Risco</th>
-                    <th>Observações</th>
+                    <th>Unidade</th><th>Edital</th><th>Início</th><th>Encerramento</th><th class="num">Vagas</th><th class="num">Contratados</th><th class="num">Ociosas</th><th>Status</th><th>Etapa</th><th>Risco</th><th>Observações</th>
                   </tr>
                 </thead>
                 <tbody id="monitorRows"></tbody>
@@ -1080,27 +447,18 @@
         <section id="page-cores" class="page">
           <div class="table-card card">
             <div class="table-head">
-              <h3>▣ Controle CORES</h3>
+              <h3>▣ Controle Núcleo CORES</h3>
               <div style="display:flex;gap:10px;align-items:center">
                 <input id="coresSearch" placeholder="Pesquisar edital, unidade, status..." oninput="renderCores()" />
                 <button class="btn green" onclick="openEditModal()">+ Novo</button>
               </div>
             </div>
-            <div class="table-meta">Editar e salvar com trilha futura no Supabase.</div>
+            <div class="table-meta">Controle de editais com registro de alterações no Supabase.</div>
             <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Destino</th>
-                    <th>Unidade</th>
-                    <th>Edital</th>
-                    <th>Status</th>
-                    <th>Etapa</th>
-                    <th class="num">Vagas</th>
-                    <th class="num">Contratados</th>
-                    <th class="num">Ociosas</th>
-                    <th>Risco</th>
-                    <th>Ações</th>
+                    <th>Destino</th><th>Unidade</th><th>Edital</th><th>Status</th><th>Etapa</th><th class="num">Vagas</th><th class="num">Contratados</th><th class="num">Ociosas</th><th>Risco</th><th>Ações</th>
                   </tr>
                 </thead>
                 <tbody id="coresRows"></tbody>
@@ -1124,39 +482,10 @@
 
         <section id="page-config" class="page">
           <div class="admin-grid">
-            <div class="admin-card card">
-              <h3>Configuração de Planilha</h3>
-              <div class="form-row">
-                <label>ID / referência da base</label>
-                <input value="MONIT_001" readonly>
-              </div>
-            </div>
-            <div class="admin-card card">
-              <h3>Aviso Global (Broadcast)</h3>
-              <div class="form-grid">
-                <div class="form-row">
-                  <label>Tipo</label>
-                  <select id="cfgBroadcastType"><option>Info</option><option>Alerta</option><option>Crítico</option></select>
-                </div>
-                <div class="form-row">
-                  <label>Mensagem</label>
-                  <input id="cfgBroadcastMsg" placeholder="Mensagem global">
-                </div>
-              </div>
-            </div>
-            <div class="admin-card card">
-              <h3>Recursos Visuais</h3>
-              <div class="form-grid">
-                <div class="form-row full"><label>Logo / mascote</label><input id="cfgMascot" value="https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png"></div>
-                <div class="form-row full"><label>Imagem de fundo do login</label><input id="cfgLoginBg" value="https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png"></div>
-                <div class="form-row"><label>Título</label><input id="cfgTitle" value="AgSUS Monitora"></div>
-                <div class="form-row"><label>Slogan</label><input id="cfgSlogan" value="Painel da Saúde Indígena"></div>
-              </div>
-            </div>
-            <div class="admin-card card">
-              <h3>Painéis Externos</h3>
-              <div id="panelAdmin"></div>
-            </div>
+            <div class="admin-card card"><h3>Configuração de Planilha</h3><div class="form-row"><label>ID / referência da base</label><input id="cfgMonitId" value="MONIT_001" readonly></div></div>
+            <div class="admin-card card"><h3>Aviso Global (Broadcast)</h3><div class="form-grid"><div class="form-row"><label>Tipo</label><select id="cfgBroadcastType"><option>Info</option><option>Alerta</option><option>Crítico</option></select></div><div class="form-row"><label>Mensagem</label><input id="cfgBroadcastMsg" placeholder="Mensagem global"></div></div></div>
+            <div class="admin-card card"><h3>Recursos Visuais</h3><div class="form-grid"><div class="form-row full"><label>Logo / mascote</label><input id="cfgMascot" value="https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png"></div><div class="form-row full"><label>Imagem de fundo do login</label><input id="cfgLoginBg" value="https://i.postimg.cc/tC4XCPDV/Chat-GPT-Image-22-04-2026-15-32-18.png"></div><div class="form-row"><label>Título</label><input id="cfgTitle" value="AgSUS Monitora"></div><div class="form-row"><label>Slogan</label><input id="cfgSlogan" value="Painel da Saúde Indígena"></div></div></div>
+            <div class="admin-card card"><h3>Painéis Externos</h3><div id="panelAdmin"></div></div>
           </div>
         </section>
       </div>
@@ -1165,10 +494,7 @@
 
   <div id="editModal" class="modal">
     <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="editModalTitle">Editar edital</h3>
-        <button class="btn secondary" onclick="closeEditModal()">Fechar</button>
-      </div>
+      <div class="modal-head"><h3 id="editModalTitle">Editar edital</h3><button class="btn secondary" onclick="closeEditModal()">Fechar</button></div>
       <div class="modal-body">
         <div class="form-grid">
           <input type="hidden" id="mId">
@@ -1187,62 +513,42 @@
           <div class="form-row full"><label>Link do edital</label><input id="mLink"></div>
           <div class="form-row full"><label>Observações</label><textarea id="mObs"></textarea></div>
         </div>
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px">
-          <button class="btn secondary" onclick="closeEditModal()">Cancelar</button>
-          <button class="btn green" onclick="saveEdital()">Salvar no Supabase</button>
-        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px"><button class="btn secondary" onclick="closeEditModal()">Cancelar</button><button class="btn green" onclick="saveEdital()">Salvar no Supabase</button></div>
       </div>
     </div>
   </div>
 
 <script>
-  // =========================================================
-  // CONFIGURAÇÃO - PREENCHA AQUI
-  // =========================================================
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_Z__In8_fZh4UcgLpCq9jzg_gFlp2nkF"; 
+  const SUPABASE_KEY = "sb_publishable_Z__In8_fZh4UcgLpCq9jzg_gFlp2nkF";
 
-  // Painéis externos padrão fixos no código. Preencha as URLs abaixo.
   const DEFAULT_PANELS = [
-    { codigo:"analises", titulo:"Análises", icone:"fa-chart-line", url:"https://script.google.com/macros/s/AKfycbz4AAh9gC_kVtIW5U0pm-TEdOmscGpA0ujhnh_CsSU6NPbGsjtzn8PnMPUmbcJ3j7Rh/exec", ativo:true },
-    { codigo:"recrutamento", titulo:"Recrutamento", icone:"fa-chart-pie", url:"COLE_A_URL_DO_PAINEL_RECRUTAMENTO", ativo:true },
-    { codigo:"contratacao", titulo:"Contratação", icone:"fa-desktop", url:"https://lookerstudio.google.com/embed/reporting/2d5f1d2f-d32a-4b4d-95bf-7c5a725a1b9a/page/p_d9w2owdmfd", ativo:true },
-    { codigo:"entrevistas", titulo:"Entrevistas", icone:"fa-arrow-up-right-from-square", url:"COLE_A_URL_DO_PAINEL_ENTREVISTAS", ativo:true }
+    { codigo:"analises", titulo:"Análises", icone:"fa-chart-line", url:"", ativo:true, em_manutencao:true, tipo_abertura:"iframe" },
+    { codigo:"recrutamento", titulo:"Recrutamento", icone:"fa-chart-pie", url:"", ativo:true, em_manutencao:true, tipo_abertura:"iframe" },
+    { codigo:"contratacao", titulo:"Contratação", icone:"fa-desktop", url:"", ativo:true, em_manutencao:true, tipo_abertura:"iframe" },
+    { codigo:"entrevistas", titulo:"Entrevistas", icone:"fa-arrow-up-right-from-square", url:"", ativo:true, em_manutencao:true, tipo_abertura:"iframe" }
   ];
 
-  // =========================================================
-  // 2) ESTADO
-  // =========================================================
   let sb = null;
   let rows = [];
   let filtered = [];
   let panels = [...DEFAULT_PANELS];
   let currentPanel = null;
   let currentView = "dashboard";
-  let externalFrames = {};
-  let activeExternalPanelCode = ""; 
   let statusChart = null;
   let chartsReady = false;
+  let profile = null;
+  let iframeCache = {};
 
   google.charts.load("current", { packages:["geochart"] });
-  google.charts.setOnLoadCallback(() => {
-    chartsReady = true;
-    if(rows.length) renderMap();
-  });
+  google.charts.setOnLoadCallback(() => { chartsReady = true; if(rows.length) renderMap(); });
 
   function $(id){ return document.getElementById(id); }
   function n(v){ const x = Number(v || 0); return Number.isFinite(x) ? x : 0; }
   function txt(v){ return String(v ?? "").trim(); }
   function low(v){ return txt(v).toLowerCase(); }
   function fmt(v){ return n(v).toLocaleString("pt-BR"); }
-  function esc(v){
-    return String(v ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
+  function esc(v){ return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
   function attr(v){ return esc(v).replaceAll("`","&#096;"); }
 
   function toast(message, type="ok"){
@@ -1253,7 +559,6 @@
     box.appendChild(el);
     setTimeout(() => { try{ el.remove(); }catch(e){} }, 4200);
   }
-
   function loader(show,title="Carregando",sub="Aguarde...",pct=0){
     $("loader").classList.toggle("show", !!show);
     $("loaderTitle").textContent = title;
@@ -1261,7 +566,6 @@
     $("loaderPct").textContent = Math.round(pct) + "%";
     $("loaderBar").style.width = Math.max(0,Math.min(100,pct)) + "%";
   }
-
   function showAlert(id,msg,type=""){
     const el = $(id);
     el.textContent = msg || "";
@@ -1286,7 +590,6 @@
     if(!initSupabase()) return;
     buildNav();
     renderPanelAdmin();
-
     const { data } = await sb.auth.getSession();
     if(data && data.session){
       openApp(data.session.user);
@@ -1294,23 +597,16 @@
     }
   }
 
-  function togglePassword(){
-    const p = $("loginPassword");
-    p.type = p.type === "password" ? "text" : "password";
-  }
+  function togglePassword(){ const p = $("loginPassword"); p.type = p.type === "password" ? "text" : "password"; }
 
   async function login(){
     if(!sb && !initSupabase()) return;
     const email = txt($("loginEmail").value);
     const password = $("loginPassword").value;
-    if(!email || !password){
-      showAlert("loginMsg","Informe usuário e senha.","warn");
-      return;
-    }
+    if(!email || !password){ showAlert("loginMsg","Informe usuário e senha.","warn"); return; }
     $("loginBtn").disabled = true;
     $("loginBtn").textContent = "Entrando...";
     loader(true,"Autenticando","Validando credenciais com segurança e preparando o ambiente...",10);
-
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if(error){
       loader(false);
@@ -1319,7 +615,6 @@
       showAlert("loginMsg","Falha no login: " + error.message,"error");
       return;
     }
-
     loader(true,"Carregando ambiente","Aplicando navegação, permissões, preferências e dados principais...",42);
     openApp(data.user);
     await loadAll();
@@ -1331,8 +626,7 @@
 
   async function logout(){
     if(sb) await sb.auth.signOut();
-    rows = [];
-    filtered = [];
+    rows = []; filtered = []; profile = null; iframeCache = {};
     $("appScreen").classList.add("hidden");
     $("loginScreen").classList.remove("hidden");
     $("loginPassword").value = "";
@@ -1345,34 +639,43 @@
   }
 
   async function loadAll(){
+    await loadProfile();
     await loadPanels();
     await loadData();
   }
 
+  async function loadProfile(){
+    try{
+      const { data, error } = await sb.from("app_usuarios").select("*").maybeSingle();
+      if(!error && data) profile = data;
+    }catch(e){ profile = null; }
+  }
+  function can(perm){
+    if(!profile) return true;
+    if(profile.perfil === "master") return true;
+    if(perm === "ind") return !!profile.p_ind;
+    if(perm === "cores") return !!profile.p_cores;
+    if(perm === "paineis") return !!profile.p_paineis;
+    if(perm === "config") return !!profile.p_config;
+    if(perm === "auditoria") return !!profile.p_auditoria;
+    return false;
+  }
+
   async function loadPanels(){
-    // V2.3: usa os links fixos em DEFAULT_PANELS.
-    // Quando você criar a tabela paineis_externos no Supabase, podemos reativar a leitura dinâmica.
-    panels = [...DEFAULT_PANELS];
+    try{
+      const { data, error } = await sb.from("paineis_externos").select("*").eq("ativo", true).order("ordem", { ascending:true });
+      if(!error && Array.isArray(data) && data.length){
+        panels = data.map(p => ({ codigo:p.codigo, titulo:p.titulo, icone:p.icone || "fa-arrow-up-right-from-square", url:p.url || "", ativo:p.ativo !== false, em_manutencao:!!p.em_manutencao, tipo_abertura:p.tipo_abertura || "iframe" }));
+      }
+    }catch(e){}
     buildNav();
     renderPanelAdmin();
   }
 
   async function loadData(){
     loader(true,"Atualizando","Sincronizando dados do monitoramento...",55);
-
-    const { data, error } = await sb
-      .from("monitoramento_indigena")
-      .select("*")
-      .eq("ativo", true)
-      .order("risco", { ascending:true })
-      .order("unidade", { ascending:true });
-
-    if(error){
-      loader(false);
-      toast("Erro ao carregar dados: " + error.message, "error");
-      return;
-    }
-
+    const { data, error } = await sb.from("monitoramento_indigena").select("*").eq("ativo", true).order("risco", { ascending:true }).order("unidade", { ascending:true });
+    if(error){ loader(false); toast("Erro ao carregar dados: " + error.message, "error"); return; }
     rows = Array.isArray(data) ? data : [];
     populateFilters();
     applyFilters();
@@ -1380,576 +683,157 @@
     loader(false);
   }
 
-  function setUpdated(){
-    const now = new Date();
-    $("updatedText").textContent = "Atualizado em " + now.toLocaleString("pt-BR");
-    $("updatedPill").classList.remove("hidden");
-  }
-
-  function refreshData(){
-    loadAll();
-  }
+  function setUpdated(){ const now = new Date(); $("updatedText").textContent = "Atualizado em " + now.toLocaleString("pt-BR"); $("updatedPill").classList.remove("hidden"); }
+  function refreshData(){ loadAll(); }
 
   function buildNav(){
     const nav = $("nav");
     const base = [
-      { view:"dashboard", label:"Saúde Indígena", ico:"fa-feather-pointed" },
-      { view:"cores", label:"Equipe Cores", ico:"fa-pen-to-square" }
+      { view:"dashboard", label:"Saúde Indígena", ico:"fa-feather-pointed", show:can("ind") },
+      { view:"cores", label:"Núcleo CORES", ico:"fa-pen-to-square", show:can("cores") }
     ];
-
-    let html = base.map(item => navButton(item.view,item.label,item.ico)).join("");
-
-    panels.forEach(p => {
-      if(p.ativo) html += navButton("panel:" + p.codigo, p.titulo, p.icone || "↗");
-    });
-
-    html += navButton("config", "Configurações", "fa-gear");
+    let html = base.filter(x => x.show).map(item => navButton(item.view,item.label,item.ico)).join("");
+    if(can("paineis")) panels.forEach(p => { if(p.ativo) html += navButton("panel:" + p.codigo, p.titulo, p.icone || "fa-arrow-up-right-from-square"); });
+    if(can("config")) html += navButton("config", "Configurações", "fa-gear");
     nav.innerHTML = html;
     setActiveNav(currentView);
   }
-
-
   function navIconHTML(view, ico){
-    const byView = {
-      dashboard:"fa-feather-pointed",
-      cores:"fa-pen-to-square",
-      config:"fa-gear",
-      "panel:analises":"fa-chart-line",
-      "panel:recrutamento":"fa-chart-pie",
-      "panel:contratacao":"fa-desktop",
-      "panel:entrevistas":"fa-arrow-up-right-from-square"
-    };
+    const byView = { dashboard:"fa-feather-pointed", cores:"fa-pen-to-square", config:"fa-gear", "panel:analises":"fa-chart-line", "panel:recrutamento":"fa-chart-pie", "panel:contratacao":"fa-desktop", "panel:entrevistas":"fa-arrow-up-right-from-square" };
     const cls = byView[view] || (/^fa-/.test(String(ico || "")) ? ico : "");
     if(cls) return `<i class="fa-solid ${attr(cls)}" aria-hidden="true"></i>`;
     return esc(ico || "•");
   }
-
-  function navButton(view,label,ico){
-    return `<button data-view="${attr(view)}" onclick="navigate('${attr(view)}')"><span class="nav-ico">${navIconHTML(view, ico)}</span><span class="nav-text">${esc(label)}</span></button>`;
-  }
-
-  function setActiveNav(view){
-    document.querySelectorAll("#nav button").forEach(b => {
-      b.classList.toggle("active", b.dataset.view === view);
-    });
-  }
+  function navButton(view,label,ico){ return `<button data-view="${attr(view)}" onclick="navigate('${attr(view)}')"><span class="nav-ico">${navIconHTML(view, ico)}</span><span class="nav-text">${esc(label)}</span></button>`; }
+  function setActiveNav(view){ document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view)); }
 
   function navigate(view){
     document.body.classList.remove("external-mode");
     currentView = view;
     setActiveNav(view);
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-
     if(view === "dashboard"){
-      $("page-dashboard").classList.add("active");
-      setPageTitle("Saúde Indígena","Monitoramento DSEI/CASAI");
-      renderAll();
-      return;
+      $("page-dashboard").classList.add("active"); setPageTitle("Saúde Indígena","Monitoramento DSEI/CASAI"); renderAll(); return;
     }
     if(view === "cores"){
-      $("page-cores").classList.add("active");
-      setPageTitle("Equipe CORES","Controle de Editais (Inserir/Editar)");
-      renderCores();
-      return;
+      $("page-cores").classList.add("active"); setPageTitle("Núcleo CORES","Controle de Editais (Inserir/Editar)"); renderCores(); return;
     }
     if(view === "config"){
-      $("page-config").classList.add("active");
-      setPageTitle("Configurações","Parametrização do Sistema");
-      return;
+      $("page-config").classList.add("active"); setPageTitle("Configurações","Parametrização do Sistema"); return;
     }
-    if(view.startsWith("panel:")){
-      const code = view.split(":")[1];
-      openPanel(code);
-      return;
-    }
+    if(view.startsWith("panel:")){ openPanel(view.split(":")[1]); }
   }
-
-  function setPageTitle(title,sub){
-    $("pageTitle").textContent = title;
-    $("pageSubtitle").textContent = sub;
-    document.title = title + " - AgSUS Monitora";
-  }
-
-  function toggleSidebar(){
-    document.body.classList.toggle("sidebar-collapsed");
-    setTimeout(() => { if(currentView === "dashboard") renderMap(); }, 220);
-  }
-
-  function toggleFilters(){
-    $("filterBody").classList.toggle("hidden");
-    $("filterToggleBtn").textContent = $("filterBody").classList.contains("hidden") ? "⌄ Mostrar filtros" : "⌃ Ocultar filtros";
-  }
-
-  function unique(field){
-    return [...new Set(rows.map(r => txt(r[field])).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt-BR"));
-  }
-
-  function setOptions(id, values, first){
-    const el = $(id);
-    const cur = el.value;
-    el.innerHTML = `<option value="">${first}</option>` + values.map(v => `<option value="${attr(v)}">${esc(v)}</option>`).join("");
-    if(values.includes(cur)) el.value = cur;
-  }
-
-  function populateFilters(){
-    setOptions("filterUnidade", unique("unidade"), "Todas");
-    setOptions("filterStatus", unique("status"), "Todos");
-    setOptions("filterRisco", unique("risco"), "Todos");
-    setOptions("filterUf", unique("uf"), "Todas");
-  }
-
-  function clearFilters(){
-    ["filterSearch","filterUnidade","filterStatus","filterRisco","filterUf","tableSearch"].forEach(id => $(id).value = "");
-    applyFilters();
-  }
+  function setPageTitle(title,sub){ $("pageTitle").textContent = title; $("pageSubtitle").textContent = sub; document.title = title + " - AgSUS Monitora"; }
+  function toggleSidebar(){ document.body.classList.toggle("sidebar-collapsed"); setTimeout(() => { if(currentView === "dashboard") renderMap(); }, 220); }
+  function toggleFilters(){ $("filterBody").classList.toggle("hidden"); $("filterToggleBtn").textContent = $("filterBody").classList.contains("hidden") ? "⌄ Mostrar filtros" : "⌃ Ocultar filtros"; }
+  function unique(field){ return [...new Set(rows.map(r => txt(r[field])).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt-BR")); }
+  function setOptions(id, values, first){ const el = $(id); const cur = el.value; el.innerHTML = `<option value="">${first}</option>` + values.map(v => `<option value="${attr(v)}">${esc(v)}</option>`).join(""); if(values.includes(cur)) el.value = cur; }
+  function populateFilters(){ setOptions("filterUnidade", unique("unidade"), "Todas"); setOptions("filterStatus", unique("status"), "Todos"); setOptions("filterRisco", unique("risco"), "Todos"); setOptions("filterUf", unique("uf"), "Todas"); }
+  function clearFilters(){ ["filterSearch","filterUnidade","filterStatus","filterRisco","filterUf","tableSearch"].forEach(id => $(id).value = ""); applyFilters(); }
 
   function applyFilters(){
-    const q = low($("filterSearch").value);
-    const qt = low($("tableSearch").value);
-    const unidade = txt($("filterUnidade").value);
-    const status = txt($("filterStatus").value);
-    const risco = txt($("filterRisco").value);
-    const uf = txt($("filterUf").value);
-
+    const q = low($("filterSearch").value), qt = low($("tableSearch").value), unidade = txt($("filterUnidade").value), status = txt($("filterStatus").value), risco = txt($("filterRisco").value), uf = txt($("filterUf").value);
     filtered = rows.filter(r => {
-      const hay = [
-        r.processo,r.edital,r.unidade,r.ciclo,r.uf,r.status,r.etapa,r.responsavel,r.cargos,r.risco,r.observacoes,r.observacoes_internas,r.link_edital
-      ].map(low).join(" | ");
-
-      return (!q || hay.includes(q))
-        && (!qt || hay.includes(qt))
-        && (!unidade || txt(r.unidade) === unidade)
-        && (!status || txt(r.status) === status)
-        && (!risco || txt(r.risco) === risco)
-        && (!uf || txt(r.uf) === uf);
+      const hay = [r.processo,r.edital,r.unidade,r.ciclo,r.uf,r.status,r.etapa,r.responsavel,r.cargos,r.risco,r.observacoes,r.observacoes_internas,r.link_edital].map(low).join(" | ");
+      return (!q || hay.includes(q)) && (!qt || hay.includes(qt)) && (!unidade || txt(r.unidade) === unidade) && (!status || txt(r.status) === status) && (!risco || txt(r.risco) === risco) && (!uf || txt(r.uf) === uf);
     }).sort(compareRows);
-
     renderAll();
   }
-
-  function compareRows(a,b){
-    const rank = { "Alto":0, "Médio":1, "Medio":1, "Baixo":2 };
-    const ar = rank[txt(a.risco)] ?? 9;
-    const br = rank[txt(b.risco)] ?? 9;
-    if(ar !== br) return ar - br;
-    return n(b.vagas_ociosas) - n(a.vagas_ociosas);
-  }
-
-  function sum(field){
-    return filtered.reduce((acc,r) => acc + n(r[field]), 0);
-  }
-
-  function renderAll(){
-    renderKpis();
-    renderStatusSummary();
-    renderChart();
-    renderMap();
-    renderRisks();
-    renderTable();
-    if(currentView === "cores") renderCores();
-  }
-
-  function renderKpis(){
-    $("kProcessos").textContent = fmt(filtered.length);
-    $("kVagas").textContent = fmt(sum("vagas_total"));
-    $("kContratados").textContent = fmt(sum("contratados"));
-    $("kOciosas").textContent = fmt(sum("vagas_ociosas"));
-    $("kInscritos").textContent = fmt(sum("inscritos"));
-    $("kCriticos").textContent = fmt(filtered.filter(r => ["alto","médio","medio"].includes(low(r.risco))).length);
-  }
-
-  function group(field){
-    const out = {};
-    filtered.forEach(r => {
-      const k = txt(r[field]) || "Não informado";
-      out[k] = (out[k] || 0) + 1;
-    });
-    return Object.entries(out).sort((a,b) => b[1]-a[1]);
-  }
-
-  function renderStatusSummary(){
-    $("statusSummary").innerHTML = group("status").map(([k,v]) => {
-      const cls = low(k).includes("conclu") ? "green" : low(k).includes("andamento") ? "blue" : low(k).includes("elabora") ? "cyan" : low(k).includes("cancel") ? "red" : "gray";
-      return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:9px 0"><b>${esc(k)}</b><span class="chip ${cls}">${fmt(v)}</span></div>`;
-    }).join("") || `<div class="alert">Sem dados.</div>`;
-  }
-
+  function compareRows(a,b){ const rank = { "Alto":0, "Médio":1, "Medio":1, "Baixo":2 }; const ar = rank[txt(a.risco)] ?? 9; const br = rank[txt(b.risco)] ?? 9; if(ar !== br) return ar - br; return n(b.vagas_ociosas) - n(a.vagas_ociosas); }
+  function sum(field){ return filtered.reduce((acc,r) => acc + n(r[field]), 0); }
+  function renderAll(){ renderKpis(); renderStatusSummary(); renderChart(); renderMap(); renderRisks(); renderTable(); if(currentView === "cores") renderCores(); }
+  function renderKpis(){ $("kProcessos").textContent = fmt(filtered.length); $("kVagas").textContent = fmt(sum("vagas_total")); $("kContratados").textContent = fmt(sum("contratados")); $("kOciosas").textContent = fmt(sum("vagas_ociosas")); $("kInscritos").textContent = fmt(sum("inscritos")); $("kCriticos").textContent = fmt(filtered.filter(r => ["alto","médio","medio"].includes(low(r.risco))).length); }
+  function group(field){ const out = {}; filtered.forEach(r => { const k = txt(r[field]) || "Não informado"; out[k] = (out[k] || 0) + 1; }); return Object.entries(out).sort((a,b) => b[1]-a[1]); }
+  function renderStatusSummary(){ $("statusSummary").innerHTML = group("status").map(([k,v]) => { const cls = low(k).includes("conclu") ? "green" : low(k).includes("andamento") ? "blue" : low(k).includes("elabora") ? "cyan" : low(k).includes("cancel") ? "red" : "gray"; return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:9px 0"><b>${esc(k)}</b><span class="chip ${cls}">${fmt(v)}</span></div>`; }).join("") || `<div class="alert">Sem dados.</div>`; }
   function renderChart(){
-    const canvas = $("statusChart");
-    if(!canvas || !window.Chart) return;
-
-    const entries = group("status");
-    const labels = entries.map(x => x[0]);
-    const values = entries.map(x => x[1]);
-    const colors = labels.map(label => {
-      const l = low(label);
-      if(l.includes("conclu")) return "#0ea76b";
-      if(l.includes("andamento")) return "#0d6efd";
-      if(l.includes("elabora")) return "#00b8d9";
-      if(l.includes("cancel")) return "#e4323b";
-      return "#7d8da5";
-    });
-
+    const canvas = $("statusChart"); if(!canvas || !window.Chart) return;
+    const entries = group("status"), labels = entries.map(x => x[0]), values = entries.map(x => x[1]);
+    const colors = labels.map(label => { const l = low(label); if(l.includes("conclu")) return "#0ea76b"; if(l.includes("andamento")) return "#0d6efd"; if(l.includes("elabora")) return "#00b8d9"; if(l.includes("cancel")) return "#e4323b"; return "#7d8da5"; });
     if(statusChart) statusChart.destroy();
-    statusChart = new Chart(canvas, {
-      type:"doughnut",
-      data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:0 }] },
-      options:{
-        responsive:true,
-        maintainAspectRatio:false,
-        cutout:"68%",
-        plugins:{ legend:{ position:"top", labels:{ usePointStyle:true, boxWidth:10, font:{ weight:"bold" } } } },
-        onClick:(evt, items) => {
-          if(!items.length) return;
-          $("filterStatus").value = labels[items[0].index];
-          applyFilters();
-        }
-      }
-    });
+    statusChart = new Chart(canvas, { type:"doughnut", data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:0 }] }, options:{ responsive:true, maintainAspectRatio:false, cutout:"68%", plugins:{ legend:{ position:"top", labels:{ usePointStyle:true, boxWidth:10, font:{ weight:"bold" } } } }, onClick:(evt, items) => { if(!items.length) return; $("filterStatus").value = labels[items[0].index]; applyFilters(); } } });
   }
-
   function renderMap(){
     if(!chartsReady || !window.google || !google.visualization) return;
-    const el = $("map");
-    if(!el || currentView !== "dashboard") return;
-
+    const el = $("map"); if(!el || currentView !== "dashboard") return;
     const groups = {};
-    filtered.forEach(r => {
-      const uf = txt(r.uf).toUpperCase();
-      if(!uf) return;
-      const key = "BR-" + uf;
-      groups[key] = (groups[key] || 0) + 1;
-    });
-
-    const dt = new google.visualization.DataTable();
-    dt.addColumn("string","UF");
-    dt.addColumn("number","Processos");
-    dt.addColumn({ type:"string", role:"tooltip" });
-
-    Object.entries(groups).forEach(([key,value]) => {
-      dt.addRow([key, value, `UF: ${key.replace("BR-","")}\nProcessos: ${value}`]);
-    });
-
-    if(!dt.getNumberOfRows()){
-      el.innerHTML = "<div class='alert'>Sem UF para plotar no mapa.</div>";
-      return;
-    }
-
+    filtered.forEach(r => { const uf = txt(r.uf).toUpperCase(); if(!uf) return; const key = "BR-" + uf; groups[key] = (groups[key] || 0) + 1; });
+    const dt = new google.visualization.DataTable(); dt.addColumn("string","UF"); dt.addColumn("number","Processos"); dt.addColumn({ type:"string", role:"tooltip" });
+    Object.entries(groups).forEach(([key,value]) => dt.addRow([key, value, `UF: ${key.replace("BR-","")}\nProcessos: ${value}`]));
+    if(!dt.getNumberOfRows()){ el.innerHTML = "<div class='alert'>Sem UF para plotar no mapa.</div>"; return; }
     const chart = new google.visualization.GeoChart(el);
-    google.visualization.events.addListener(chart, "select", () => {
-      const sel = chart.getSelection();
-      if(!sel.length) return;
-      const uf = dt.getValue(sel[0].row,0).replace("BR-","");
-      $("filterUf").value = uf;
-      applyFilters();
-    });
-
-    chart.draw(dt, {
-      region:"BR",
-      resolution:"provinces",
-      displayMode:"regions",
-      colorAxis:{ colors:["#dbeafe","#003b70"] },
-      datalessRegionColor:"#edf2f7",
-      backgroundColor:"transparent",
-      legend:"none"
-    });
+    google.visualization.events.addListener(chart, "select", () => { const sel = chart.getSelection(); if(!sel.length) return; const uf = dt.getValue(sel[0].row,0).replace("BR-",""); $("filterUf").value = uf; applyFilters(); });
+    chart.draw(dt, { region:"BR", resolution:"provinces", displayMode:"regions", colorAxis:{ colors:["#dbeafe","#003b70"] }, datalessRegionColor:"#edf2f7", backgroundColor:"transparent", legend:"none" });
   }
-
   function renderRisks(){
     const critical = filtered.filter(r => ["alto","médio","medio"].includes(low(r.risco))).slice(0,30);
-    $("riskList").innerHTML = critical.map(r => {
-      const isHigh = low(r.risco) === "alto";
-      return `<div class="risk-item">
-        <div class="top-line"><span>${esc(r.edital || "-")}</span><span class="chip ${isHigh ? "red":"yellow"}">${esc(r.risco || "-")}</span></div>
-        <small>${esc(r.etapa || "Etapa não informada")} <span style="float:right">${esc(r.unidade || "")}</span></small>
-      </div>`;
-    }).join("") || `<div class="alert">Nenhum processo crítico com os filtros atuais.</div>`;
+    $("riskList").innerHTML = critical.map(r => { const isHigh = low(r.risco) === "alto"; return `<div class="risk-item"><div class="top-line"><span>${esc(r.edital || "-")}</span><span class="chip ${isHigh ? "red":"yellow"}">${esc(r.risco || "-")}</span></div><small>${esc(r.etapa || "Etapa não informada")} <span style="float:right">${esc(r.unidade || "")}</span></small></div>`; }).join("") || `<div class="alert">Nenhum processo crítico com os filtros atuais.</div>`;
   }
-
-  function statusChip(status){
-    const l = low(status);
-    const cls = l.includes("conclu") ? "green" : l.includes("andamento") ? "blue" : l.includes("elabora") ? "cyan" : l.includes("cancel") ? "red" : "gray";
-    return `<span class="chip ${cls}">${esc(status || "-")}</span>`;
-  }
-  function riscoChip(risco){
-    const l = low(risco);
-    const cls = l === "alto" ? "red" : (l === "médio" || l === "medio") ? "yellow" : "green";
-    return `<span class="chip ${cls}">${esc(risco || "-")}</span>`;
-  }
-
+  function statusChip(status){ const l = low(status); const cls = l.includes("conclu") ? "green" : l.includes("andamento") ? "blue" : l.includes("elabora") ? "cyan" : l.includes("cancel") ? "red" : "gray"; return `<span class="chip ${cls}">${esc(status || "-")}</span>`; }
+  function riscoChip(risco){ const l = low(risco); const cls = l === "alto" ? "red" : (l === "médio" || l === "medio") ? "yellow" : "green"; return `<span class="chip ${cls}">${esc(risco || "-")}</span>`; }
   function renderTable(){
     $("tableMeta").textContent = `Exibindo ${fmt(filtered.length)} de ${fmt(rows.length)} registros após os filtros.`;
-    $("monitorRows").innerHTML = filtered.map(r => {
-      const link = txt(r.link_edital);
-      const edital = link ? `<a class="link" href="${attr(link)}" target="_blank" rel="noopener">${esc(r.edital || "-")} ↗</a>` : esc(r.edital || "-");
-      return `<tr>
-        <td>${esc(r.unidade)}</td>
-        <td>${edital}</td>
-        <td>${esc(r.data_inicio || "")}</td>
-        <td>${esc(r.data_fim || "")}</td>
-        <td class="num">${fmt(r.vagas_total)}</td>
-        <td class="num green-text">${fmt(r.contratados)}</td>
-        <td class="num red-text">${fmt(r.vagas_ociosas)}</td>
-        <td>${statusChip(r.status)}</td>
-        <td>${esc(r.etapa)}</td>
-        <td>${riscoChip(r.risco)}</td>
-        <td><div class="obs" title="${attr(r.observacoes || "-")}">${esc(r.observacoes || "-")}</div></td>
-      </tr>`;
-    }).join("") || `<tr><td colspan="11" style="text-align:center;padding:22px">Nenhum registro encontrado com os filtros atuais.</td></tr>`;
+    $("monitorRows").innerHTML = filtered.map(r => { const link = txt(r.link_edital); const edital = link ? `<a class="link" href="${attr(link)}" target="_blank" rel="noopener">${esc(r.edital || "-")} ↗</a>` : esc(r.edital || "-"); return `<tr><td>${esc(r.unidade)}</td><td>${edital}</td><td>${esc(r.data_inicio || "")}</td><td>${esc(r.data_fim || "")}</td><td class="num">${fmt(r.vagas_total)}</td><td class="num green-text">${fmt(r.contratados)}</td><td class="num red-text">${fmt(r.vagas_ociosas)}</td><td>${statusChip(r.status)}</td><td>${esc(r.etapa)}</td><td>${riscoChip(r.risco)}</td><td><div class="obs" title="${attr(r.observacoes || "-")}">${esc(r.observacoes || "-")}</div></td></tr>`; }).join("") || `<tr><td colspan="11" style="text-align:center;padding:22px">Nenhum registro encontrado com os filtros atuais.</td></tr>`;
   }
-
   function renderCores(){
     const q = low($("coresSearch").value);
-    const data = rows.filter(r => {
-      if(!q) return true;
-      const hay = [r.edital,r.unidade,r.status,r.etapa,r.risco,r.processo].map(low).join(" | ");
-      return hay.includes(q);
-    }).sort(compareRows);
-
-    $("coresRows").innerHTML = data.map(r => {
-      return `<tr>
-        <td>Saúde Indígena</td>
-        <td>${esc(r.unidade)}</td>
-        <td><a class="link" href="${attr(r.link_edital || "#")}" target="_blank" rel="noopener">${esc(r.edital || "-")}</a></td>
-        <td>${statusChip(r.status)}</td>
-        <td>${esc(r.etapa)}</td>
-        <td class="num">${fmt(r.vagas_total)}</td>
-        <td class="num green-text">${fmt(r.contratados)}</td>
-        <td class="num red-text">${fmt(r.vagas_ociosas)}</td>
-        <td>${riscoChip(r.risco)}</td>
-        <td><button class="btn outline" onclick="openEditModal('${attr(r.id)}')">Editar</button></td>
-      </tr>`;
-    }).join("") || `<tr><td colspan="10" style="text-align:center;padding:22px">Nenhum registro encontrado.</td></tr>`;
+    const data = rows.filter(r => { if(!q) return true; const hay = [r.edital,r.unidade,r.status,r.etapa,r.risco,r.processo].map(low).join(" | "); return hay.includes(q); }).sort(compareRows);
+    $("coresRows").innerHTML = data.map(r => `<tr><td>Saúde Indígena</td><td>${esc(r.unidade)}</td><td><a class="link" href="${attr(r.link_edital || "#")}" target="_blank" rel="noopener">${esc(r.edital || "-")}</a></td><td>${statusChip(r.status)}</td><td>${esc(r.etapa)}</td><td class="num">${fmt(r.vagas_total)}</td><td class="num green-text">${fmt(r.contratados)}</td><td class="num red-text">${fmt(r.vagas_ociosas)}</td><td>${riscoChip(r.risco)}</td><td><button class="btn outline" onclick="openEditModal('${attr(r.id)}')">Editar</button></td></tr>`).join("") || `<tr><td colspan="10" style="text-align:center;padding:22px">Nenhum registro encontrado.</td></tr>`;
   }
-
   function openEditModal(id){
     const r = id ? rows.find(x => String(x.id) === String(id)) : {};
     $("editModalTitle").textContent = id ? "Editar edital" : "Novo edital";
-    $("mId").value = r?.id || "";
-    $("mProcesso").value = r?.processo || "";
-    $("mEdital").value = r?.edital || "";
-    $("mUnidade").value = r?.unidade || "";
-    $("mUf").value = r?.uf || "";
-    $("mCiclo").value = r?.ciclo || "";
-    $("mVagas").value = r?.vagas_total || 0;
-    $("mContratados").value = r?.contratados || 0;
-    $("mInscritos").value = r?.inscritos || 0;
-    $("mStatus").value = r?.status || "";
-    $("mEtapa").value = r?.etapa || "";
-    $("mRisco").value = r?.risco || "Baixo";
-    $("mResponsavel").value = r?.responsavel || "";
-    $("mLink").value = r?.link_edital || "";
-    $("mObs").value = r?.observacoes || "";
+    $("mId").value = r?.id || ""; $("mProcesso").value = r?.processo || ""; $("mEdital").value = r?.edital || ""; $("mUnidade").value = r?.unidade || ""; $("mUf").value = r?.uf || ""; $("mCiclo").value = r?.ciclo || ""; $("mVagas").value = r?.vagas_total || 0; $("mContratados").value = r?.contratados || 0; $("mInscritos").value = r?.inscritos || 0; $("mStatus").value = r?.status || ""; $("mEtapa").value = r?.etapa || ""; $("mRisco").value = r?.risco || "Baixo"; $("mResponsavel").value = r?.responsavel || ""; $("mLink").value = r?.link_edital || ""; $("mObs").value = r?.observacoes || "";
     $("editModal").classList.add("show");
   }
-
-  function closeEditModal(){
-    $("editModal").classList.remove("show");
-  }
-
+  function closeEditModal(){ $("editModal").classList.remove("show"); }
   async function saveEdital(){
     const id = txt($("mId").value);
-    const payload = {
-      processo: txt($("mProcesso").value),
-      edital: txt($("mEdital").value),
-      unidade: txt($("mUnidade").value),
-      uf: txt($("mUf").value).toUpperCase(),
-      ciclo: txt($("mCiclo").value),
-      vagas_total: n($("mVagas").value),
-      contratados: n($("mContratados").value),
-      inscritos: n($("mInscritos").value),
-      status: txt($("mStatus").value),
-      etapa: txt($("mEtapa").value),
-      risco: txt($("mRisco").value),
-      responsavel: txt($("mResponsavel").value),
-      link_edital: txt($("mLink").value),
-      observacoes: txt($("mObs").value),
-      ativo: true,
-      vagas_ociosas: Math.max(0, n($("mVagas").value) - n($("mContratados").value))
-    };
-
-    if(!payload.edital || !payload.unidade){
-      toast("Informe pelo menos edital e unidade.", "warn");
-      return;
-    }
-
-    loader(true,"CORES","Salvando edital no Supabase...",70);
-    let result;
-    if(id){
-      result = await sb.from("monitoramento_indigena").update(payload).eq("id", id).select().single();
-    }else{
-      result = await sb.from("monitoramento_indigena").insert(payload).select().single();
-    }
-
-    if(result.error){
-      loader(false);
-      toast("Erro ao salvar: " + result.error.message, "error");
-      return;
-    }
-
-    closeEditModal();
-    await loadData();
-    loader(false);
-    toast("Registro salvo com sucesso.");
-    navigate("cores");
-  }
-
-  function ensureExternalMount(){
-    const mount = $("externalMount");
-    if(!mount) return null;
-
-    if(mount.dataset.initialized !== "1"){
-      mount.innerHTML = "";
-      mount.dataset.initialized = "1";
-      mount.className = "external-frame-host";
-    }
-
-    return mount;
-  }
-
-  function showExternalMessage(htmlMessage){
-    const mount = ensureExternalMount();
-    if(!mount) return;
-
-    Object.values(externalFrames).forEach(frame => {
-      if(frame) frame.style.display = "none";
-    });
-
-    let msg = $("externalMessage");
-    if(!msg){
-      msg = document.createElement("div");
-      msg.id = "externalMessage";
-      msg.className = "external-placeholder";
-      mount.appendChild(msg);
-    }
-
-    msg.innerHTML = htmlMessage;
-    msg.style.display = "grid";
-  }
-
-  function showExternalFrame(panel){
-    const mount = ensureExternalMount();
-    if(!mount) return;
-
-    let msg = $("externalMessage");
-    if(msg) msg.style.display = "none";
-
-    Object.values(externalFrames).forEach(frame => {
-      if(frame) frame.style.display = "none";
-    });
-
-    let frame = externalFrames[panel.codigo];
-
-    if(!frame){
-      frame = document.createElement("iframe");
-      frame.className = "external-frame";
-      frame.dataset.panelCode = panel.codigo;
-      frame.src = panel.url;
-      frame.loading = "eager";
-      frame.referrerPolicy = "no-referrer-when-downgrade";
-      mount.appendChild(frame);
-      externalFrames[panel.codigo] = frame;
-    } else if(frame.getAttribute("src") !== panel.url){
-      // Só recarrega se a URL realmente mudou.
-      frame.src = panel.url;
-    }
-
-    frame.style.display = "block";
-    activeExternalPanelCode = panel.codigo;
+    const payload = { processo:txt($("mProcesso").value), edital:txt($("mEdital").value), unidade:txt($("mUnidade").value), uf:txt($("mUf").value).toUpperCase(), ciclo:txt($("mCiclo").value), vagas_total:n($("mVagas").value), contratados:n($("mContratados").value), inscritos:n($("mInscritos").value), status:txt($("mStatus").value), etapa:txt($("mEtapa").value), risco:txt($("mRisco").value), responsavel:txt($("mResponsavel").value), link_edital:txt($("mLink").value), observacoes:txt($("mObs").value), ativo:true, vagas_ociosas:Math.max(0,n($("mVagas").value)-n($("mContratados").value)) };
+    if(!payload.edital || !payload.unidade){ toast("Informe pelo menos edital e unidade.", "warn"); return; }
+    loader(true,"Núcleo CORES","Salvando edital no Supabase...",70);
+    let result = id ? await sb.from("monitoramento_indigena").update(payload).eq("id", id).select().single() : await sb.from("monitoramento_indigena").insert(payload).select().single();
+    if(result.error){ loader(false); toast("Erro ao salvar: " + result.error.message, "error"); return; }
+    closeEditModal(); await loadData(); loader(false); toast("Registro salvo com sucesso."); navigate("cores");
   }
 
   function openPanel(code){
     const panel = panels.find(p => p.codigo === code);
     if(!panel) return;
-
     document.body.classList.add("external-mode");
     document.body.classList.add("sidebar-collapsed");
-
     currentPanel = panel;
     $("page-external").classList.add("active");
-    document.querySelectorAll(".page").forEach(p => {
-      if(p.id !== "page-external") p.classList.remove("active");
-    });
-
+    document.querySelectorAll(".page").forEach(p => { if(p.id !== "page-external") p.classList.remove("active"); });
     setPageTitle(panel.titulo, "Painel externo incorporado");
     $("externalTitle").textContent = panel.titulo;
     $("externalOpen").href = panel.url || "#";
-
-    if(panel.em_manutencao){
-      showExternalMessage(`<div><h2>Painel em manutenção</h2><p>Este painel está temporariamente indisponível.</p></div>`);
-      return;
-    }
-
-    if(!panel.url || panel.url.includes("COLE_A_URL")){
-      showExternalMessage(`<div><h2>${esc(panel.titulo)}</h2><p>Cadastre a URL deste painel no DEFAULT_PANELS.</p></div>`);
-      return;
-    }
-
-    showExternalFrame(panel);
+    const mount = $("externalMount");
+    if(panel.em_manutencao){ mount.className = "external-placeholder"; mount.innerHTML = `<div><h2>Módulo em Manutenção</h2><p>A AgSUS está atualizando esta base de dados.<br>Por favor, tente novamente mais tarde.</p></div>`; return; }
+    if(!panel.url){ mount.className = "external-placeholder"; mount.innerHTML = `<div><h2>${esc(panel.titulo)}</h2><p>Cadastre a URL deste painel na tabela paineis_externos.</p></div>`; return; }
+    mount.className = "";
+    const cacheKey = panel.codigo + "::" + panel.url;
+    if(!iframeCache[cacheKey]) iframeCache[cacheKey] = `<iframe class="external-frame" src="${attr(panel.url)}" loading="eager" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
+    mount.innerHTML = iframeCache[cacheKey];
   }
-
   function reloadExternal(){
     if(!currentPanel) return;
-
-    if(currentPanel.url && !currentPanel.url.includes("COLE_A_URL")){
-      const frame = externalFrames[currentPanel.codigo];
-      if(frame){
-        // Recarrega apenas quando o usuário clicar em Atualizar.
-        frame.src = currentPanel.url;
-      } else {
-        showExternalFrame(currentPanel);
-      }
-      return;
-    }
-
+    Object.keys(iframeCache).forEach(k => { if(k.startsWith(currentPanel.codigo + "::")) delete iframeCache[k]; });
     openPanel(currentPanel.codigo);
   }
-
   function renderPanelAdmin(){
-    const box = $("panelAdmin");
-    if(!box) return;
-    box.innerHTML = panels.map((p,i) => `
-      <div class="form-row" style="margin-bottom:12px">
-        <label>${esc(p.titulo)}</label>
-        <input value="${attr(p.url || "")}" placeholder="URL do painel ${i+1}" onchange="panels[${i}].url=this.value">
-      </div>
-    `).join("") + `<p style="color:var(--muted);font-weight:800">Nesta versão local, os links alterados aqui valem até recarregar a página. Depois criaremos a tabela paineis_externos para persistir.</p>`;
+    const box = $("panelAdmin"); if(!box) return;
+    box.innerHTML = panels.map((p,i) => `<div class="form-row" style="margin-bottom:12px"><label>${esc(p.titulo)}</label><input value="${attr(p.url || "")}" placeholder="URL do painel ${i+1}" onchange="panels[${i}].url=this.value"></div>`).join("") + `<p style="color:var(--muted);font-weight:800">Os links oficiais agora devem ser alterados na tabela paineis_externos do Supabase.</p>`;
   }
-
-  function toggleTheme(){
-    document.body.classList.toggle("dark");
-    setTimeout(renderMap, 120);
-  }
-
-  function toggleAccessibility(){
-    document.body.classList.toggle("large-text");
-    toast(document.body.classList.contains("large-text") ? "Texto ampliado ativado." : "Texto ampliado desativado.");
-  }
-
-  function toggleFullscreen(){
-    if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
-    else document.exitFullscreen?.();
-  }
-
+  function toggleTheme(){ document.body.classList.toggle("dark"); setTimeout(renderMap, 120); }
+  function toggleAccessibility(){ document.body.classList.toggle("large-text"); toast(document.body.classList.contains("large-text") ? "Texto ampliado ativado." : "Texto ampliado desativado."); }
+  function toggleFullscreen(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
   function exportCSV(){
     const headers = ["unidade","uf","edital","processo","ciclo","vagas_total","contratados","vagas_ociosas","inscritos","status","etapa","risco","responsavel","observacoes","link_edital"];
-    const csv = [
-      headers.join(";"),
-      ...filtered.map(r => headers.map(h => String(r[h] ?? "").replaceAll("\n"," ").replaceAll("\r"," ").replaceAll(";"," ").replaceAll('"',"'")).join(";"))
-    ].join("\n");
+    const csv = [headers.join(";"), ...filtered.map(r => headers.map(h => String(r[h] ?? "").replaceAll("\n"," ").replaceAll("\r"," ").replaceAll(";"," ").replaceAll('"',"'")).join(";"))].join("\n");
     const blob = new Blob(["\ufeff" + csv], { type:"text/csv;charset=utf-8;" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "agsus_monitora_saude_indigena.csv";
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "agsus_monitora_saude_indigena.csv"; a.click(); URL.revokeObjectURL(a.href);
   }
-
-  window.addEventListener("resize", () => {
-    clearTimeout(window.__mapResize);
-    window.__mapResize = setTimeout(renderMap, 220);
-  });
-
+  window.addEventListener("resize", () => { clearTimeout(window.__mapResize); window.__mapResize = setTimeout(renderMap, 220); });
   boot();
 </script>
 </body>
