@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.4.2</title>
+  <title>AgSUS Monitora Web V2.5</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -193,7 +193,7 @@
     .alert.ok{background:#e9fbf1;border-color:#b8edd1;color:#067044}
     .alert.error{background:#fff1f2;border-color:#fecdd3;color:#be123c}
     .alert.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
-    .login-foot{margin-top:18px;color:#00c2e8;font-size:12px;font-weight:900;letter-spacing:.12em}
+    .login-foot{margin-top:18px;color:#00c2e8;font-size:12px;font-weight:900;letter-spacing:.12em}.link-btn{border:0;background:transparent;color:#00529b;font-weight:900;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:8px 4px;justify-self:center}.link-btn:hover{color:#003b70}
 
     .loader{
       position:fixed; inset:0; display:none; place-items:center; z-index:1000;
@@ -369,6 +369,7 @@
           <button type="button" onclick="togglePassword()" aria-label="Mostrar senha"><i class="fa-solid fa-eye"></i></button>
         </div>
         <button id="loginBtn" class="btn" onclick="login()">Iniciar sessão</button>
+        <button type="button" class="link-btn" onclick="requestPasswordReset()">Esqueci minha senha</button>
       </div>
       <div id="loginFoot" class="login-foot">© 2026 COGIP</div>
     </div>
@@ -530,6 +531,34 @@
     </div>
   </div>
 
+
+  <div id="resetModal" class="modal">
+    <div class="modal-card" style="width:min(560px,calc(100vw - 28px))">
+      <div class="modal-head">
+        <h3>Redefinir senha</h3>
+        <button class="btn secondary" onclick="closeResetModal()">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <div id="resetMsg" class="alert hidden"></div>
+        <div class="form-grid" style="grid-template-columns:1fr">
+          <div class="form-row">
+            <label>Nova senha</label>
+            <input id="newPassword1" type="password" autocomplete="new-password" placeholder="Mínimo de 8 caracteres">
+          </div>
+          <div class="form-row">
+            <label>Confirmar nova senha</label>
+            <input id="newPassword2" type="password" autocomplete="new-password" placeholder="Repita a nova senha">
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px">
+          <button class="btn secondary" onclick="closeResetModal()">Cancelar</button>
+          <button id="resetSaveBtn" class="btn green" onclick="completePasswordReset()">Salvar nova senha</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
 <script>
   const APP_VERSION = "AgSUS Monitora Web V2.4.2";
 
@@ -626,6 +655,12 @@
 
   async function boot(){
     if(!initSupabase()) return;
+    sb.auth.onAuthStateChange((event, session) => {
+      if(event === "PASSWORD_RECOVERY"){
+        sessionUser = session?.user || null;
+        showResetModal();
+      }
+    });
     applyConfigToUi();
     const { data } = await sb.auth.getSession();
     if(data && data.session){
@@ -634,6 +669,70 @@
       await loadInitialData();
     }
   }
+
+
+  function resetRedirectUrl(){
+    return window.location.origin + window.location.pathname + "?reset=1";
+  }
+
+  async function requestPasswordReset(){
+    if(!sb && !initSupabase()) return;
+    const email = txt($("loginEmail").value);
+    if(!email){
+      showAlert("loginMsg","Informe seu e-mail no campo Usuário para receber o link de recuperação.","warn");
+      return;
+    }
+    loader(true,"Recuperação de senha","Enviando link seguro pelo Supabase...",35);
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: resetRedirectUrl() });
+    loader(false);
+    if(error){
+      showAlert("loginMsg","Não foi possível enviar o link: " + friendlyError(error),"error");
+      return;
+    }
+    showAlert("loginMsg","Enviamos um link de recuperação para este e-mail. Abra o link e cadastre uma nova senha.","ok");
+  }
+
+  function showResetModal(){
+    $("resetModal").classList.add("show");
+    $("newPassword1").value = "";
+    $("newPassword2").value = "";
+    showAlert("resetMsg","Digite e confirme sua nova senha.","ok");
+  }
+
+  function closeResetModal(){
+    $("resetModal").classList.remove("show");
+  }
+
+  async function completePasswordReset(){
+    if(!sb) return;
+    const p1 = $("newPassword1").value;
+    const p2 = $("newPassword2").value;
+    if(!p1 || p1.length < 8){
+      showAlert("resetMsg","A senha precisa ter pelo menos 8 caracteres.","warn");
+      return;
+    }
+    if(p1 !== p2){
+      showAlert("resetMsg","As senhas não conferem.","warn");
+      return;
+    }
+    $("resetSaveBtn").disabled = true;
+    $("resetSaveBtn").textContent = "Salvando...";
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    $("resetSaveBtn").disabled = false;
+    $("resetSaveBtn").textContent = "Salvar nova senha";
+    if(error){
+      showAlert("resetMsg","Não foi possível redefinir a senha: " + friendlyError(error),"error");
+      return;
+    }
+    closeResetModal();
+    toast("Senha redefinida com sucesso. Faça login novamente.");
+    await sb.auth.signOut();
+    history.replaceState({}, document.title, window.location.pathname);
+    $("appScreen").classList.add("hidden");
+    $("loginScreen").classList.remove("hidden");
+    $("loginPassword").value = "";
+  }
+
 
   function togglePassword(){ const p = $("loginPassword"); p.type = p.type === "password" ? "text" : "password"; }
 
@@ -872,21 +971,87 @@
 
   async function saveEdital(){
     if(!can("cores")) return toast("Sem permissão para salvar registros.", "warn");
+
     const id = txt($("mId").value);
     const payload = {
-      processo: txt($("mProcesso").value), edital: txt($("mEdital").value), unidade: txt($("mUnidade").value), uf: txt($("mUf").value).toUpperCase(), ciclo: txt($("mCiclo").value),
-      vagas_total: n($("mVagas").value), contratados: n($("mContratados").value), inscritos: n($("mInscritos").value), status: txt($("mStatus").value), etapa: txt($("mEtapa").value), risco: txt($("mRisco").value),
-      responsavel: txt($("mResponsavel").value), link_edital: txt($("mLink").value), observacoes: txt($("mObs").value), ativo: true
+      processo: txt($("mProcesso").value),
+      edital: txt($("mEdital").value),
+      unidade: txt($("mUnidade").value),
+      uf: txt($("mUf").value).toUpperCase(),
+      ciclo: txt($("mCiclo").value),
+      vagas_total: n($("mVagas").value),
+      contratados: n($("mContratados").value),
+      inscritos: n($("mInscritos").value),
+      status: txt($("mStatus").value),
+      etapa: txt($("mEtapa").value),
+      risco: txt($("mRisco").value),
+      responsavel: txt($("mResponsavel").value),
+      link_edital: txt($("mLink").value),
+      observacoes: txt($("mObs").value),
+      ativo: true
     };
-    // Nao enviar vagas_ociosas: no Supabase essa coluna e calculada/protegida e so pode ser DEFAULT.
-    if(!payload.edital || !payload.unidade){ toast("Informe pelo menos edital e unidade.", "warn"); return; }
-    const btn = $("saveEditalBtn"); btn.disabled = true; btn.textContent = "Salvando..."; loader(true,"Equipe Núcleo","Salvando registro permitido no Supabase...",70);
+
+    // Nao enviar vagas_ociosas: no Supabase essa coluna e calculada/protegida.
+    if(!payload.edital || !payload.unidade){
+      toast("Informe pelo menos edital e unidade.", "warn");
+      return;
+    }
+
+    const btn = $("saveEditalBtn");
+    btn.disabled = true;
+    btn.textContent = "Salvando...";
+    loader(true,"Equipe Núcleo","Salvando e confirmando persistência no Supabase...",70);
+
+    const fieldsToReturn = "id,processo,edital,unidade,uf,ciclo,vagas_total,contratados,inscritos,status,etapa,risco,responsavel,link_edital,observacoes,ativo";
     let result;
-    if(id) result = await sb.from("monitoramento_indigena").update(payload).eq("id", id);
-    else result = await sb.from("monitoramento_indigena").insert(payload);
-    btn.disabled = false; btn.textContent = "Salvar";
-    if(result.error){ loader(false); toast("Erro ao salvar: " + friendlyError(result.error), "error"); return; }
-    closeEditModal(); await loadData(); loader(false); toast("Registro salvo com sucesso."); navigate("nucleo");
+
+    if(id){
+      result = await sb
+        .from("monitoramento_indigena")
+        .update(payload)
+        .eq("id", id)
+        .select(fieldsToReturn);
+    }else{
+      result = await sb
+        .from("monitoramento_indigena")
+        .insert(payload)
+        .select(fieldsToReturn);
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Salvar";
+
+    if(result.error){
+      loader(false);
+      toast("Erro ao salvar: " + friendlyError(result.error), "error");
+      return;
+    }
+
+    const saved = Array.isArray(result.data) ? result.data[0] : null;
+    if(!saved || !saved.id){
+      loader(false);
+      toast("Não foi possível confirmar o salvamento. Verifique se seu usuário tem permissão de edição na Equipe Núcleo.", "error");
+      return;
+    }
+
+    // Confirma a persistência lendo de novo o registro salvo.
+    const check = await sb
+      .from("monitoramento_indigena")
+      .select(fieldsToReturn)
+      .eq("id", saved.id)
+      .maybeSingle();
+
+    if(check.error || !check.data){
+      loader(false);
+      toast("O registro foi enviado, mas não foi possível confirmar a leitura no banco. Atualize e confira.", "warn");
+      return;
+    }
+
+    closeEditModal();
+    await loadData();
+    loader(false);
+    toast("Registro salvo e confirmado no Supabase.");
+    navigate("nucleo");
   }
 
   function openPanel(code){
