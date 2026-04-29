@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.5.2</title>
+  <title>AgSUS Monitora Web V2.5.3</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -384,7 +384,7 @@
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.5.2</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.5.3</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -562,7 +562,7 @@
 
 
 <script>
-  const APP_VERSION = "AgSUS Monitora Web V2.5.2";
+  const APP_VERSION = "AgSUS Monitora Web V2.5.3";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -661,6 +661,10 @@
 
     sb.auth.onAuthStateChange((event, session) => {
       if(event === "PASSWORD_RECOVERY"){
+        if(recoveryUrlHasError()){
+          handleInvalidRecoveryLink();
+          return;
+        }
         currentUser = session?.user || null;
         enterPasswordRecoveryMode();
       }
@@ -672,6 +676,10 @@
     const resetUrl = isPasswordRecoveryUrl();
 
     if(resetUrl){
+      if(recoveryUrlHasError() || (!data?.session && !recoveryUrlHasToken())){
+        await handleInvalidRecoveryLink();
+        return;
+      }
       currentUser = data?.session?.user || null;
       enterPasswordRecoveryMode();
       return;
@@ -710,6 +718,35 @@
     const qs = new URLSearchParams(window.location.search || "");
     const hash = String(window.location.hash || "");
     return qs.get("reset") === "1" || hash.includes("type=recovery") || hash.includes("access_token=") || qs.get("type") === "recovery";
+  }
+
+  function recoveryUrlHasError(){
+    const qs = new URLSearchParams(window.location.search || "");
+    const hash = new URLSearchParams(String(window.location.hash || "").replace(/^#/, ""));
+    return qs.has("error") || qs.has("error_code") || hash.has("error") || hash.has("error_code");
+  }
+
+  function recoveryUrlHasToken(){
+    const qs = new URLSearchParams(window.location.search || "");
+    const hash = String(window.location.hash || "");
+    return hash.includes("type=recovery") || hash.includes("access_token=") || hash.includes("refresh_token=") || qs.get("type") === "recovery" || qs.has("code");
+  }
+
+  async function handleInvalidRecoveryLink(){
+    passwordRecoveryMode = false;
+    currentUser = null;
+    profile = null;
+    rows = [];
+    filtered = [];
+    dataLoadedAtLeastOnce = false;
+    loader(false);
+    $("resetModal").classList.remove("show");
+    if(sb) await sb.auth.signOut();
+    clearRecoveryUrl();
+    $("appScreen").classList.add("hidden");
+    $("loginScreen").classList.remove("hidden");
+    $("loginPassword").value = "";
+    showAlert("loginMsg", "Link de redefinição expirado ou inválido. Clique em Esqueci minha senha para solicitar um novo link.", "warn");
   }
 
   function clearRecoveryUrl(){
