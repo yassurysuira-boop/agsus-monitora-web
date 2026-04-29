@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.4</title>
+  <title>AgSUS Monitora Web V2.4.1</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -307,9 +307,16 @@
 
     .page{display:none}.page.active{display:block}
     .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid .full{grid-column:1/-1}.form-row{display:grid;gap:6px}.admin-card{padding:18px}.admin-card h3{margin:0 0 15px}
-    .external-frame{width:100%;height:calc(100vh - 218px);min-height:640px;border:0;background:#fff;border-radius:0 0 var(--radius) var(--radius);display:block}
-    .external-placeholder{min-height:520px;display:grid;place-items:center;text-align:center;color:#63748d;font-weight:800;background:#fff;border-radius:0 0 var(--radius) var(--radius)}
+    .external-frame{width:100%;height:calc(100vh - 148px);min-height:720px;border:0;background:#fff;border-radius:var(--radius);display:block}
+    .external-placeholder{min-height:calc(100vh - 170px);display:grid;place-items:center;text-align:center;color:#63748d;font-weight:800;background:#fff;border-radius:var(--radius)}
     .external-panel[hidden]{display:none!important}
+    #page-external .table-head{display:none!important}
+    #page-external .table-card{margin-top:0;border-radius:var(--radius);background:transparent;box-shadow:none;border:0;overflow:visible}
+    #page-external #externalMount{border-radius:var(--radius);overflow:hidden}
+    #page-nucleo .table-card{height:calc(100vh - 138px);min-height:680px;display:flex;flex-direction:column;margin-top:0}
+    #page-nucleo .table-wrap{flex:1;max-height:none;min-height:0}
+    #page-nucleo table{min-width:1320px}
+    #page-nucleo th,#page-nucleo td{padding-top:12px;padding-bottom:12px}
 
     .toast-box{position:fixed;top:18px;right:18px;z-index:1200;display:grid;gap:10px;width:min(390px,calc(100vw - 30px))}
     .toast{border-radius:16px;padding:14px 16px;background:#fff;box-shadow:0 20px 50px rgba(0,0,0,.16);border:1px solid var(--line);font-weight:800;display:flex;gap:10px;align-items:flex-start}
@@ -369,7 +376,7 @@
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.4</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.4.1</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -517,7 +524,7 @@
   </div>
 
 <script>
-  const APP_VERSION = "AgSUS Monitora Web V2.4";
+  const APP_VERSION = "AgSUS Monitora Web V2.4.1";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -867,8 +874,8 @@
     if(!payload.edital || !payload.unidade){ toast("Informe pelo menos edital e unidade.", "warn"); return; }
     const btn = $("saveEditalBtn"); btn.disabled = true; btn.textContent = "Salvando..."; loader(true,"Equipe Núcleo","Salvando registro permitido no Supabase...",70);
     let result;
-    if(id) result = await sb.from("monitoramento_indigena").update(payload).eq("id", id).select().single();
-    else result = await sb.from("monitoramento_indigena").insert(payload).select().single();
+    if(id) result = await sb.from("monitoramento_indigena").update(payload).eq("id", id);
+    else result = await sb.from("monitoramento_indigena").insert(payload);
     btn.disabled = false; btn.textContent = "Salvar";
     if(result.error){ loader(false); toast("Erro ao salvar: " + friendlyError(result.error), "error"); return; }
     closeEditModal(); await loadData(); loader(false); toast("Registro salvo com sucesso."); navigate("nucleo");
