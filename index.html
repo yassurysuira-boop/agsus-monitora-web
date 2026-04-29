@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.4.1</title>
+  <title>AgSUS Monitora Web V2.4.2</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -313,6 +313,13 @@
     #page-external .table-head{display:none!important}
     #page-external .table-card{margin-top:0;border-radius:var(--radius);background:transparent;box-shadow:none;border:0;overflow:visible}
     #page-external #externalMount{border-radius:var(--radius);overflow:hidden}
+    /* V2.4.2 external panels clean mode */
+    body.external-clean .top{display:none!important}
+    body.external-clean .content{padding:0!important}
+    body.external-clean #page-external .table-card{margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;overflow:visible!important}
+    body.external-clean #page-external #externalMount{border-radius:0!important;overflow:hidden!important}
+    body.external-clean .external-frame{height:100vh!important;min-height:100vh!important;border-radius:0!important}
+    body.external-clean .external-placeholder{min-height:100vh!important;border-radius:0!important;border:0!important;box-shadow:none!important}
     #page-nucleo .table-card{height:calc(100vh - 138px);min-height:680px;display:flex;flex-direction:column;margin-top:0}
     #page-nucleo .table-wrap{flex:1;max-height:none;min-height:0}
     #page-nucleo table{min-width:1320px}
@@ -376,7 +383,7 @@
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.4.1</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.4.2</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -524,7 +531,7 @@
   </div>
 
 <script>
-  const APP_VERSION = "AgSUS Monitora Web V2.4.1";
+  const APP_VERSION = "AgSUS Monitora Web V2.4.2";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -766,6 +773,7 @@
   function setActiveNav(view){ document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view)); }
 
   function navigate(view){
+    document.body.classList.remove("external-clean");
     currentView = view;
     setActiveNav(view);
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
@@ -883,6 +891,7 @@
 
   function openPanel(code){
     const panel = panels.find(p => p.codigo === code); if(!panel) return;
+    document.body.classList.add("external-clean");
     currentPanel = panel; currentView = "panel:" + code; setActiveNav(currentView);
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active")); $("page-external").classList.add("active");
     setPageTitle(panel.titulo, "Painel externo incorporado");
