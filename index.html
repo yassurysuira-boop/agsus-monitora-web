@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.5</title>
+  <title>AgSUS Monitora Web V2.5.1</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -384,7 +384,7 @@
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.4.2</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.5.1</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -475,12 +475,14 @@
           <div class="admin-grid">
             <div class="admin-card card">
               <h3>Configuração do Sistema</h3>
+              <!-- V2.5.1: cfgLoginLogo salva login_logo_url no Supabase para não voltar ao fallback fixo do index.html -->
               <div class="form-grid">
                 <div class="form-row"><label>ID / referência da base</label><input id="cfgMonitId"></div>
                 <div class="form-row"><label>Título</label><input id="cfgTitle"></div>
                 <div class="form-row"><label>Slogan</label><input id="cfgSlogan"></div>
                 <div class="form-row"><label>Rodapé</label><input id="cfgFooter"></div>
                 <div class="form-row full"><label>Logo / mascote</label><input id="cfgMascot"></div>
+                <div class="form-row full"><label>Logo da tela de login</label><input id="cfgLoginLogo"></div>
                 <div class="form-row full"><label>Imagem de fundo do login</label><input id="cfgLoginBg"></div>
               </div>
             </div>
@@ -560,7 +562,7 @@
 
 
 <script>
-  const APP_VERSION = "AgSUS Monitora Web V2.4.2";
+  const APP_VERSION = "AgSUS Monitora Web V2.5.1";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -657,7 +659,7 @@
     if(!initSupabase()) return;
     sb.auth.onAuthStateChange((event, session) => {
       if(event === "PASSWORD_RECOVERY"){
-        sessionUser = session?.user || null;
+        currentUser = session?.user || null;
         showResetModal();
       }
     });
@@ -672,7 +674,7 @@
 
 
   function resetRedirectUrl(){
-    return window.location.origin + window.location.pathname + "?reset=1";
+    return "https://yassurysuira-boop.github.io/agsus-monitora-web/?reset=1";
   }
 
   async function requestPasswordReset(){
@@ -1103,6 +1105,7 @@
     $("cfgSlogan").value = appConfig.app_slogan || DEFAULT_CONFIG.app_slogan;
     $("cfgFooter").value = appConfig.footer_text || DEFAULT_CONFIG.footer_text;
     $("cfgMascot").value = appConfig.mascot_url || DEFAULT_CONFIG.mascot_url;
+    $("cfgLoginLogo").value = appConfig.login_logo_url || DEFAULT_CONFIG.login_logo_url;
     $("cfgLoginBg").value = appConfig.login_bg_url || DEFAULT_CONFIG.login_bg_url;
     $("cfgBroadcastType").value = appConfig.broadcast_type || "info";
     $("cfgBroadcastMsg").value = appConfig.broadcast_msg || "";
@@ -1131,6 +1134,7 @@
       {chave:"app_slogan", valor:txt($("cfgSlogan").value), descricao:"Slogan do sistema"},
       {chave:"footer_text", valor:txt($("cfgFooter").value), descricao:"Texto do rodapé"},
       {chave:"mascot_url", valor:txt($("cfgMascot").value), descricao:"Logo / mascote do menu lateral"},
+      {chave:"login_logo_url", valor:txt($("cfgLoginLogo").value), descricao:"Logo exibida na tela de login"},
       {chave:"login_bg_url", valor:txt($("cfgLoginBg").value), descricao:"Imagem de fundo do login"},
       {chave:"broadcast_type", valor:txt($("cfgBroadcastType").value), descricao:"Tipo do aviso global"},
       {chave:"broadcast_msg", valor:txt($("cfgBroadcastMsg").value), descricao:"Mensagem do aviso global"}
