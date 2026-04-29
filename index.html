@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.5.1</title>
+  <title>AgSUS Monitora Web V2.5.2</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -384,7 +384,7 @@
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.5.1</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.5.2</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -562,7 +562,7 @@
 
 
 <script>
-  const APP_VERSION = "AgSUS Monitora Web V2.5.1";
+  const APP_VERSION = "AgSUS Monitora Web V2.5.2";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -599,6 +599,7 @@
   let statusChart = null;
   let chartsReady = false;
   let dataLoadedAtLeastOnce = false;
+  let passwordRecoveryMode = false;
 
   google.charts.load("current", { packages:["geochart"] });
   google.charts.setOnLoadCallback(() => { chartsReady = true; if(rows.length) renderMap(); });
@@ -657,14 +658,25 @@
 
   async function boot(){
     if(!initSupabase()) return;
+
     sb.auth.onAuthStateChange((event, session) => {
       if(event === "PASSWORD_RECOVERY"){
         currentUser = session?.user || null;
-        showResetModal();
+        enterPasswordRecoveryMode();
       }
     });
+
     applyConfigToUi();
+
     const { data } = await sb.auth.getSession();
+    const resetUrl = isPasswordRecoveryUrl();
+
+    if(resetUrl){
+      currentUser = data?.session?.user || null;
+      enterPasswordRecoveryMode();
+      return;
+    }
+
     if(data && data.session){
       currentUser = data.session.user;
       openApp(currentUser);
@@ -691,7 +703,29 @@
       showAlert("loginMsg","Não foi possível enviar o link: " + friendlyError(error),"error");
       return;
     }
-    showAlert("loginMsg","Enviamos um link de recuperação para este e-mail. Abra o link e cadastre uma nova senha.","ok");
+    showAlert("loginMsg","Se o e-mail estiver cadastrado, enviaremos um link de recuperação. Verifique a caixa de entrada e o spam.","ok");
+  }
+
+  function isPasswordRecoveryUrl(){
+    const qs = new URLSearchParams(window.location.search || "");
+    const hash = String(window.location.hash || "");
+    return qs.get("reset") === "1" || hash.includes("type=recovery") || hash.includes("access_token=") || qs.get("type") === "recovery";
+  }
+
+  function clearRecoveryUrl(){
+    history.replaceState({}, document.title, window.location.pathname);
+  }
+
+  function enterPasswordRecoveryMode(){
+    passwordRecoveryMode = true;
+    profile = null;
+    rows = [];
+    filtered = [];
+    dataLoadedAtLeastOnce = false;
+    loader(false);
+    $("appScreen").classList.add("hidden");
+    $("loginScreen").classList.remove("hidden");
+    showResetModal();
   }
 
   function showResetModal(){
@@ -701,8 +735,28 @@
     showAlert("resetMsg","Digite e confirme sua nova senha.","ok");
   }
 
-  function closeResetModal(){
+  async function closeResetModal(){
+    if(passwordRecoveryMode){
+      await cancelPasswordRecovery();
+      return;
+    }
     $("resetModal").classList.remove("show");
+  }
+
+  async function cancelPasswordRecovery(){
+    $("resetModal").classList.remove("show");
+    passwordRecoveryMode = false;
+    currentUser = null;
+    profile = null;
+    rows = [];
+    filtered = [];
+    dataLoadedAtLeastOnce = false;
+    if(sb) await sb.auth.signOut();
+    clearRecoveryUrl();
+    $("appScreen").classList.add("hidden");
+    $("loginScreen").classList.remove("hidden");
+    $("loginPassword").value = "";
+    showAlert("loginMsg","Redefinição de senha cancelada. Para acessar o sistema, faça login normalmente.","warn");
   }
 
   async function completePasswordReset(){
@@ -726,19 +780,27 @@
       showAlert("resetMsg","Não foi possível redefinir a senha: " + friendlyError(error),"error");
       return;
     }
-    closeResetModal();
+    $("resetModal").classList.remove("show");
+    passwordRecoveryMode = false;
     toast("Senha redefinida com sucesso. Faça login novamente.");
     await sb.auth.signOut();
-    history.replaceState({}, document.title, window.location.pathname);
+    clearRecoveryUrl();
+    currentUser = null;
+    profile = null;
+    rows = [];
+    filtered = [];
+    dataLoadedAtLeastOnce = false;
     $("appScreen").classList.add("hidden");
     $("loginScreen").classList.remove("hidden");
     $("loginPassword").value = "";
+    showAlert("loginMsg","Senha redefinida com sucesso. Faça login com a nova senha.","ok");
   }
 
 
   function togglePassword(){ const p = $("loginPassword"); p.type = p.type === "password" ? "text" : "password"; }
 
   async function login(){
+    if(passwordRecoveryMode){ await cancelPasswordRecovery(); }
     if(!sb && !initSupabase()) return;
     const email = txt($("loginEmail").value);
     const password = $("loginPassword").value;
@@ -765,10 +827,12 @@
   }
 
   function openApp(user){
+    if(passwordRecoveryMode) return;
     $("loginScreen").classList.add("hidden"); $("appScreen").classList.remove("hidden"); $("userEmail").textContent = user && user.email ? user.email : "-";
   }
 
   async function loadInitialData(){
+    if(passwordRecoveryMode) return;
     loader(true,"Carregando ambiente","Aplicando perfil, configurações e dados principais...",35);
     await loadProfile();
     await loadConfig();
