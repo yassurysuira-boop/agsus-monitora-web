@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.5.3</title>
+  <title>AgSUS Monitora Web V2.5.4</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -384,7 +384,7 @@
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.5.3</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.5.4</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -562,7 +562,7 @@
 
 
 <script>
-  const APP_VERSION = "AgSUS Monitora Web V2.5.3";
+  const APP_VERSION = "AgSUS Monitora Web V2.5.4";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -889,14 +889,25 @@
   }
 
   async function loadProfile(){
-    if(!currentUser?.email) return;
-    const { data, error } = await sb.from("app_usuarios").select("*").ilike("email", currentUser.email).maybeSingle();
-    if(error){ toast("Não foi possível carregar permissões do usuário.", "error"); return; }
+    if(!currentUser?.id) return;
+
+    const { data, error } = await sb
+      .from("app_usuarios")
+      .select("*")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+
+    if(error){
+      toast("Não foi possível carregar permissões do usuário.", "error");
+      return;
+    }
+
     if(!data || data.ativo === false){
       await logout();
       showAlert("loginMsg", "Usuário sem perfil ativo no sistema. Verifique app_usuarios no Supabase.", "error");
       throw new Error("Usuário sem perfil ativo");
     }
+
     profile = data;
   }
 
@@ -934,7 +945,12 @@
   async function loadData(){
     if(!can("ind") && !can("cores")) { rows = []; filtered = []; buildNav(); return; }
     loader(true,"Atualizando","Sincronizando dados do monitoramento...",62);
-    const { data, error } = await sb.from("monitoramento_indigena").select("*").eq("ativo", true);
+    const { data, error } = await sb
+      .from("monitoramento_indigena")
+      .select("*")
+      .eq("ativo", true)
+      .order("unidade", { ascending: true })
+      .order("edital", { ascending: true });
     if(error){ loader(false); toast("Erro ao carregar dados: " + friendlyError(error), "error"); return; }
     rows = Array.isArray(data) ? data : [];
     dataLoadedAtLeastOnce = true;
@@ -1094,7 +1110,7 @@
       ativo: true
     };
 
-    // Nao enviar vagas_ociosas: no Supabase essa coluna e calculada/protegida.
+    // Nao enviar vagas_ociosas: no Supabase essa coluna deve ser recalculada por trigger no banco.
     if(!payload.edital || !payload.unidade){
       toast("Informe pelo menos edital e unidade.", "warn");
       return;
