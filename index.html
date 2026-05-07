@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.5.4</title>
+  <title>AgSUS Monitora Web V2.6.0</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -337,6 +337,302 @@
     @media(max-width:1220px){.kpis{grid-template-columns:repeat(3,1fr)}.dashboard-grid,.lower-grid,.admin-grid{grid-template-columns:1fr}.filter-body{grid-template-columns:1fr 1fr}}
     @media(max-width:820px){.app{grid-template-columns:1fr}body.sidebar-collapsed .app{grid-template-columns:1fr}.sidebar{position:relative;min-height:auto}.side-brand{text-align:left;display:flex;align-items:center;gap:12px}.side-logo{margin:0;width:62px;height:62px}.nav{grid-template-columns:1fr 1fr}.top{position:relative;align-items:flex-start;flex-direction:column}.actions{justify-content:flex-start}.kpis{grid-template-columns:1fr 1fr}.filter-body{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
     @media(max-width:540px){.kpis,.nav{grid-template-columns:1fr}.page-title h1{font-size:24px}.table-head{align-items:stretch;flex-direction:column}.table-head input{max-width:none}.login-card{padding:28px 20px}}
+
+
+    /* =========================================================
+       SKIN TECNOLÓGICA V2.6 - AgSUS Monitora
+       Camada visual aplicada sem alterar a regra de negócio.
+       ========================================================= */
+
+    :root{
+      --bg:#eaf2fb;
+      --card:rgba(255,255,255,.88);
+      --line:rgba(148,163,184,.34);
+      --shadow:0 22px 60px rgba(15,35,60,.13);
+      --tech-glow:0 0 0 1px rgba(0,184,217,.18), 0 18px 52px rgba(0,59,112,.16);
+    }
+
+    body{
+      background:
+        radial-gradient(circle at 12% 8%, rgba(0,184,217,.18), transparent 28%),
+        radial-gradient(circle at 88% 12%, rgba(13,110,253,.16), transparent 30%),
+        radial-gradient(circle at 58% 92%, rgba(14,167,107,.11), transparent 32%),
+        linear-gradient(135deg,#eef6ff 0%,#eaf2fb 48%,#f7fbff 100%);
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
+      opacity:.32;
+      background-image:
+        linear-gradient(rgba(0,59,112,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,59,112,.08) 1px, transparent 1px);
+      background-size:42px 42px;
+      mask-image:radial-gradient(circle at center, black 0%, transparent 78%);
+      -webkit-mask-image:radial-gradient(circle at center, black 0%, transparent 78%);
+    }
+
+    .app,
+    .login-screen{
+      position:relative;
+      z-index:1;
+    }
+
+    .sidebar{
+      background:
+        radial-gradient(circle at 20% 0%, rgba(0,184,217,.28), transparent 26%),
+        radial-gradient(circle at 90% 18%, rgba(13,110,253,.20), transparent 30%),
+        linear-gradient(180deg,#021b35 0%,#003b70 48%,#021b35 100%);
+      border-right:1px solid rgba(0,184,217,.22);
+      box-shadow:18px 0 42px rgba(0,36,72,.18);
+    }
+
+    .sidebar::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.08), transparent 24%),
+        repeating-linear-gradient(
+          135deg,
+          rgba(255,255,255,.045) 0,
+          rgba(255,255,255,.045) 1px,
+          transparent 1px,
+          transparent 12px
+        );
+    }
+
+    .side-brand{
+      position:relative;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:20px;
+      padding:16px 10px 18px;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.10);
+    }
+
+    .side-logo{
+      filter:drop-shadow(0 0 18px rgba(0,194,232,.35));
+    }
+
+    .nav button{
+      position:relative;
+      overflow:hidden;
+      border:1px solid transparent;
+      transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    }
+
+    .nav button::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:12px;
+      bottom:12px;
+      width:3px;
+      border-radius:999px;
+      background:#00d4ff;
+      opacity:0;
+      box-shadow:0 0 14px rgba(0,212,255,.75);
+    }
+
+    .nav button.active,
+    .nav button:hover{
+      background:linear-gradient(90deg, rgba(0,184,217,.22), rgba(255,255,255,.12));
+      color:#ffffff;
+      border-color:rgba(0,212,255,.34);
+      box-shadow:0 10px 26px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.10);
+      transform:translateX(2px);
+    }
+
+    .nav button.active::before,
+    .nav button:hover::before{
+      opacity:1;
+    }
+
+    body.sidebar-collapsed .nav button.active,
+    body.sidebar-collapsed .nav button:hover{
+      transform:translateY(-1px);
+    }
+
+    .top{
+      background:rgba(248,252,255,.78);
+      border-bottom:1px solid rgba(0,184,217,.18);
+      box-shadow:0 14px 34px rgba(15,35,60,.08);
+    }
+
+    .hamb{
+      background:linear-gradient(135deg,#003b70,#00a8d6);
+      color:#fff;
+      border:0;
+      box-shadow:0 12px 26px rgba(0,91,170,.20);
+    }
+
+    .page-title h1{
+      background:linear-gradient(90deg,#04142d,#003b70,#00a8d6);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+
+    .status-pill{
+      background:rgba(255,255,255,.82);
+      border-color:rgba(0,184,217,.22);
+      box-shadow:0 10px 24px rgba(15,35,60,.07);
+    }
+
+    .btn{
+      background:linear-gradient(135deg,#004c93,#00a8d6);
+      box-shadow:0 12px 26px rgba(0,77,145,.20);
+      transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    }
+
+    .btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 16px 32px rgba(0,77,145,.25);
+    }
+
+    .btn.secondary{
+      background:rgba(255,255,255,.80);
+      color:#18324f;
+      border:1px solid rgba(0,59,112,.16);
+      box-shadow:0 8px 20px rgba(15,35,60,.06);
+    }
+
+    .btn.outline{
+      background:rgba(255,255,255,.55);
+      color:#004c93;
+      border:1px solid rgba(0,128,210,.38);
+      box-shadow:none;
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.94), rgba(255,255,255,.82));
+      border:1px solid rgba(0,59,112,.12);
+      box-shadow:var(--tech-glow);
+      backdrop-filter:blur(12px);
+    }
+
+    .filter-card,
+    .panel-pad,
+    .map-card,
+    .kpi{
+      position:relative;
+      overflow:hidden;
+    }
+
+    .filter-card::before,
+    .panel-pad::before,
+    .map-card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(0,184,217,.12), transparent 34%),
+        linear-gradient(135deg, rgba(255,255,255,.18), transparent 42%);
+    }
+
+    .filter-title{
+      color:#003b70;
+      text-shadow:0 0 18px rgba(0,184,217,.18);
+    }
+
+    .section-label{
+      color:#005b9f;
+    }
+
+    .section-label::after{
+      background:linear-gradient(90deg,#00b8d9,rgba(0,59,112,.12),transparent);
+    }
+
+    .kpi{
+      background:
+        radial-gradient(circle at 100% 0%, rgba(0,184,217,.16), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.82));
+      border-top-width:0;
+      border-left:1px solid rgba(0,184,217,.20);
+      min-height:96px;
+    }
+
+    .kpi::before{
+      content:"";
+      position:absolute;
+      top:0;
+      left:0;
+      right:0;
+      height:4px;
+      background:linear-gradient(90deg,#003b70,#00b8d9,#0ea76b);
+      box-shadow:0 0 18px rgba(0,184,217,.45);
+    }
+
+    .kpi::after{
+      content:"";
+      position:absolute;
+      width:120px;
+      height:120px;
+      right:-58px;
+      bottom:-72px;
+      border-radius:50%;
+      background:rgba(0,184,217,.10);
+    }
+
+    .kpi span,
+    .kpi b{
+      position:relative;
+      z-index:1;
+    }
+
+    .kpi b{
+      color:#03142d;
+      text-shadow:0 0 20px rgba(0,184,217,.18);
+    }
+
+    .table-head{
+      background:linear-gradient(90deg,#041b35 0%,#003b70 55%,#00a8d6 100%);
+      box-shadow:inset 0 -1px 0 rgba(255,255,255,.12);
+    }
+
+    th{
+      background:rgba(245,250,255,.94);
+      backdrop-filter:blur(8px);
+    }
+
+    tr:hover td{
+      background:rgba(0,184,217,.07);
+    }
+
+    .external-placeholder{
+      background:
+        radial-gradient(circle at 50% 0%, rgba(0,184,217,.16), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.95), rgba(242,247,252,.96));
+      border:1px solid rgba(0,184,217,.18);
+    }
+
+    .external-frame{
+      box-shadow:inset 0 0 0 1px rgba(0,184,217,.12);
+    }
+
+    .loader-card,
+    .login-card{
+      border-color:rgba(0,184,217,.26);
+      box-shadow:0 30px 100px rgba(0,36,72,.24), 0 0 0 1px rgba(0,184,217,.14);
+    }
+
+    @media(prefers-reduced-motion:no-preference){
+      .status-dot{
+        animation:agsusPulse 1.6s ease-in-out infinite;
+      }
+
+      @keyframes agsusPulse{
+        0%,100%{box-shadow:0 0 0 5px rgba(14,167,107,.14)}
+        50%{box-shadow:0 0 0 9px rgba(14,167,107,.05)}
+      }
+    }
+
   </style>
 </head>
 
@@ -384,7 +680,7 @@
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.5.4</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.6.0</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -562,7 +858,7 @@
 
 
 <script>
-  const APP_VERSION = "AgSUS Monitora Web V2.5.4";
+  const APP_VERSION = "AgSUS Monitora Web V2.6.0";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -581,10 +877,12 @@
   };
 
   const DEFAULT_PANELS = [
-    { codigo:"analises", titulo:"Análises", icone:"fa-chart-line", url:"", ordem:1, ativo:true, em_manutencao:false, tipo_abertura:"iframe" },
-    { codigo:"recrutamento", titulo:"Recrutamento", icone:"fa-chart-pie", url:"", ordem:2, ativo:true, em_manutencao:true, tipo_abertura:"iframe" },
-    { codigo:"contratacao", titulo:"Contratação", icone:"fa-desktop", url:"", ordem:3, ativo:true, em_manutencao:false, tipo_abertura:"iframe" },
-    { codigo:"entrevistas", titulo:"Entrevistas", icone:"fa-arrow-up-right-from-square", url:"", ordem:4, ativo:true, em_manutencao:true, tipo_abertura:"iframe" }
+    { codigo:"recrutamento", titulo:"Seleção", icone:"fa-chart-pie", url:"https://script.google.com/a/macros/agenciasus.org.br/s/AKfycbyOSYL713GOeC_P1Q7AcA68wMw-4amA8Xujqx6a5944qOXdn_m0_8VKpYdbterRkTsG/exec", ordem:1, ativo:true, em_manutencao:false, tipo_abertura:"iframe" },
+    { codigo:"analises", titulo:"Análises", icone:"fa-chart-line", url:"https://script.google.com/a/macros/agenciasus.org.br/s/AKfycbyWleWLWyLdIJO8oPDFGu3JCyTwMj4MOB2nCSOnPXUxkXjMUCVxEdySvjbI75VczRVm/exec", ordem:2, ativo:true, em_manutencao:false, tipo_abertura:"iframe" },
+    { codigo:"entrevistas", titulo:"Entrevistas", icone:"fa-arrow-up-right-from-square", url:"", ordem:3, ativo:true, em_manutencao:true, tipo_abertura:"iframe" },
+    { codigo:"contratacao", titulo:"Contratação", icone:"fa-desktop", url:"https://lookerstudio.google.com/embed/reporting/2d5f1d2f-d32a-4b4d-95bf-7c5a725a1b9a/page/p_d9w2owdmfd", ordem:4, ativo:true, em_manutencao:false, tipo_abertura:"iframe" },
+    { codigo:"recursos", titulo:"Recursos", icone:"fa-scale-balanced", url:"", ordem:5, ativo:true, em_manutencao:false, tipo_abertura:"iframe" },
+    { codigo:"sip", titulo:"SIP", icone:"fa-network-wired", url:"", ordem:6, ativo:true, em_manutencao:false, tipo_abertura:"iframe" }
   ];
 
   let sb = null;
