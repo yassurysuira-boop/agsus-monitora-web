@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.6.2</title>
+  <title>AgSUS Monitora Web V2.6.3</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -339,7 +339,7 @@
     @media(max-width:540px){.kpis,.nav{grid-template-columns:1fr}.page-title h1{font-size:24px}.table-head{align-items:stretch;flex-direction:column}.table-head input{max-width:none}.login-card{padding:28px 20px}}
 
 /* =========================================================
-   SKIN TECNOLÓGICA V2.6.2 - AgSUS Monitora
+   SKIN TECNOLÓGICA V2.6.3 - AgSUS Monitora
    Ajustes: logo mais notória, toggle global e filtros alternáveis
    ========================================================= */
 
@@ -800,7 +800,7 @@ tr:hover td{
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.6.2</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.6.3</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -978,8 +978,8 @@ tr:hover td{
 
 
 <script>
-  // Build V2.6.2: logo reforçada, toggle global e filtros alternáveis.
-  const APP_VERSION = "AgSUS Monitora Web V2.6.2";
+  // Build V2.6.3: logo reforçada, toggle global, filtros alternáveis e pré-cache dos painéis externos.
+  const APP_VERSION = "AgSUS Monitora Web V2.6.3";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -1019,6 +1019,7 @@ tr:hover td{
   let chartsReady = false;
   let dataLoadedAtLeastOnce = false;
   let passwordRecoveryMode = false;
+  let externalPanelsWarmed = false;
 
   google.charts.load("current", { packages:["geochart"] });
   google.charts.setOnLoadCallback(() => { chartsReady = true; if(rows.length) renderMap(); });
@@ -1279,6 +1280,7 @@ tr:hover td{
   async function logout(){
     if(sb) await sb.auth.signOut();
     currentUser = null; profile = null; rows = []; filtered = []; dataLoadedAtLeastOnce = false;
+    clearExternalPanelCache();
     $("appScreen").classList.add("hidden"); $("loginScreen").classList.remove("hidden"); $("loginPassword").value = "";
   }
 
@@ -1294,6 +1296,7 @@ tr:hover td{
     await loadConfig();
     await loadPanels();
     buildNav();
+    warmExternalPanels();
     await loadData();
     navigate(startView());
     loader(false);
@@ -1389,8 +1392,14 @@ tr:hover td{
     await loadConfig();
     await loadPanels();
     buildNav();
+    warmExternalPanels(true);
     await loadData();
-    if(currentPanel) updateCurrentPanelInfo();
+
+    if(currentPanel){
+      updateCurrentPanelInfo();
+      openPanel(currentPanel.codigo);
+    }
+
     toast("Dados atualizados.");
   }
 
@@ -1602,6 +1611,59 @@ tr:hover td{
     navigate("nucleo");
   }
 
+  function warmExternalPanels(force=false){
+    if(!can("paineis")) return;
+
+    const mount = $("externalMount");
+    if(!mount) return;
+
+    if(force){
+      document.querySelectorAll(".external-panel").forEach(el => el.remove());
+      externalPanelsWarmed = false;
+    }
+
+    if(externalPanelsWarmed) return;
+
+    if(mount.classList.contains("external-placeholder")){
+      mount.className = "";
+      mount.innerHTML = "";
+    }
+
+    panels
+      .filter(p => p.ativo)
+      .sort((a,b) => n(a.ordem) - n(b.ordem))
+      .forEach(panel => {
+        const code = txt(panel.codigo);
+        if(!code) return;
+
+        let holder = document.getElementById("external-panel-" + code);
+        if(holder) return;
+
+        holder = document.createElement("div");
+        holder.id = "external-panel-" + code;
+        holder.className = "external-panel";
+        holder.hidden = true;
+
+        mount.appendChild(holder);
+        buildExternalPanel(holder, panel);
+      });
+
+    externalPanelsWarmed = true;
+  }
+
+  function clearExternalPanelCache(){
+    document.querySelectorAll(".external-panel").forEach(el => el.remove());
+
+    const mount = $("externalMount");
+    if(mount){
+      mount.className = "external-placeholder";
+      mount.innerHTML = "Selecione um painel externo no menu.";
+    }
+
+    externalPanelsWarmed = false;
+    currentPanel = null;
+  }
+
   function openPanel(code){
     const panel = panels.find(p => p.codigo === code); if(!panel) return;
     document.body.classList.add("external-clean");
@@ -1629,7 +1691,7 @@ tr:hover td{
       holder.innerHTML = `<div class="external-placeholder"><div><h2>${esc(panel.titulo)}</h2><p>Cadastre a URL deste painel em paineis_externos.</p></div></div>`;
       return;
     }
-    holder.innerHTML = `<iframe class="external-frame" src="${attr(panel.url)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+    holder.innerHTML = `<iframe class="external-frame" src="${attr(panel.url)}" loading="eager" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
   }
 
   function updateCurrentPanelInfo(){
