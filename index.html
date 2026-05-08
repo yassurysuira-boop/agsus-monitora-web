@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.6.3</title>
+  <title>AgSUS Monitora Web V2.6.4</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -339,7 +339,7 @@
     @media(max-width:540px){.kpis,.nav{grid-template-columns:1fr}.page-title h1{font-size:24px}.table-head{align-items:stretch;flex-direction:column}.table-head input{max-width:none}.login-card{padding:28px 20px}}
 
 /* =========================================================
-   SKIN TECNOLÓGICA V2.6.3 - AgSUS Monitora
+   SKIN TECNOLÓGICA V2.6.4 - AgSUS Monitora
    Ajustes: logo mais notória, toggle global e filtros alternáveis
    ========================================================= */
 
@@ -800,7 +800,7 @@ tr:hover td{
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.6.3</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.6.4</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -978,8 +978,8 @@ tr:hover td{
 
 
 <script>
-  // Build V2.6.3: logo reforçada, toggle global, filtros alternáveis e pré-cache dos painéis externos.
-  const APP_VERSION = "AgSUS Monitora Web V2.6.3";
+  // Build V2.6.4: logo reforçada, toggle global, filtros alternáveis, pré-cache dos painéis externos e etapas de carregamento aprimoradas.
+  const APP_VERSION = "AgSUS Monitora Web V2.6.4";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -1031,6 +1031,10 @@ tr:hover td{
   function fmt(v){ return n(v).toLocaleString("pt-BR"); }
   function esc(v){ return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
   function attr(v){ return esc(v).replaceAll("`","&#096;"); }
+
+  function sleep(ms){
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
   function toast(message, type="ok"){
     const box = $("toastBox");
@@ -1291,14 +1295,25 @@ tr:hover td{
 
   async function loadInitialData(){
     if(passwordRecoveryMode) return;
-    loader(true,"Carregando ambiente","Aplicando perfil, configurações e dados principais...",35);
+
+    loader(true,"Carregando ambiente","Aplicando perfil do usuário...",22);
     await loadProfile();
+
+    loader(true,"Carregando configurações","Buscando parâmetros do sistema...",34);
     await loadConfig();
+
+    loader(true,"Carregando painéis","Preparando painéis externos em cache...",48);
     await loadPanels();
     buildNav();
     warmExternalPanels();
+    await sleep(180);
+
+    loader(true,"Carregando dados","Sincronizando dados do monitoramento...",62);
     await loadData();
+
+    loader(true,"Finalizando","Abrindo painel inicial...",88);
     navigate(startView());
+
     loader(false);
   }
 
@@ -1389,10 +1404,16 @@ tr:hover td{
   }
 
   async function refreshData(){
+    loader(true,"Atualizando configurações","Buscando parâmetros e painéis externos...",24);
     await loadConfig();
     await loadPanels();
     buildNav();
+
+    loader(true,"Atualizando painéis","Reconstruindo cache dos painéis externos...",48);
     warmExternalPanels(true);
+    await sleep(180);
+
+    loader(true,"Atualizando dados","Sincronizando dados do monitoramento...",68);
     await loadData();
 
     if(currentPanel){
@@ -1400,6 +1421,7 @@ tr:hover td{
       openPanel(currentPanel.codigo);
     }
 
+    loader(false);
     toast("Dados atualizados.");
   }
 
