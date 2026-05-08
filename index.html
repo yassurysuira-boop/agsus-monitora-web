@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.6.5</title>
+  <title>AgSUS Monitora Web V2.6.6</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -339,7 +339,7 @@
     @media(max-width:540px){.kpis,.nav{grid-template-columns:1fr}.page-title h1{font-size:24px}.table-head{align-items:stretch;flex-direction:column}.table-head input{max-width:none}.login-card{padding:28px 20px}}
 
 /* =========================================================
-   SKIN TECNOLÓGICA V2.6.5 - AgSUS Monitora
+   SKIN TECNOLÓGICA V2.6.6 - AgSUS Monitora
    Ajustes: logo mais notória, toggle global e filtros alternáveis
    ========================================================= */
 
@@ -752,11 +752,11 @@ tr:hover td{
 
 
 /* =========================================================
-   V2.6.5 - Sidebar travada em telas pequenas
+   V2.6.6 - Sidebar travada e fixa na tela principal/telas menores
    Notebook pequeno, tablet e celular
    ========================================================= */
 
-@media(max-width:1180px){
+@media(max-width:1480px){
   body.sidebar-locked .app,
   body.sidebar-locked.sidebar-collapsed .app{
     grid-template-columns:var(--sidebar-mini) minmax(0,1fr)!important;
@@ -870,6 +870,158 @@ tr:hover td{
 }
 
 
+/* =========================================================
+   V2.6.6 - trava real da sidebar e contenção do dashboard
+   Aplica também na aba principal, mesmo quando a largura ainda
+   fica acima do breakpoint responsivo.
+   ========================================================= */
+
+body.sidebar-locked{
+  overflow-x:hidden!important;
+}
+
+body.sidebar-locked .app,
+body.sidebar-locked.sidebar-collapsed .app{
+  grid-template-columns:var(--sidebar-mini) minmax(0,1fr)!important;
+  width:100%!important;
+  max-width:100vw!important;
+  overflow-x:hidden!important;
+}
+
+body.sidebar-locked .sidebar{
+  position:fixed!important;
+  left:0!important;
+  top:0!important;
+  bottom:0!important;
+  width:var(--sidebar-mini)!important;
+  height:100vh!important;
+  height:100dvh!important;
+  min-height:100vh!important;
+  z-index:60!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  padding-left:6px!important;
+  padding-right:6px!important;
+}
+
+body.sidebar-locked .main{
+  grid-column:2!important;
+  min-width:0!important;
+  width:100%!important;
+  max-width:100%!important;
+  overflow-x:hidden!important;
+}
+
+body.sidebar-locked .top,
+body.sidebar-locked .content,
+body.sidebar-locked .page,
+body.sidebar-locked .filter-card,
+body.sidebar-locked .dashboard-grid,
+body.sidebar-locked .lower-grid,
+body.sidebar-locked .table-card,
+body.sidebar-locked .table-wrap{
+  min-width:0!important;
+  max-width:100%!important;
+}
+
+body.sidebar-locked .side-brand{
+  min-height:118px!important;
+  padding:10px 5px!important;
+  margin-bottom:10px!important;
+  border-radius:20px!important;
+  display:grid!important;
+  justify-items:center!important;
+  align-content:center!important;
+}
+
+body.sidebar-locked .side-brand::after{
+  width:94px!important;
+  height:94px!important;
+  top:10px!important;
+}
+
+body.sidebar-locked .side-logo{
+  width:76px!important;
+  height:76px!important;
+  margin:0 auto!important;
+  display:block!important;
+}
+
+body.sidebar-locked .side-brand h2,
+body.sidebar-locked .side-brand small,
+body.sidebar-locked .nav-text,
+body.sidebar-locked .side-user,
+body.sidebar-locked .side-version,
+body.sidebar-locked .side-logout span{
+  display:none!important;
+}
+
+body.sidebar-locked .nav{
+  grid-template-columns:1fr!important;
+}
+
+body.sidebar-locked .nav button{
+  justify-content:center!important;
+  padding:0!important;
+  min-height:48px!important;
+}
+
+body.sidebar-locked .global-side-toggle,
+body.sidebar-locked .hamb{
+  display:none!important;
+}
+
+body.sidebar-locked .content{
+  padding-left:8px!important;
+  padding-right:8px!important;
+}
+
+body.sidebar-locked #page-dashboard .table-wrap{
+  overflow:auto!important;
+}
+
+body.sidebar-locked #page-dashboard table{
+  width:max-content!important;
+  min-width:1180px!important;
+}
+
+@media(max-width:980px){
+  body.sidebar-locked .top{
+    align-items:flex-start!important;
+    flex-direction:column!important;
+  }
+
+  body.sidebar-locked .actions{
+    justify-content:flex-start!important;
+  }
+
+  body.sidebar-locked .filter-body{
+    grid-template-columns:1fr 1fr!important;
+  }
+
+  body.sidebar-locked .kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
+  body.sidebar-locked .dashboard-grid,
+  body.sidebar-locked .lower-grid{
+    grid-template-columns:1fr!important;
+  }
+}
+
+@media(max-width:640px){
+  body.sidebar-locked .filter-body,
+  body.sidebar-locked .kpis{
+    grid-template-columns:1fr!important;
+  }
+
+  body.sidebar-locked .content{
+    padding-left:6px!important;
+    padding-right:6px!important;
+  }
+}
+
+
   </style>
 </head>
 
@@ -920,7 +1072,7 @@ tr:hover td{
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.6.5</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.6.6</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -1098,8 +1250,8 @@ tr:hover td{
 
 
 <script>
-  // Build V2.6.5: logo reforçada, toggle global, filtros alternáveis, pré-cache dos painéis externos, etapas de carregamento e sidebar travada em telas pequenas.
-  const APP_VERSION = "AgSUS Monitora Web V2.6.5";
+  // Build V2.6.6: logo reforçada, toggle global, filtros alternáveis, pré-cache dos painéis externos, etapas de carregamento e sidebar fixa/travada na tela principal e em telas menores.
+  const APP_VERSION = "AgSUS Monitora Web V2.6.6";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -1140,7 +1292,8 @@ tr:hover td{
   let dataLoadedAtLeastOnce = false;
   let passwordRecoveryMode = false;
   let externalPanelsWarmed = false;
-  const SIDEBAR_LOCK_BREAKPOINT = 1180;
+  const SIDEBAR_LOCK_BREAKPOINT = 1480;
+  const SIDEBAR_FORCE_LOCK_VIEWS = new Set(["dashboard"]);
 
   google.charts.load("current", { packages:["geochart"] });
   google.charts.setOnLoadCallback(() => { chartsReady = true; if(rows.length) renderMap(); });
@@ -1600,6 +1753,7 @@ tr:hover td{
   function navigate(view){
     document.body.classList.remove("external-clean");
     currentView = view;
+    enforceResponsiveSidebar();
     setActiveNav(view);
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
     if(view === "dashboard"){
@@ -1626,8 +1780,12 @@ tr:hover td{
     return window.matchMedia(`(max-width:${SIDEBAR_LOCK_BREAKPOINT}px)`).matches;
   }
 
+  function shouldLockSidebar(){
+    return isSidebarLockedViewport() || SIDEBAR_FORCE_LOCK_VIEWS.has(currentView);
+  }
+
   function enforceResponsiveSidebar(){
-    const locked = isSidebarLockedViewport();
+    const locked = shouldLockSidebar();
 
     document.body.classList.toggle("sidebar-locked", locked);
 
@@ -1637,7 +1795,9 @@ tr:hover td{
   }
 
   function toggleSidebar(){
-    if(document.body.classList.contains("sidebar-locked")){
+    enforceResponsiveSidebar();
+
+    if(shouldLockSidebar()){
       document.body.classList.add("sidebar-collapsed");
       return;
     }
@@ -1877,7 +2037,7 @@ tr:hover td{
       return;
     }
     document.body.classList.add("external-clean");
-    currentPanel = panel; currentView = "panel:" + code; setActiveNav(currentView);
+    currentPanel = panel; currentView = "panel:" + code; enforceResponsiveSidebar(); setActiveNav(currentView);
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active")); $("page-external").classList.add("active");
     setPageTitle(panel.titulo, "Painel externo incorporado");
     $("externalTitle").textContent = panel.titulo; $("externalOpen").href = panel.url || "#";
