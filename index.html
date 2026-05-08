@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.6.4</title>
+  <title>AgSUS Monitora Web V2.6.5</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -339,7 +339,7 @@
     @media(max-width:540px){.kpis,.nav{grid-template-columns:1fr}.page-title h1{font-size:24px}.table-head{align-items:stretch;flex-direction:column}.table-head input{max-width:none}.login-card{padding:28px 20px}}
 
 /* =========================================================
-   SKIN TECNOLÓGICA V2.6.4 - AgSUS Monitora
+   SKIN TECNOLÓGICA V2.6.5 - AgSUS Monitora
    Ajustes: logo mais notória, toggle global e filtros alternáveis
    ========================================================= */
 
@@ -750,6 +750,126 @@ tr:hover td{
   }
 }
 
+
+/* =========================================================
+   V2.6.5 - Sidebar travada em telas pequenas
+   Notebook pequeno, tablet e celular
+   ========================================================= */
+
+@media(max-width:1180px){
+  body.sidebar-locked .app,
+  body.sidebar-locked.sidebar-collapsed .app{
+    grid-template-columns:var(--sidebar-mini) minmax(0,1fr)!important;
+  }
+
+  body.sidebar-locked .sidebar{
+    position:sticky!important;
+    top:0!important;
+    height:100vh!important;
+    min-height:100vh!important;
+    overflow-y:auto!important;
+    padding-left:6px!important;
+    padding-right:6px!important;
+  }
+
+  body.sidebar-locked .side-brand{
+    min-height:118px!important;
+    padding:10px 5px!important;
+    margin-bottom:10px!important;
+    border-radius:20px!important;
+    display:grid!important;
+    justify-items:center!important;
+    align-content:center!important;
+  }
+
+  body.sidebar-locked .side-brand::after{
+    width:94px!important;
+    height:94px!important;
+    top:10px!important;
+  }
+
+  body.sidebar-locked .side-logo{
+    width:76px!important;
+    height:76px!important;
+    margin:0 auto!important;
+    display:block!important;
+  }
+
+  body.sidebar-locked .side-brand h2,
+  body.sidebar-locked .side-brand small,
+  body.sidebar-locked .nav-text,
+  body.sidebar-locked .side-user,
+  body.sidebar-locked .side-version,
+  body.sidebar-locked .side-logout span{
+    display:none!important;
+  }
+
+  body.sidebar-locked .nav{
+    grid-template-columns:1fr!important;
+  }
+
+  body.sidebar-locked .nav button{
+    justify-content:center!important;
+    padding:0!important;
+    min-height:48px!important;
+  }
+
+  body.sidebar-locked .global-side-toggle,
+  body.sidebar-locked .hamb{
+    display:none!important;
+  }
+
+  body.sidebar-locked .top{
+    position:sticky!important;
+    top:0!important;
+  }
+
+  body.sidebar-locked .content{
+    padding-left:8px!important;
+    padding-right:8px!important;
+  }
+}
+
+@media(max-width:560px){
+  :root{
+    --sidebar-mini:72px;
+  }
+
+  body.sidebar-locked .sidebar{
+    padding-left:4px!important;
+    padding-right:4px!important;
+  }
+
+  body.sidebar-locked .side-brand{
+    min-height:88px!important;
+  }
+
+  body.sidebar-locked .side-logo{
+    width:58px!important;
+    height:58px!important;
+  }
+
+  body.sidebar-locked .page-title h1{
+    font-size:20px!important;
+  }
+
+  body.sidebar-locked .page-title p{
+    font-size:12px!important;
+  }
+
+  body.sidebar-locked .actions .btn{
+    min-height:36px;
+    padding:0 9px;
+    font-size:12px;
+  }
+
+  body.sidebar-locked .status-pill{
+    padding:8px 10px;
+    font-size:12px;
+  }
+}
+
+
   </style>
 </head>
 
@@ -800,7 +920,7 @@ tr:hover td{
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.6.4</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.6.5</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -978,8 +1098,8 @@ tr:hover td{
 
 
 <script>
-  // Build V2.6.4: logo reforçada, toggle global, filtros alternáveis, pré-cache dos painéis externos e etapas de carregamento aprimoradas.
-  const APP_VERSION = "AgSUS Monitora Web V2.6.4";
+  // Build V2.6.5: logo reforçada, toggle global, filtros alternáveis, pré-cache dos painéis externos, etapas de carregamento e sidebar travada em telas pequenas.
+  const APP_VERSION = "AgSUS Monitora Web V2.6.5";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -1020,6 +1140,7 @@ tr:hover td{
   let dataLoadedAtLeastOnce = false;
   let passwordRecoveryMode = false;
   let externalPanelsWarmed = false;
+  const SIDEBAR_LOCK_BREAKPOINT = 1180;
 
   google.charts.load("current", { packages:["geochart"] });
   google.charts.setOnLoadCallback(() => { chartsReady = true; if(rows.length) renderMap(); });
@@ -1309,7 +1430,11 @@ tr:hover td{
     await sleep(180);
 
     loader(true,"Carregando dados","Sincronizando dados do monitoramento...",62);
-    await loadData();
+    const dataOk = await loadData({ showLoader:false });
+    if(!dataOk){
+      loader(false);
+      return;
+    }
 
     loader(true,"Finalizando","Abrindo painel inicial...",88);
     navigate(startView());
@@ -1320,7 +1445,7 @@ tr:hover td{
   function startView(){
     if(can("ind")) return "dashboard";
     if(can("cores")) return "nucleo";
-    if(can("paineis") && panels.find(p => p.ativo)) return "panel:" + panels.find(p => p.ativo).codigo;
+    if(can("paineis") && panels.find(p => p.ativo !== false)) return "panel:" + panels.find(p => p.ativo !== false).codigo;
     if(can("config")) return "config";
     return "dashboard";
   }
@@ -1335,8 +1460,9 @@ tr:hover td{
       .maybeSingle();
 
     if(error){
-      toast("Não foi possível carregar permissões do usuário.", "error");
-      return;
+      await logout();
+      showAlert("loginMsg", "Não foi possível carregar permissões do usuário. Faça login novamente.", "error");
+      throw new Error("Falha ao carregar perfil do usuário");
     }
 
     if(!data || data.ativo === false){
@@ -1379,22 +1505,42 @@ tr:hover td{
     renderPanelAdmin();
   }
 
-  async function loadData(){
-    if(!can("ind") && !can("cores")) { rows = []; filtered = []; buildNav(); return; }
-    loader(true,"Atualizando","Sincronizando dados do monitoramento...",62);
+  async function loadData(options={}){
+    const showOwnLoader = options.showLoader !== false;
+
+    if(!can("ind") && !can("cores")) {
+      rows = [];
+      filtered = [];
+      buildNav();
+      return true;
+    }
+
+    if(showOwnLoader){
+      loader(true,"Atualizando","Sincronizando dados do monitoramento...",62);
+    }
+
     const { data, error } = await sb
       .from("monitoramento_indigena")
       .select("*")
       .eq("ativo", true)
       .order("unidade", { ascending: true })
       .order("edital", { ascending: true });
-    if(error){ loader(false); toast("Erro ao carregar dados: " + friendlyError(error), "error"); return; }
+
+    if(error){
+      if(showOwnLoader) loader(false);
+      toast("Erro ao carregar dados: " + friendlyError(error), "error");
+      return false;
+    }
+
     rows = Array.isArray(data) ? data : [];
     dataLoadedAtLeastOnce = true;
     populateFilters();
     applyFilters();
     setUpdated();
-    loader(false);
+
+    if(showOwnLoader) loader(false);
+
+    return true;
   }
 
   function setUpdated(){
@@ -1414,11 +1560,22 @@ tr:hover td{
     await sleep(180);
 
     loader(true,"Atualizando dados","Sincronizando dados do monitoramento...",68);
-    await loadData();
+    const dataOk = await loadData({ showLoader:false });
+    if(!dataOk){
+      loader(false);
+      return;
+    }
 
     if(currentPanel){
-      updateCurrentPanelInfo();
-      openPanel(currentPanel.codigo);
+      const activePanel = panels.find(p => p.codigo === currentPanel.codigo && p.ativo !== false);
+
+      if(activePanel){
+        currentPanel = activePanel;
+        openPanel(currentPanel.codigo);
+      }else{
+        currentPanel = null;
+        navigate(startView());
+      }
     }
 
     loader(false);
@@ -1430,7 +1587,7 @@ tr:hover td{
     let html = "";
     if(can("ind")) html += navButton("dashboard","Saúde Indígena","fa-feather-pointed");
     if(can("cores")) html += navButton("nucleo","Equipe Núcleo","fa-pen-to-square");
-    if(can("paineis")) panels.filter(p => p.ativo).sort((a,b)=>n(a.ordem)-n(b.ordem)).forEach(p => { html += navButton("panel:" + p.codigo, p.titulo, p.icone || "fa-arrow-up-right-from-square"); });
+    if(can("paineis")) panels.filter(p => p.ativo !== false).sort((a,b)=>n(a.ordem)-n(b.ordem)).forEach(p => { html += navButton("panel:" + p.codigo, p.titulo, p.icone || "fa-arrow-up-right-from-square"); });
     if(can("config")) html += navButton("config","Configurações","fa-gear");
     nav.innerHTML = html || `<div class="alert warn">Sem permissões.</div>`;
     setActiveNav(currentView);
@@ -1464,7 +1621,33 @@ tr:hover td{
   }
 
   function setPageTitle(title,sub){ $("pageTitle").textContent = title; $("pageSubtitle").textContent = sub; document.title = title + " - AgSUS Monitora"; }
-  function toggleSidebar(){ document.body.classList.toggle("sidebar-collapsed"); setTimeout(() => { if(currentView === "dashboard") renderMap(); }, 220); }
+
+  function isSidebarLockedViewport(){
+    return window.matchMedia(`(max-width:${SIDEBAR_LOCK_BREAKPOINT}px)`).matches;
+  }
+
+  function enforceResponsiveSidebar(){
+    const locked = isSidebarLockedViewport();
+
+    document.body.classList.toggle("sidebar-locked", locked);
+
+    if(locked){
+      document.body.classList.add("sidebar-collapsed");
+    }
+  }
+
+  function toggleSidebar(){
+    if(document.body.classList.contains("sidebar-locked")){
+      document.body.classList.add("sidebar-collapsed");
+      return;
+    }
+
+    document.body.classList.toggle("sidebar-collapsed");
+
+    setTimeout(() => {
+      if(currentView === "dashboard") renderMap();
+    }, 220);
+  }
   function toggleFilters(){ $("filterBody").classList.toggle("hidden"); $("filterToggleBtn").textContent = $("filterBody").classList.contains("hidden") ? "⌄ Mostrar filtros" : "⌃ Ocultar filtros"; }
 
   function unique(field){ return [...new Set(rows.map(r => txt(r[field])).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt-BR")); }
@@ -1627,7 +1810,7 @@ tr:hover td{
     }
 
     closeEditModal();
-    await loadData();
+    await loadData({ showLoader:false });
     loader(false);
     toast("Registro salvo e confirmado no Supabase.");
     navigate("nucleo");
@@ -1652,7 +1835,7 @@ tr:hover td{
     }
 
     panels
-      .filter(p => p.ativo)
+      .filter(p => p.ativo !== false)
       .sort((a,b) => n(a.ordem) - n(b.ordem))
       .forEach(panel => {
         const code = txt(panel.codigo);
@@ -1687,7 +1870,12 @@ tr:hover td{
   }
 
   function openPanel(code){
-    const panel = panels.find(p => p.codigo === code); if(!panel) return;
+    const panel = panels.find(p => p.codigo === code && p.ativo !== false);
+
+    if(!panel){
+      toast("Painel indisponível ou inativo.", "warn");
+      return;
+    }
     document.body.classList.add("external-clean");
     currentPanel = panel; currentView = "panel:" + code; setActiveNav(currentView);
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active")); $("page-external").classList.add("active");
@@ -1718,7 +1906,7 @@ tr:hover td{
 
   function updateCurrentPanelInfo(){
     if(!currentPanel) return;
-    const latest = panels.find(p => p.codigo === currentPanel.codigo);
+    const latest = panels.find(p => p.codigo === currentPanel.codigo && p.ativo !== false);
     if(latest) currentPanel = latest;
   }
 
@@ -1798,7 +1986,22 @@ tr:hover td{
     return msg;
   }
 
-  window.addEventListener("resize", () => { clearTimeout(window.__mapResize); window.__mapResize = setTimeout(renderMap, 220); });
+  window.addEventListener("resize", () => {
+    clearTimeout(window.__responsiveResize);
+    window.__responsiveResize = setTimeout(() => {
+      enforceResponsiveSidebar();
+      renderMap();
+    }, 220);
+  });
+
+  window.addEventListener("orientationchange", () => {
+    setTimeout(() => {
+      enforceResponsiveSidebar();
+      renderMap();
+    }, 300);
+  });
+
+  enforceResponsiveSidebar();
   boot();
 </script>
 </body>
