@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.6.6</title>
+  <title>AgSUS Monitora Web V2.7.0</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -295,6 +295,14 @@
     .table-head input{max-width:390px;min-height:38px;border-radius:999px;background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.35)}
     .table-head input::placeholder{color:#d7e8ff}
     .table-meta{color:#52657d;font-weight:800;padding:12px 14px;border-bottom:1px solid var(--line)}
+    .sort-th{width:100%;border:0;background:transparent;color:inherit;font:inherit;font-weight:900;text-transform:uppercase;letter-spacing:.04em;text-align:left;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:5px}
+    .sort-th.sort-num{justify-content:center;text-align:center}
+    .sort-icon{font-size:10px;color:#6d8198;line-height:1}
+    th.sorted-asc .sort-icon, th.sorted-desc .sort-icon{color:#003b70;font-weight:900}
+    th.sorted-asc .sort-icon::before{content:"↑"}.sort-icon{font-family:Arial,sans-serif}th.sorted-asc .sort-icon,th.sorted-desc .sort-icon{font-size:0}th.sorted-asc .sort-icon::before,th.sorted-desc .sort-icon::before{font-size:11px}
+    th.sorted-desc .sort-icon::before{content:"↓"}
+    #mUf[readonly]{background:#f3f7fb;color:#334155;cursor:not-allowed}
+
     .table-wrap{overflow:auto;max-height:560px;background:var(--card)}
     table{width:100%;min-width:1180px;border-collapse:collapse;font-size:13px}
     .wide-table table{min-width:1320px}
@@ -303,7 +311,23 @@
     tr:hover td{background:rgba(13,110,253,.05)}
     .num{text-align:center}.green-text{color:#00824c}.red-text{color:#e4323b}
     .link{color:#005fec;font-weight:900;text-decoration:none;text-underline-offset:3px}.link:hover{text-decoration:underline}
-    .obs{max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#435973;font-style:italic;font-weight:650}
+    #page-dashboard .filter-body{grid-template-columns:1.25fr 1fr 1fr 1fr 1fr .75fr auto}
+    #page-dashboard .details-table{width:100%;min-width:1360px;table-layout:auto}
+    #page-dashboard .details-table th.obs-col,#page-dashboard .details-table td.obs-col{min-width:380px;width:34%}
+    .obs{max-width:none;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;line-height:1.35;color:#435973;font-style:italic;font-weight:650}
+    .obs:hover{-webkit-line-clamp:unset;overflow:visible}
+    .multi-units-card{margin-top:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .multi-units-title{font-weight:900;color:#003b70;display:flex;gap:8px;align-items:center}
+    .multi-units-list{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+    .multi-unit-chip{border:1px solid rgba(0,128,210,.28);background:rgba(255,255,255,.82);color:#004c93;border-radius:999px;padding:7px 11px;font-weight:900;cursor:pointer}
+    .multi-unit-chip:hover{background:rgba(0,184,217,.10)}
+    .readonly-metrics{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:10px}
+    .metric-readonly{border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(246,249,252,.86));border-radius:14px;padding:10px 12px;min-height:72px}
+    .metric-readonly span{display:block;color:#52657d;text-transform:uppercase;letter-spacing:.04em;font-size:10px;font-weight:900}
+    .metric-readonly b{display:block;margin-top:6px;font-size:22px;color:#06142d;font-weight:900}
+    .modal-note{grid-column:1/-1;margin:0;color:#52657d;font-weight:800;font-size:13px}
+    @media(max-width:1220px){#page-dashboard .filter-body{grid-template-columns:1fr 1fr}.readonly-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:640px){.readonly-metrics{grid-template-columns:1fr}}
 
     .page{display:none}.page.active{display:block}
     .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid .full{grid-column:1/-1}.form-row{display:grid;gap:6px}.admin-card{padding:18px}.admin-card h3{margin:0 0 15px}
@@ -981,8 +1005,13 @@ body.sidebar-locked #page-dashboard .table-wrap{
 }
 
 body.sidebar-locked #page-dashboard table{
-  width:max-content!important;
-  min-width:1180px!important;
+  width:100%!important;
+  min-width:1360px!important;
+}
+
+body.sidebar-locked #page-dashboard .details-table{
+  width:100%!important;
+  min-width:1360px!important;
 }
 
 @media(max-width:980px){
@@ -1021,6 +1050,318 @@ body.sidebar-locked #page-dashboard table{
   }
 }
 
+
+
+/* =========================================================
+   V2.7.0 - filtros multisseletores dependentes, KPIs executivos
+   ========================================================= */
+.filter-card{overflow:visible!important;z-index:30}
+.filter-body{overflow:visible!important;align-items:start!important}
+.multi-select{position:relative;width:100%;min-height:44px;z-index:5}
+.multi-select.open{z-index:80}
+.multi-select-toggle{
+  width:100%;min-height:44px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.92);
+  color:#0c1d36;padding:0 42px 0 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  cursor:pointer;font:inherit;font-weight:800;text-align:left;box-shadow:0 8px 18px rgba(15,35,60,.04)
+}
+.multi-select-toggle:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(13,110,253,.15);outline:none}
+.multi-select-toggle .multi-label{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.multi-select-toggle .multi-caret{position:absolute;right:14px;color:#47627d;font-size:12px}
+.multi-select-menu{
+  display:none;position:absolute;left:0;right:0;top:calc(100% + 7px);z-index:90;background:#fff;border:1px solid rgba(0,128,210,.25);
+  border-radius:16px;box-shadow:0 24px 54px rgba(15,35,60,.22);overflow:hidden
+}
+.multi-select.open .multi-select-menu{display:block}
+.multi-select-actions{display:flex;gap:8px;padding:10px;border-bottom:1px solid var(--line);background:#f7fbff}
+.multi-mini-btn{border:1px solid rgba(0,128,210,.28);background:#fff;color:#004c93;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;cursor:pointer}
+.multi-options{max-height:245px;overflow:auto;padding:6px}
+.multi-option{display:flex;align-items:center;gap:9px;padding:9px 8px;border-radius:10px;cursor:pointer;color:#10243e;font-size:13px;font-weight:800}
+.multi-option:hover{background:rgba(0,184,217,.08)}
+.multi-option input{width:16px;min-height:16px;height:16px;padding:0;margin:0;accent-color:#0077bf}
+.multi-option.empty{color:#63748d;cursor:default;font-style:italic}
+.multi-hint{font-size:11px;color:#63748d;font-weight:800;padding:0 10px 9px;background:#fff}
+.kpi.cyan::before{background:linear-gradient(90deg,#003b70,#00b8d9,#00d4ff)}
+.kpi .kpi-note{display:block;margin-top:4px;color:#63748d;font-size:10px;font-weight:900;letter-spacing:.03em}
+body.sidebar-locked .global-side-toggle{display:grid!important}
+body.sidebar-locked .hamb{display:none!important}
+body.sidebar-locked .global-side-toggle{left:calc(var(--sidebar-mini) - 15px)!important}
+
+  
+
+/* =========================================================
+   V2.7.0 - identidade visual AgSUS / Saúde Indígena
+   ========================================================= */
+:root{
+  --agsus-azul:#003b70;
+  --agsus-azul-vivo:#006fc9;
+  --agsus-ciano:#00b8d9;
+  --agsus-verde:#0ea76b;
+  --agsus-amarelo:#f5b400;
+  --agsus-vermelho:#e4323b;
+  --indigena-verde:#007a3d;
+  --indigena-folha:#29b36a;
+}
+
+body{
+  background:
+    radial-gradient(circle at 7% 10%, rgba(0,184,217,.24), transparent 24%),
+    radial-gradient(circle at 94% 16%, rgba(14,167,107,.20), transparent 27%),
+    radial-gradient(circle at 78% 86%, rgba(245,180,0,.12), transparent 25%),
+    linear-gradient(135deg,#edf8ff 0%,#e8f5ef 48%,#f7fbff 100%)!important;
+}
+
+.section-label-primary{color:var(--agsus-azul)}
+.section-label-primary::after{background:linear-gradient(90deg,var(--agsus-azul),var(--agsus-ciano),var(--agsus-verde),transparent)}
+.section-label.compact{margin:0;color:var(--indigena-verde);letter-spacing:.14em;font-size:11px}
+.section-label.compact::after{display:none}
+
+.kpis-main{grid-template-columns:repeat(6,minmax(150px,1fr));gap:9px}
+.kpis-funil{grid-template-columns:repeat(5,minmax(140px,1fr));gap:9px}
+.funil-panel{margin-top:9px;padding:13px 14px;border-left:4px solid var(--agsus-verde);position:relative;overflow:hidden}
+.funil-panel::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 0% 0%, rgba(14,167,107,.13), transparent 30%), radial-gradient(circle at 100% 0%, rgba(245,180,0,.10), transparent 28%);
+}
+.funil-head,.kpis-funil{position:relative;z-index:1}
+.funil-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.funil-head p{margin:4px 0 0;color:#526780;font-size:12px;font-weight:800}
+
+.kpi{align-content:center;isolation:isolate}
+.kpi.mini{min-height:78px;padding:10px}
+.kpi.mini b{font-size:24px}
+.kpi.mini span{font-size:11px}
+.kpi.ag-navy::before{background:linear-gradient(90deg,#012f59,#005da8)}
+.kpi.ag-blue::before{background:linear-gradient(90deg,#004c93,#00a8d6)}
+.kpi.ag-green::before{background:linear-gradient(90deg,#007a3d,#29b36a)}
+.kpi.ag-red::before{background:linear-gradient(90deg,#b91c1c,#e4323b)}
+.kpi.ag-yellow::before{background:linear-gradient(90deg,#f5b400,#ff7a1a)}
+.kpi.ag-cyan::before{background:linear-gradient(90deg,#00a8d6,#00d4ff)}
+.kpi.ag-navy{background:radial-gradient(circle at 100% 100%,rgba(0,59,112,.11),transparent 35%),linear-gradient(180deg,#fff,#f7fbff)}
+.kpi.ag-blue{background:radial-gradient(circle at 100% 100%,rgba(0,168,214,.13),transparent 35%),linear-gradient(180deg,#fff,#f5fbff)}
+.kpi.ag-green{background:radial-gradient(circle at 100% 100%,rgba(14,167,107,.15),transparent 35%),linear-gradient(180deg,#fff,#f4fff8)}
+.kpi.ag-red{background:radial-gradient(circle at 100% 100%,rgba(228,50,59,.12),transparent 35%),linear-gradient(180deg,#fff,#fff7f7)}
+.kpi.ag-yellow{background:radial-gradient(circle at 100% 100%,rgba(245,180,0,.16),transparent 35%),linear-gradient(180deg,#fff,#fffdf2)}
+.kpi.ag-cyan{background:radial-gradient(circle at 100% 100%,rgba(0,184,217,.16),transparent 35%),linear-gradient(180deg,#fff,#f4fdff)}
+.kpi.ag-green b{color:#006b3a}.kpi.ag-red b{color:#b91c1c}.kpi.ag-yellow b{color:#8a5a00}.kpi.ag-blue b,.kpi.ag-cyan b{color:#003b70}
+.kpi-note{opacity:.92}
+
+.filter-title{color:var(--agsus-azul)}
+.multi-units-card{border-left:4px solid var(--agsus-ciano)}
+.multi-units-title{color:var(--agsus-azul)!important}
+.table-head{background:linear-gradient(90deg,#003b70 0%,#006fc9 58%,#00b8d9 100%)!important}
+.nav button.active,.nav button:hover{background:linear-gradient(90deg,rgba(0,184,217,.32),rgba(14,167,107,.18))!important}
+
+@media(min-width:1481px){
+  .sidebar{position:fixed!important;left:0!important;top:0!important;bottom:0!important;width:var(--sidebar)!important;height:100vh!important;height:100dvh!important;overflow-y:auto!important;overflow-x:hidden!important}
+  body.sidebar-collapsed .sidebar{width:var(--sidebar-mini)!important}
+  .main{grid-column:2!important;min-width:0!important}
+}
+
+@media(max-width:1220px){.kpis-main{grid-template-columns:repeat(3,1fr)}.kpis-funil{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:820px){.kpis-main,.kpis-funil{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.kpis-main,.kpis-funil{grid-template-columns:1fr}}
+
+  
+
+/* =========================================================
+   V2.7.0 - cockpit executivo nítido / sem efeito embaçado / ajustes operacionais
+   ========================================================= */
+:root{
+  --bg:#f3f7fb;
+  --card:#ffffff;
+  --line:#d7e5f2;
+  --shadow:0 8px 22px rgba(15,35,60,.075);
+  --agsus-azul:#003b70;
+  --agsus-ciano:#00a8d6;
+  --agsus-verde:#0b8f58;
+  --agsus-amarelo:#f2b705;
+  --agsus-vermelho:#d92d3a;
+}
+
+body{
+  background:#f3f7fb!important;
+  color:#10243e!important;
+  font-weight:500!important;
+  text-rendering:optimizeLegibility!important;
+}
+body::before{display:none!important}
+
+.top{
+  background:#f8fbfe!important;
+  backdrop-filter:none!important;
+  border-bottom:1px solid var(--line)!important;
+  box-shadow:0 1px 0 rgba(15,35,60,.03)!important;
+  padding-top:12px!important;
+  padding-bottom:12px!important;
+}
+.page-title h1{
+  background:none!important;
+  -webkit-background-clip:initial!important;
+  background-clip:initial!important;
+  color:var(--agsus-azul)!important;
+  text-shadow:none!important;
+  letter-spacing:-.035em!important;
+  font-weight:800!important;
+}
+.page-title p{color:#526780!important;font-weight:700!important}
+
+.card,
+.filter-card,
+.panel-pad,
+.map-card,
+.table-card,
+.multi-units-card{
+  background:#ffffff!important;
+  border:1px solid var(--line)!important;
+  box-shadow:var(--shadow)!important;
+  backdrop-filter:none!important;
+}
+.filter-card::before,
+.panel-pad::before,
+.map-card::before{display:none!important}
+
+.filter-card{
+  padding:14px!important;
+  margin-bottom:10px!important;
+  border-left:4px solid var(--agsus-ciano)!important;
+}
+.filter-title{color:var(--agsus-azul)!important;text-shadow:none!important;font-weight:800!important}
+.filter-sub{color:#60758f!important;font-weight:700!important}
+.filter-body{gap:10px!important}
+
+.status-pill{
+  background:#ffffff!important;
+  border:1px solid #cce1f2!important;
+  box-shadow:0 4px 12px rgba(15,35,60,.055)!important;
+}
+.btn{
+  box-shadow:0 6px 14px rgba(0,77,145,.14)!important;
+  font-weight:800!important;
+}
+.btn.secondary,.btn.outline{
+  background:#ffffff!important;
+  box-shadow:0 4px 12px rgba(15,35,60,.05)!important;
+}
+
+.section-label{
+  margin:10px 0 8px!important;
+  color:var(--agsus-azul)!important;
+  text-shadow:none!important;
+}
+.section-label::after{
+  background:linear-gradient(90deg,var(--agsus-ciano),rgba(0,59,112,.12),transparent)!important;
+}
+
+.kpis-main{grid-template-columns:repeat(6,minmax(150px,1fr))!important;gap:9px!important}
+.kpi{
+  min-height:82px!important;
+  padding:10px 12px!important;
+  border-radius:14px!important;
+  background:#ffffff!important;
+  border:1px solid var(--line)!important;
+  border-top:0!important;
+  box-shadow:0 7px 18px rgba(15,35,60,.07)!important;
+  text-shadow:none!important;
+  color:#10243e!important;
+  font-family:inherit!important;
+}
+.kpi::after{display:none!important}
+.kpi::before{height:4px!important;box-shadow:none!important;border-radius:14px 14px 0 0!important}
+.kpi span{font-size:11.5px!important;font-weight:800!important;color:#10243e!important;line-height:1.15!important}
+.kpi b{font-size:28px!important;font-weight:800!important;margin-top:6px!important;text-shadow:none!important;color:#07162d!important}
+.kpi.ag-navy::before{background:var(--agsus-azul)!important}
+.kpi.ag-blue::before{background:#0075c9!important}
+.kpi.ag-green::before{background:var(--agsus-verde)!important}
+.kpi.ag-red::before{background:var(--agsus-vermelho)!important}
+.kpi.ag-yellow::before{background:linear-gradient(90deg,var(--agsus-amarelo),#ff7a1a)!important}
+.kpi.ag-cyan::before{background:var(--agsus-ciano)!important}
+.kpi.ag-green b{color:#087246!important}
+.kpi.ag-red b{color:#b91c1c!important}
+.kpi.ag-yellow b{color:#7c5200!important}
+.kpi.ag-blue b,.kpi.ag-cyan b{color:var(--agsus-azul)!important}
+.kpi-clickable{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  cursor:pointer!important;
+}
+.kpi-clickable:hover{
+  transform:translateY(-1px)!important;
+  border-color:#f2b705!important;
+  box-shadow:0 10px 22px rgba(15,35,60,.10)!important;
+}
+.kpi-clickable.active-filter{
+  outline:2px solid #f2b705!important;
+  background:#fff9e6!important;
+}
+.kpi-clickable.active-filter .chip{background:#fef3c7!important;color:#7c5200!important;border-color:#f2b705!important}
+
+.multi-units-card{
+  margin-top:10px!important;
+  padding:11px 13px!important;
+  border-left:4px solid var(--agsus-ciano)!important;
+}
+.multi-units-title{font-weight:800!important;color:var(--agsus-azul)!important}
+.multi-unit-chip{
+  background:#ffffff!important;
+  border:1px solid #b8dcff!important;
+  box-shadow:none!important;
+  font-weight:800!important;
+}
+
+.dashboard-grid,.lower-grid{gap:10px!important}
+.map-card{min-height:245px!important}
+#map{height:245px!important}
+.chart-wrap{min-height:185px!important}
+#statusChart{max-height:180px!important}
+.panel-title{font-weight:800!important;color:#18324f!important}
+.risk-list{max-height:210px!important}
+.risk-item{box-shadow:none!important;background:#fffafa!important}
+
+.table-head{
+  background:#003b70!important;
+  box-shadow:none!important;
+}
+th{
+  background:#f4f8fc!important;
+  backdrop-filter:none!important;
+  color:#10243e!important;
+  font-weight:800!important;
+}
+td{font-weight:650!important;color:#10243e!important}
+.obs{
+  white-space:normal!important;
+  max-width:none!important;
+  min-width:360px!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:3!important;
+  -webkit-box-orient:vertical!important;
+  line-height:1.35!important;
+}
+
+.multi-select-toggle{
+  background:#ffffff!important;
+  border-color:#cfdeed!important;
+  box-shadow:none!important;
+  font-weight:700!important;
+}
+.multi-select-menu{
+  box-shadow:0 14px 34px rgba(15,35,60,.16)!important;
+  border-color:#c6d9eb!important;
+}
+.multi-option{font-weight:700!important}
+
+.sidebar{
+  background:linear-gradient(180deg,#032f5a 0%,#003b70 58%,#022947 100%)!important;
+  box-shadow:10px 0 24px rgba(0,36,72,.16)!important;
+}
+.side-brand{box-shadow:none!important;background:rgba(255,255,255,.08)!important}
+.side-logo{filter:drop-shadow(0 8px 14px rgba(0,0,0,.18))!important}
+.nav button{font-weight:800!important}
+.nav button.active,.nav button:hover{background:rgba(255,255,255,.12)!important;color:#ffffff!important;transform:none!important}
+
+@media(max-width:1220px){.kpis-main{grid-template-columns:repeat(3,1fr)!important}}
+@media(max-width:820px){.kpis-main{grid-template-columns:repeat(2,1fr)!important}}
+@media(max-width:540px){.kpis-main{grid-template-columns:1fr!important}}
 
   </style>
 </head>
@@ -1066,13 +1407,13 @@ body.sidebar-locked #page-dashboard table{
     </button>
     <aside class="sidebar">
       <div class="side-brand">
-        <img id="sideLogo" class="side-logo" src="https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png" alt="AgSUS Monitora" onerror="this.src="https://i.postimg.cc/7PztC6jq/79255fad-06f0-4963-81f5-1fa4a116475e.png">
+        <img id="sideLogo" class="side-logo" src="https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png" alt="AgSUS Monitora" onerror="this.onerror=null;this.src='https://i.postimg.cc/7PztC6jq/79255fad-06f0-4963-81f5-1fa4a116475e.png';">
         <h2 id="sideTitle">AgSUS Monitora</h2>
         <small id="sideSlogan">Painel da Saúde Indígena</small>
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.6.6</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.7.0</b></div>
       <button class="side-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span>Sair do Sistema</span></button>
     </aside>
 
@@ -1094,30 +1435,35 @@ body.sidebar-locked #page-dashboard table{
         <section id="page-dashboard" class="page active">
           <div class="filter-card card">
             <div class="filter-head">
-              <div><div class="filter-title">🔎 Filtros do monitoramento</div><p class="filter-sub">Refine unidade, status e risco sem poluir a tela principal.</p></div>
+              <div><div class="filter-title">🔎 Filtros do monitoramento</div><p class="filter-sub">Refine por unidade, edital, etapa, status, risco e UF.</p></div>
               <button id="filterToggleBtn" class="btn secondary" onclick="toggleFilters()">⌄ Mostrar filtros</button>
             </div>
             <div id="filterBody" class="filter-body hidden">
-              <div><label>Pesquisar</label><input id="filterSearch" placeholder="Edital, unidade, processo, etapa..." oninput="applyFilters()" /></div>
-              <div><label>Unidade</label><select id="filterUnidade" onchange="applyFilters()"></select></div>
-              <div><label>Status</label><select id="filterStatus" onchange="applyFilters()"></select></div>
-              <div><label>Risco</label><select id="filterRisco" onchange="applyFilters()"></select></div>
-              <div><label>UF</label><select id="filterUf" onchange="applyFilters()"></select></div>
+              <div><label>Unidade</label><div id="filterUnidade" class="multi-select" data-filter="unidade"></div></div>
+              <div><label>Edital</label><div id="filterEdital" class="multi-select" data-filter="edital"></div></div>
+              <div><label>Etapa</label><div id="filterEtapa" class="multi-select" data-filter="etapa"></div></div>
+              <div><label>Status</label><div id="filterStatus" class="multi-select" data-filter="status"></div></div>
+              <div><label>Risco</label><div id="filterRisco" class="multi-select" data-filter="risco"></div></div>
+              <div><label>UF</label><div id="filterUf" class="multi-select" data-filter="uf"></div></div>
               <button class="btn secondary" onclick="clearFilters()">Limpar</button>
             </div>
           </div>
-          <div class="section-label">Processos Seletivos</div>
-          <div class="kpis">
-            <div class="kpi gray"><span>Processos Seletivos</span><b id="kProcessos">0</b></div>
-            <div class="kpi blue"><span>Vagas Imediatas Previstas</span><b id="kVagas">0</b></div>
-            <div class="kpi green"><span>Contratações de Vagas Imediatas + CR</span><b id="kContratados">0</b></div>
-            <div class="kpi red"><span>Vagas Ociosas</span><b id="kOciosas">0</b></div>
-            <div class="kpi yellow"><span>Processos Seletivos Críticos <span id="panicChip" class="chip gray">CRÍTICO: OFF</span></span><b id="kCriticos">0</b></div>
-            <div class="kpi gray"><span>Inscritos</span><b id="kInscritos">0</b></div>
+          <div class="section-label section-label-primary">Processos Seletivos</div>
+          <div class="kpis kpis-main">
+            <div class="kpi ag-navy"><span>Processos Seletivos</span><b id="kProcessos">0</b></div>
+            <div class="kpi ag-blue"><span>Vagas Imediatas Previstas</span><b id="kVagas">0</b></div>
+            <div class="kpi ag-green"><span>Contratações de Vagas Imediatas + CR</span><b id="kContratados">0</b></div>
+            <div class="kpi ag-red"><span>Vagas Ociosas</span><b id="kOciosas">0</b></div>
+            <button type="button" id="kpiCriticosCard" class="kpi kpi-clickable ag-yellow" onclick="toggleCriticalRiskFilter()" title="Filtrar por risco Médio e Alto">
+              <span>Processos Seletivos Críticos <span id="panicChip" class="chip gray">MÉDIO/ALTO</span></span>
+              <b id="kCriticos">0</b>
+            </button>
+            <div class="kpi ag-cyan"><span>Inscritos</span><b id="kInscritos">0</b></div>
           </div>
+          <div id="multiUnitsCard" class="multi-units-card card hidden"></div>
           <div class="dashboard-grid">
             <div class="card map-card"><div id="map"></div></div>
-            <div class="card panel-pad"><h3 class="panel-title">Resumo por status</h3><div id="statusSummary"></div></div>
+            <div class="card panel-pad"><h3 class="panel-title">Resumo por etapa</h3><div id="statusSummary"></div></div>
           </div>
           <div class="lower-grid">
             <div class="card panel-pad"><h3 class="panel-title">Status Operacional</h3><div class="chart-wrap"><canvas id="statusChart"></canvas></div></div>
@@ -1126,7 +1472,19 @@ body.sidebar-locked #page-dashboard table{
           <div class="table-card card">
             <div class="table-head"><h3><i class="fa-solid fa-table-list"></i> Detalhes</h3><input id="tableSearch" placeholder="Pesquisar..." oninput="applyFilters()" /></div>
             <div id="tableMeta" class="table-meta">Nenhum registro carregado.</div>
-            <div class="table-wrap"><table><thead><tr><th>Unidade</th><th>Edital</th><th>Início</th><th>Encerramento</th><th class="num">Vagas</th><th class="num">Contratados</th><th class="num">Ociosas</th><th>Status</th><th>Etapa</th><th>Risco</th><th>Observações</th></tr></thead><tbody id="monitorRows"></tbody></table></div>
+            <div class="table-wrap"><table class="details-table"><thead><tr>
+              <th data-sort-field="unidade"><button type="button" class="sort-th" onclick="sortDetails('unidade')">Unidade <span class="sort-icon">↕</span></button></th>
+              <th data-sort-field="edital"><button type="button" class="sort-th" onclick="sortDetails('edital')">Edital <span class="sort-icon">↕</span></button></th>
+              <th data-sort-field="data_inicio"><button type="button" class="sort-th" onclick="sortDetails('data_inicio')">Início <span class="sort-icon">↕</span></button></th>
+              <th data-sort-field="data_fim"><button type="button" class="sort-th" onclick="sortDetails('data_fim')">Encerramento <span class="sort-icon">↕</span></button></th>
+              <th class="num" data-sort-field="vagas_total"><button type="button" class="sort-th sort-num" onclick="sortDetails('vagas_total')">Vagas <span class="sort-icon">↕</span></button></th>
+              <th class="num" data-sort-field="contratados"><button type="button" class="sort-th sort-num" onclick="sortDetails('contratados')">Contratados <span class="sort-icon">↕</span></button></th>
+              <th class="num" data-sort-field="vagas_ociosas"><button type="button" class="sort-th sort-num" onclick="sortDetails('vagas_ociosas')">Ociosas <span class="sort-icon">↕</span></button></th>
+              <th data-sort-field="status"><button type="button" class="sort-th" onclick="sortDetails('status')">Status <span class="sort-icon">↕</span></button></th>
+              <th data-sort-field="etapa"><button type="button" class="sort-th" onclick="sortDetails('etapa')">Etapa <span class="sort-icon">↕</span></button></th>
+              <th data-sort-field="risco"><button type="button" class="sort-th" onclick="sortDetails('risco')">Risco <span class="sort-icon">↕</span></button></th>
+              <th class="obs-col" data-sort-field="observacoes"><button type="button" class="sort-th" onclick="sortDetails('observacoes')">Observações <span class="sort-icon">↕</span></button></th>
+            </tr></thead><tbody id="monitorRows"></tbody></table></div>
           </div>
         </section>
 
@@ -1195,23 +1553,46 @@ body.sidebar-locked #page-dashboard table{
       <div class="modal-body">
         <div class="form-grid">
           <input type="hidden" id="mId">
-          <div class="subsection">Identificação</div>
-          <div class="form-row"><label>Processo</label><input id="mProcesso"></div>
-          <div class="form-row"><label>Edital</label><input id="mEdital"></div>
-          <div class="form-row"><label>Unidade</label><input id="mUnidade"></div>
-          <div class="form-row"><label>UF</label><input id="mUf" maxlength="2"></div>
-          <div class="form-row"><label>Ciclo</label><input id="mCiclo"></div>
-          <div class="form-row"><label>Link do edital</label><input id="mLink"></div>
-          <div class="subsection">Vagas e status</div>
-          <div class="form-row"><label>Vagas</label><input id="mVagas" type="number" min="0"></div>
-          <div class="form-row"><label>Contratados</label><input id="mContratados" type="number" min="0"></div>
-          <div class="form-row"><label>Inscritos</label><input id="mInscritos" type="number" min="0"></div>
-          <div class="form-row"><label>Status</label><input id="mStatus"></div>
-          <div class="form-row"><label>Etapa</label><input id="mEtapa"></div>
+          <input type="hidden" id="mIdUnidade">
+          <input type="hidden" id="mSiglaUnidade">
+          <input type="hidden" id="mTipoUnidade">
+
+          <div class="subsection">Identificação do edital</div>
+          <div class="form-row"><label>Processo</label><input id="mProcesso" placeholder="Processo SEI"></div>
+          <div class="form-row"><label>Edital</label><input id="mEdital" placeholder="Número do edital"></div>
+          <div class="form-row"><label>Unidade</label><select id="mUnidade" onchange="onModalUnidadeChange()"><option value="">Carregando unidades...</option></select></div>
+          <div class="form-row"><label>UF</label><input id="mUf" maxlength="2" placeholder="UF" readonly title="Preenchida automaticamente pela unidade selecionada"></div>
+          <div class="form-row"><label>Ciclo</label><input id="mCiclo" placeholder="Ciclo"></div>
+          <div class="form-row"><label>Link do edital</label><input id="mLink" placeholder="https://..."></div>
+
+          <div class="subsection">Situação operacional</div>
+          <div class="form-row"><label>Vagas previstas</label><input id="mVagas" type="number" min="0"></div>
+          <div class="form-row"><label>Data de início</label><input id="mDataInicio" type="date"></div>
+          <div class="form-row"><label>Data de encerramento</label><input id="mDataFim" type="date"></div>
+          <div class="form-row"><label>Status</label><input id="mStatus" placeholder="Ex.: Em andamento, Concluído"></div>
+          <div class="form-row"><label>Etapa</label><input id="mEtapa" placeholder="Ex.: Análise Curricular"></div>
           <div class="form-row"><label>Risco</label><select id="mRisco"><option>Baixo</option><option>Médio</option><option>Alto</option></select></div>
-          <div class="subsection">Responsável e observações</div>
-          <div class="form-row"><label>Responsável</label><input id="mResponsavel"></div>
-          <div class="form-row full"><label>Observações</label><textarea id="mObs"></textarea></div>
+          <div class="form-row full"><label>Responsável</label><input id="mResponsavel" placeholder="Responsável pelo acompanhamento"></div>
+
+          <div class="subsection">Indicadores automáticos</div>
+          <p class="modal-note">Campos calculados ou sincronizados automaticamente. Eles aparecem para conferência, mas não são alterados por este formulário.</p>
+          <div class="readonly-metrics full">
+            <div class="metric-readonly"><span>Inscritos</span><b id="mAutoInscritos">0</b></div>
+            <div class="metric-readonly"><span>Aptos análise</span><b id="mAutoAptosAnalise">0</b></div>
+            <div class="metric-readonly"><span>Cancelados</span><b id="mAutoCancelados">0</b></div>
+            <div class="metric-readonly"><span>Eliminados nota</span><b id="mAutoEliminadosNota">0</b></div>
+            <div class="metric-readonly"><span>Reprovados análise</span><b id="mAutoReprovadosAnalise">0</b></div>
+            <div class="metric-readonly"><span>Total eliminados</span><b id="mAutoTotalEliminados">0</b></div>
+            <div class="metric-readonly"><span>Aprovados análise</span><b id="mAutoAprovadosAnalise">0</b></div>
+            <div class="metric-readonly"><span>Aprovados prova</span><b id="mAutoAprovadosProva">0</b></div>
+            <div class="metric-readonly"><span>Entrevistados</span><b id="mAutoEntrevistados">0</b></div>
+            <div class="metric-readonly"><span>Contratados</span><b id="mAutoContratados">0</b></div>
+            <div class="metric-readonly"><span>Vagas ociosas</span><b id="mAutoOciosas">0</b></div>
+          </div>
+
+          <div class="subsection">Observações</div>
+          <div class="form-row full"><label>Observações gerenciais</label><textarea id="mObs" placeholder="Resumo visível no painel"></textarea></div>
+          <div class="form-row full"><label>Observações internas</label><textarea id="mObsInternas" placeholder="Notas internas da equipe"></textarea></div>
         </div>
         <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px">
           <button class="btn secondary" onclick="closeEditModal()">Cancelar</button>
@@ -1250,8 +1631,8 @@ body.sidebar-locked #page-dashboard table{
 
 
 <script>
-  // Build V2.6.6: logo reforçada, toggle global, filtros alternáveis, pré-cache dos painéis externos, etapas de carregamento e sidebar fixa/travada na tela principal e em telas menores.
-  const APP_VERSION = "AgSUS Monitora Web V2.6.6";
+  // Build V2.7.1: ajustes operacionais com tabela ordenável, dimensão oficial de unidades, UF automática e preservação do cockpit executivo Saúde Indígena.
+  const APP_VERSION = "AgSUS Monitora Web V2.7.0";
 
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
@@ -1284,6 +1665,19 @@ body.sidebar-locked #page-dashboard table{
   let appConfig = {...DEFAULT_CONFIG};
   let rows = [];
   let filtered = [];
+  let unidadesCatalog = [];
+  let tableSort = { field:"", direction:"" };
+  const VIEW_STORAGE_KEY = "agsus_monitora_current_view_v268";
+  const FILTER_CONFIG = [
+    { id:"filterUnidade", field:"unidade", label:"Unidade", all:"Todas" },
+    { id:"filterEdital", field:"edital", label:"Edital", all:"Todos" },
+    { id:"filterEtapa", field:"etapa", label:"Etapa", all:"Todas" },
+    { id:"filterStatus", field:"status", label:"Status", all:"Todos" },
+    { id:"filterRisco", field:"risco", label:"Risco", all:"Todos" },
+    { id:"filterUf", field:"uf", label:"UF", all:"Todas" }
+  ];
+  const FILTER_ID_TO_FIELD = Object.fromEntries(FILTER_CONFIG.map(f => [f.id, f.field]));
+  let filterState = Object.fromEntries(FILTER_CONFIG.map(f => [f.field, new Set()]));
   let panels = [...DEFAULT_PANELS];
   let currentPanel = null;
   let currentView = "dashboard";
@@ -1293,7 +1687,7 @@ body.sidebar-locked #page-dashboard table{
   let passwordRecoveryMode = false;
   let externalPanelsWarmed = false;
   const SIDEBAR_LOCK_BREAKPOINT = 1480;
-  const SIDEBAR_FORCE_LOCK_VIEWS = new Set(["dashboard"]);
+  const SIDEBAR_FORCE_LOCK_VIEWS = new Set([]);
 
   google.charts.load("current", { packages:["geochart"] });
   google.charts.setOnLoadCallback(() => { chartsReady = true; if(rows.length) renderMap(); });
@@ -1356,6 +1750,7 @@ body.sidebar-locked #page-dashboard table{
 
   async function boot(){
     if(!initSupabase()) return;
+    applyStoredSidebarState();
 
     sb.auth.onAuthStateChange((event, session) => {
       if(event === "PASSWORD_RECOVERY"){
@@ -1368,7 +1763,9 @@ body.sidebar-locked #page-dashboard table{
       }
     });
 
-    applyConfigToUi();
+    // Carrega as configurações salvas antes de decidir a tela inicial.
+    // Assim as logos/fundo configurados não voltam ao fallback fixo após F5.
+    await loadConfig({ silent:true });
 
     const { data } = await sb.auth.getSession();
     const resetUrl = isPasswordRecoveryUrl();
@@ -1532,6 +1929,15 @@ body.sidebar-locked #page-dashboard table{
   }
 
 
+  function applyStoredSidebarState(){
+    if(isSidebarLockedViewport()) return;
+    try{
+      const saved = localStorage.getItem("agsus_monitora_sidebar_collapsed_v1");
+      if(saved === "0") document.body.classList.remove("sidebar-collapsed");
+      if(saved === "1") document.body.classList.add("sidebar-collapsed");
+    }catch(e){}
+  }
+
   function togglePassword(){ const p = $("loginPassword"); p.type = p.type === "password" ? "text" : "password"; }
 
   async function login(){
@@ -1582,6 +1988,9 @@ body.sidebar-locked #page-dashboard table{
     warmExternalPanels();
     await sleep(180);
 
+    loader(true,"Carregando unidades","Buscando catálogo oficial DSEI/CASAI...",55);
+    await loadUnidades();
+
     loader(true,"Carregando dados","Sincronizando dados do monitoramento...",62);
     const dataOk = await loadData({ showLoader:false });
     if(!dataOk){
@@ -1595,7 +2004,30 @@ body.sidebar-locked #page-dashboard table{
     loader(false);
   }
 
+  function isViewAllowed(view){
+    if(!view) return false;
+    if(view === "dashboard") return can("ind");
+    if(view === "nucleo") return can("cores");
+    if(view === "config") return can("config");
+    if(view.startsWith("panel:")){
+      const code = view.split(":")[1];
+      return can("paineis") && panels.some(p => p.codigo === code && p.ativo !== false);
+    }
+    return false;
+  }
+
+  function rememberView(view){
+    if(!view) return;
+    try{ localStorage.setItem(VIEW_STORAGE_KEY, view); }catch(e){}
+  }
+
+  function storedView(){
+    try{ return localStorage.getItem(VIEW_STORAGE_KEY) || ""; }catch(e){ return ""; }
+  }
+
   function startView(){
+    const stored = storedView();
+    if(isViewAllowed(stored)) return stored;
     if(can("ind")) return "dashboard";
     if(can("cores")) return "nucleo";
     if(can("paineis") && panels.find(p => p.ativo !== false)) return "panel:" + panels.find(p => p.ativo !== false).codigo;
@@ -1627,13 +2059,35 @@ body.sidebar-locked #page-dashboard table{
     profile = data;
   }
 
-  async function loadConfig(){
-    const { data, error } = await sb.from("configuracoes").select("chave,valor,descricao");
-    if(!error && Array.isArray(data)){
-      data.forEach(r => { if(r.chave) appConfig[r.chave] = r.valor ?? ""; });
+  async function loadConfig(options={}){
+    const silent = options.silent === true;
+
+    // Sempre começa pelo padrão e depois sobrescreve com o que estiver salvo.
+    // Isso evita lixo de estado local e garante comportamento previsível após atualizar a página.
+    appConfig = {...DEFAULT_CONFIG};
+
+    const { data, error } = await sb
+      .from("configuracoes")
+      .select("chave,valor,descricao");
+
+    if(error){
+      if(!silent){
+        toast("Erro ao carregar configurações: " + friendlyError(error), "error");
+      }
+      applyConfigToUi();
+      renderConfigForm();
+      return false;
     }
+
+    if(Array.isArray(data)){
+      data.forEach(r => {
+        if(r.chave) appConfig[r.chave] = r.valor ?? "";
+      });
+    }
+
     applyConfigToUi();
     renderConfigForm();
+    return true;
   }
 
   function applyConfigToUi(){
@@ -1649,6 +2103,128 @@ body.sidebar-locked #page-dashboard table{
     document.querySelector(".login-screen").style.background = `linear-gradient(90deg,rgba(0,21,50,.28),rgba(0,45,92,.18)), url("${loginBg}")`;
     document.querySelector(".login-screen").style.backgroundSize = "cover";
     document.querySelector(".login-screen").style.backgroundPosition = "center";
+  }
+
+
+  function normalizeUnitName(value){
+    return low(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+  }
+
+  function sortUnits(a,b){
+    const tipoA = txt(a.tipo), tipoB = txt(b.tipo);
+    if(tipoA !== tipoB) return tipoA.localeCompare(tipoB, "pt-BR", { numeric:true });
+    return txt(a.nome_oficial || a.unidade || a.nome).localeCompare(txt(b.nome_oficial || b.unidade || b.nome), "pt-BR", { numeric:true });
+  }
+
+  async function loadUnidades(){
+    if(!sb){ unidadesCatalog = []; populateModalUnidades(); return false; }
+
+    const { data, error } = await sb
+      .from("dim_unidades")
+      .select("id_unidade,sigla,nome_oficial,tipo,uf_sede,ativo")
+      .eq("ativo", true)
+      .order("tipo", { ascending:true })
+      .order("nome_oficial", { ascending:true });
+
+    if(error){
+      unidadesCatalog = [];
+      populateModalUnidades();
+      toast("Catálogo dim_unidades não disponível. O modal usará unidades já carregadas no monitoramento.", "warn");
+      return false;
+    }
+
+    unidadesCatalog = Array.isArray(data) ? data.filter(u => txt(u.nome_oficial)).sort(sortUnits) : [];
+    populateModalUnidades();
+    return true;
+  }
+
+  function fallbackUnitsFromRows(){
+    const map = new Map();
+    rows.forEach(r => {
+      const nome = txt(r.unidade);
+      if(!nome || map.has(normalizeUnitName(nome))) return;
+      map.set(normalizeUnitName(nome), {
+        id_unidade: txt(r.id_unidade) || "",
+        sigla: txt(r.sigla_unidade) || "",
+        nome_oficial: nome,
+        tipo: txt(r.tipo_unidade) || (nome.toUpperCase().startsWith("CASAI") ? "CASAI" : "DSEI"),
+        uf_sede: txt(r.uf).toUpperCase(),
+        ativo: true,
+        fallback: true
+      });
+    });
+    return Array.from(map.values()).sort(sortUnits);
+  }
+
+  function unidadesForModal(){
+    const primary = unidadesCatalog.length ? unidadesCatalog : [];
+    const byName = new Map(primary.map(u => [normalizeUnitName(u.nome_oficial), u]));
+    fallbackUnitsFromRows().forEach(u => {
+      if(!byName.has(normalizeUnitName(u.nome_oficial))) byName.set(normalizeUnitName(u.nome_oficial), u);
+    });
+    return Array.from(byName.values()).sort(sortUnits);
+  }
+
+  function unidadeOptionValue(unit){
+    return txt(unit.id_unidade) || txt(unit.nome_oficial);
+  }
+
+  function findUnitByValue(value){
+    const clean = txt(value);
+    if(!clean) return null;
+    return unidadesForModal().find(u => unidadeOptionValue(u) === clean || txt(u.id_unidade) === clean || txt(u.nome_oficial) === clean) || null;
+  }
+
+  function findUnitForRow(row){
+    if(!row) return null;
+    const byId = txt(row.id_unidade);
+    if(byId){
+      const found = unidadesForModal().find(u => txt(u.id_unidade) === byId);
+      if(found) return found;
+    }
+    const rowName = normalizeUnitName(row.unidade);
+    if(rowName){
+      const found = unidadesForModal().find(u => normalizeUnitName(u.nome_oficial) === rowName);
+      if(found) return found;
+    }
+    return null;
+  }
+
+  function populateModalUnidades(selectedValue=""){
+    const select = $("mUnidade");
+    if(!select) return;
+    const current = selectedValue || select.value;
+    const units = unidadesForModal();
+    select.innerHTML = `<option value="">Selecione a unidade</option>` + units.map(u => {
+      const value = unidadeOptionValue(u);
+      const label = `${txt(u.nome_oficial)}${txt(u.uf_sede) ? " — " + txt(u.uf_sede).toUpperCase() : ""}`;
+      return `<option value="${attr(value)}" data-id="${attr(u.id_unidade)}" data-sigla="${attr(u.sigla)}" data-tipo="${attr(u.tipo)}" data-uf="${attr(u.uf_sede)}" data-nome="${attr(u.nome_oficial)}">${esc(label)}</option>`;
+    }).join("");
+    if(current && Array.from(select.options).some(o => o.value === current)) select.value = current;
+  }
+
+  function selectedModalUnidade(){
+    const select = $("mUnidade");
+    if(!select) return null;
+    const unit = findUnitByValue(select.value);
+    if(unit) return unit;
+    const opt = select.options[select.selectedIndex];
+    if(!opt || !txt(opt.value)) return null;
+    return {
+      id_unidade: opt.dataset.id || "",
+      sigla: opt.dataset.sigla || "",
+      nome_oficial: opt.dataset.nome || opt.textContent || "",
+      tipo: opt.dataset.tipo || "",
+      uf_sede: opt.dataset.uf || ""
+    };
+  }
+
+  function onModalUnidadeChange(){
+    const unit = selectedModalUnidade();
+    setFieldValue("mIdUnidade", unit?.id_unidade || "");
+    setFieldValue("mSiglaUnidade", unit?.sigla || "");
+    setFieldValue("mTipoUnidade", unit?.tipo || "");
+    setFieldValue("mUf", txt(unit?.uf_sede).toUpperCase());
   }
 
   async function loadPanels(){
@@ -1687,6 +2263,7 @@ body.sidebar-locked #page-dashboard table{
 
     rows = Array.isArray(data) ? data : [];
     dataLoadedAtLeastOnce = true;
+    populateModalUnidades();
     populateFilters();
     applyFilters();
     setUpdated();
@@ -1703,6 +2280,9 @@ body.sidebar-locked #page-dashboard table{
   }
 
   async function refreshData(){
+    const previousView = currentView;
+    const previousPanelCode = previousView && previousView.startsWith("panel:") ? previousView.split(":")[1] : "";
+
     loader(true,"Atualizando configurações","Buscando parâmetros e painéis externos...",24);
     await loadConfig();
     await loadPanels();
@@ -1712,6 +2292,9 @@ body.sidebar-locked #page-dashboard table{
     warmExternalPanels(true);
     await sleep(180);
 
+    loader(true,"Atualizando unidades","Atualizando catálogo oficial DSEI/CASAI...",58);
+    await loadUnidades();
+
     loader(true,"Atualizando dados","Sincronizando dados do monitoramento...",68);
     const dataOk = await loadData({ showLoader:false });
     if(!dataOk){
@@ -1719,16 +2302,19 @@ body.sidebar-locked #page-dashboard table{
       return;
     }
 
-    if(currentPanel){
-      const activePanel = panels.find(p => p.codigo === currentPanel.codigo && p.ativo !== false);
-
+    if(previousPanelCode){
+      const activePanel = panels.find(p => p.codigo === previousPanelCode && p.ativo !== false);
       if(activePanel){
         currentPanel = activePanel;
-        openPanel(currentPanel.codigo);
+        openPanel(previousPanelCode);
       }else{
         currentPanel = null;
         navigate(startView());
       }
+    }else if(isViewAllowed(previousView)){
+      navigate(previousView);
+    }else{
+      navigate(startView());
     }
 
     loader(false);
@@ -1753,6 +2339,8 @@ body.sidebar-locked #page-dashboard table{
   function navigate(view){
     document.body.classList.remove("external-clean");
     currentView = view;
+    rememberView(view);
+    if(!view.startsWith("panel:")) currentPanel = null;
     enforceResponsiveSidebar();
     setActiveNav(view);
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
@@ -1786,9 +2374,7 @@ body.sidebar-locked #page-dashboard table{
 
   function enforceResponsiveSidebar(){
     const locked = shouldLockSidebar();
-
     document.body.classList.toggle("sidebar-locked", locked);
-
     if(locked){
       document.body.classList.add("sidebar-collapsed");
     }
@@ -1799,10 +2385,12 @@ body.sidebar-locked #page-dashboard table{
 
     if(shouldLockSidebar()){
       document.body.classList.add("sidebar-collapsed");
+      setTimeout(() => { if(currentView === "dashboard") renderMap(); }, 220);
       return;
     }
 
     document.body.classList.toggle("sidebar-collapsed");
+    try{ localStorage.setItem("agsus_monitora_sidebar_collapsed_v1", document.body.classList.contains("sidebar-collapsed") ? "1" : "0"); }catch(e){}
 
     setTimeout(() => {
       if(currentView === "dashboard") renderMap();
@@ -1810,22 +2398,166 @@ body.sidebar-locked #page-dashboard table{
   }
   function toggleFilters(){ $("filterBody").classList.toggle("hidden"); $("filterToggleBtn").textContent = $("filterBody").classList.contains("hidden") ? "⌄ Mostrar filtros" : "⌃ Ocultar filtros"; }
 
-  function unique(field){ return [...new Set(rows.map(r => txt(r[field])).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt-BR")); }
-  function setOptions(id, values, first){ const el = $(id); const cur = el.value; el.innerHTML = `<option value="">${first}</option>` + values.map(v => `<option value="${attr(v)}">${esc(v)}</option>`).join(""); if(values.includes(cur)) el.value = cur; }
-  function populateFilters(){ setOptions("filterUnidade", unique("unidade"), "Todas"); setOptions("filterStatus", unique("status"), "Todos"); setOptions("filterRisco", unique("risco"), "Todos"); setOptions("filterUf", unique("uf"), "Todas"); }
-  function clearFilters(){ ["filterSearch","filterUnidade","filterStatus","filterRisco","filterUf","tableSearch"].forEach(id => $(id).value = ""); applyFilters(); }
+  function unique(field){
+    return [...new Set(rows.map(r => txt(r[field])).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt-BR",{numeric:true}));
+  }
+
+  function selectedValues(field){
+    return Array.from(filterState[field] || []);
+  }
+
+  function rowValue(r, field){
+    return txt(r[field]);
+  }
+
+  function rowMatchesFilterState(r, ignoreField=""){
+    return FILTER_CONFIG.every(cfg => {
+      if(cfg.field === ignoreField) return true;
+      const selected = filterState[cfg.field];
+      if(!selected || selected.size === 0) return true;
+      return selected.has(rowValue(r, cfg.field));
+    });
+  }
+
+  function optionValuesFor(field){
+    const values = new Set();
+    rows.forEach(r => {
+      if(rowMatchesFilterState(r, field)){
+        const value = rowValue(r, field);
+        if(value) values.add(value);
+      }
+    });
+    return Array.from(values).sort((a,b) => a.localeCompare(b,"pt-BR",{numeric:true}));
+  }
+
+  function pruneFilterSelections(){
+    let changed = false;
+    FILTER_CONFIG.forEach(cfg => {
+      const allowed = new Set(optionValuesFor(cfg.field));
+      const selected = filterState[cfg.field] || new Set();
+      Array.from(selected).forEach(value => {
+        if(!allowed.has(value)){
+          selected.delete(value);
+          changed = true;
+        }
+      });
+    });
+    return changed;
+  }
+
+  function filterLabel(cfg, values){
+    const selected = selectedValues(cfg.field);
+    if(!selected.length) return cfg.all;
+    if(selected.length === 1) return selected[0];
+    return `${selected.length} selecionados`;
+  }
+
+  function renderFilterControls(){
+    FILTER_CONFIG.forEach(cfg => {
+      const el = $(cfg.id);
+      if(!el) return;
+      const values = optionValuesFor(cfg.field);
+      const selected = filterState[cfg.field] || new Set();
+      const label = filterLabel(cfg, values);
+      const options = values.length
+        ? values.map(value => `
+          <label class="multi-option" title="${attr(value)}">
+            <input type="checkbox" ${selected.has(value) ? "checked" : ""} onchange="toggleFilterValue('${attr(cfg.field)}','${attr(value)}')">
+            <span>${esc(value)}</span>
+          </label>`).join("")
+        : `<div class="multi-option empty">Nenhuma opção disponível</div>`;
+      el.innerHTML = `
+        <button type="button" class="multi-select-toggle" onclick="toggleFilterMenu('${attr(cfg.id)}')" title="${attr(label)}">
+          <span class="multi-label">${esc(label)}</span><span class="multi-caret">▾</span>
+        </button>
+        <div class="multi-select-menu">
+          <div class="multi-select-actions">
+            <button type="button" class="multi-mini-btn" onclick="selectAllFilterValues('${attr(cfg.field)}')">Selecionar visíveis</button>
+            <button type="button" class="multi-mini-btn" onclick="clearFilterField('${attr(cfg.field)}')">Limpar</button>
+          </div>
+          <div class="multi-options">${options}</div>
+          <div class="multi-hint">${values.length} opção(ões) disponível(is). Os filtros se ajustam entre si.</div>
+        </div>`;
+    });
+  }
+
+  function closeFilterMenus(exceptId=""){
+    document.querySelectorAll(".multi-select.open").forEach(el => {
+      if(!exceptId || el.id !== exceptId) el.classList.remove("open");
+    });
+  }
+
+  function toggleFilterMenu(id){
+    const el = $(id);
+    if(!el) return;
+    const opening = !el.classList.contains("open");
+    closeFilterMenus(id);
+    el.classList.toggle("open", opening);
+  }
+
+  function applyFilterStateChange(){
+    pruneFilterSelections();
+    renderFilterControls();
+    applyFilters();
+  }
+
+  function toggleFilterValue(field, value){
+    const selected = filterState[field] || new Set();
+    if(selected.has(value)) selected.delete(value);
+    else selected.add(value);
+    filterState[field] = selected;
+    applyFilterStateChange();
+  }
+
+  function selectAllFilterValues(field){
+    filterState[field] = new Set(optionValuesFor(field));
+    applyFilterStateChange();
+  }
+
+  function clearFilterField(field){
+    filterState[field] = new Set();
+    applyFilterStateChange();
+  }
+
+  function initFilterControls(){
+    document.addEventListener("click", ev => {
+      if(!ev.target.closest || !ev.target.closest(".multi-select")) closeFilterMenus();
+    });
+  }
+
+  function populateFilters(){
+    pruneFilterSelections();
+    renderFilterControls();
+  }
+
+  function clearFilters(){
+    filterState = Object.fromEntries(FILTER_CONFIG.map(f => [f.field, new Set()]));
+    ["tableSearch"].forEach(id => { const el = $(id); if(el) el.value = ""; });
+    renderFilterControls();
+    applyFilters();
+  }
 
   function applyFilters(){
-    const q = low($("filterSearch").value); const qt = low($("tableSearch").value);
-    const unidade = txt($("filterUnidade").value); const status = txt($("filterStatus").value); const risco = txt($("filterRisco").value); const uf = txt($("filterUf").value);
+    const qt = low($("tableSearch")?.value);
     filtered = rows.filter(r => {
       const hay = [r.processo,r.edital,r.unidade,r.ciclo,r.uf,r.status,r.etapa,r.responsavel,r.cargos,r.risco,r.observacoes,r.observacoes_internas,r.link_edital].map(low).join(" | ");
-      return (!q || hay.includes(q)) && (!qt || hay.includes(qt)) && (!unidade || txt(r.unidade) === unidade) && (!status || txt(r.status) === status) && (!risco || txt(r.risco) === risco) && (!uf || txt(r.uf) === uf);
-    }).sort(compareRows);
+      return rowMatchesFilterState(r) && (!qt || hay.includes(qt));
+    }).sort(compareRowsForTable);
     renderAll();
   }
 
   function toggleSelectFilter(selectId, value, label){
+    const field = FILTER_ID_TO_FIELD[selectId];
+    if(field){
+      const cleanValue = txt(value);
+      const selected = filterState[field] || new Set();
+      const removing = selected.size === 1 && selected.has(cleanValue);
+      filterState[field] = removing ? new Set() : new Set([cleanValue]);
+      applyFilterStateChange();
+      toast(removing ? `${label} removido.` : `${label}: ${cleanValue}`);
+      return;
+    }
+
     const el = $(selectId);
     if(!el) return;
     const cleanValue = txt(value);
@@ -1835,13 +2567,101 @@ body.sidebar-locked #page-dashboard table{
     toast(removing ? `${label} removido.` : `${label}: ${cleanValue}`);
   }
 
-  function compareRows(a,b){ const rank = { "Alto":0, "Médio":1, "Medio":1, "Baixo":2 }; const ar = rank[txt(a.risco)] ?? 9; const br = rank[txt(b.risco)] ?? 9; if(ar !== br) return ar - br; return n(b.vagas_ociosas) - n(a.vagas_ociosas); }
+
+  function criticalRiskValues(){
+    const values = optionValuesFor("risco").filter(v => ["alto","médio","medio"].includes(low(v)));
+    if(values.length) return values;
+    return ["Alto", "Médio"];
+  }
+
+  function isCriticalRiskFilterActive(){
+    const selected = Array.from(filterState.risco || []);
+    return selected.length > 0 && selected.every(v => ["alto","médio","medio"].includes(low(v)));
+  }
+
+  function toggleCriticalRiskFilter(){
+    const active = isCriticalRiskFilterActive();
+    filterState.risco = active ? new Set() : new Set(criticalRiskValues());
+    applyFilterStateChange();
+    toast(active ? "Filtro de processos críticos removido." : "Filtro aplicado: processos seletivos críticos (Médio/Alto).");
+  }
+
+  function riskRank(value){ const rank = { "alto":0, "médio":1, "medio":1, "baixo":2 }; return rank[low(value)] ?? 9; }
+  function compareRows(a,b){ const ar = riskRank(a.risco); const br = riskRank(b.risco); if(ar !== br) return ar - br; return n(b.vagas_ociosas) - n(a.vagas_ociosas); }
+  function sortValue(row, field){
+    if(["vagas_total","contratados","vagas_ociosas"].includes(field)) return n(row[field]);
+    if(field === "risco") return riskRank(row.risco);
+    if(field === "data_inicio" || field === "data_fim"){
+      const v = txt(row[field]);
+      const t = v ? Date.parse(v) : NaN;
+      return Number.isFinite(t) ? t : 0;
+    }
+    return txt(row[field]).toLocaleLowerCase("pt-BR");
+  }
+  function compareRowsForTable(a,b){
+    if(!tableSort.field || !tableSort.direction) return compareRows(a,b);
+    const av = sortValue(a, tableSort.field);
+    const bv = sortValue(b, tableSort.field);
+    let result = 0;
+    if(typeof av === "number" && typeof bv === "number") result = av - bv;
+    else result = String(av).localeCompare(String(bv), "pt-BR", { numeric:true, sensitivity:"base" });
+    if(result === 0) result = compareRows(a,b);
+    return tableSort.direction === "desc" ? -result : result;
+  }
+  function sortDetails(field){
+    if(tableSort.field !== field) tableSort = { field, direction:"asc" };
+    else if(tableSort.direction === "asc") tableSort = { field, direction:"desc" };
+    else tableSort = { field:"", direction:"" };
+    applyFilters();
+  }
+  function renderSortIndicators(){
+    document.querySelectorAll(".details-table th[data-sort-field]").forEach(th => {
+      const field = th.getAttribute("data-sort-field");
+      th.classList.toggle("sorted-asc", tableSort.field === field && tableSort.direction === "asc");
+      th.classList.toggle("sorted-desc", tableSort.field === field && tableSort.direction === "desc");
+      const icon = th.querySelector(".sort-icon");
+      if(icon && tableSort.field !== field) icon.textContent = "↕";
+    });
+  }
   function sum(field){ return filtered.reduce((acc,r) => acc + n(r[field]), 0); }
-  function renderAll(){ renderKpis(); renderStatusSummary(); renderChart(); renderMap(); renderRisks(); renderTable(); if(currentView === "nucleo") renderNucleo(); }
-  function renderKpis(){ $("kProcessos").textContent = fmt(filtered.length); $("kVagas").textContent = fmt(sum("vagas_total")); $("kContratados").textContent = fmt(sum("contratados")); $("kOciosas").textContent = fmt(sum("vagas_ociosas")); $("kInscritos").textContent = fmt(sum("inscritos")); $("kCriticos").textContent = fmt(filtered.filter(r => ["alto","médio","medio"].includes(low(r.risco))).length); }
+  function renderAll(){ renderKpis(); renderMultiUnits(); renderStatusSummary(); renderChart(); renderMap(); renderRisks(); renderTable(); if(currentView === "nucleo") renderNucleo(); }
+  function renderKpis(){
+    const processos = filtered.length;
+    const vagas = sum("vagas_total");
+    const contratados = sum("contratados");
+    const ociosas = sum("vagas_ociosas");
+    const inscritos = sum("inscritos");
+    const emRisco = filtered.filter(r => ["alto","médio","medio"].includes(low(r.risco))).length;
+
+    $("kProcessos").textContent = fmt(processos);
+    $("kVagas").textContent = fmt(vagas);
+    $("kContratados").textContent = fmt(contratados);
+    $("kOciosas").textContent = fmt(ociosas);
+    $("kCriticos").textContent = fmt(emRisco);
+    if($("kInscritos")) $("kInscritos").textContent = fmt(inscritos);
+
+    const criticalActive = isCriticalRiskFilterActive();
+    const criticalCard = $("kpiCriticosCard");
+    if(criticalCard) criticalCard.classList.toggle("active-filter", criticalActive);
+    if($("panicChip")) $("panicChip").textContent = criticalActive ? "FILTRO ATIVO" : "MÉDIO/ALTO";
+  }
   function group(field){ const out = {}; filtered.forEach(r => { const k = txt(r[field]) || "Não informado"; out[k] = (out[k] || 0) + 1; }); return Object.entries(out).sort((a,b) => b[1]-a[1]); }
 
-  function renderStatusSummary(){ $("statusSummary").innerHTML = group("status").map(([k,v]) => { const cls = low(k).includes("conclu") ? "green" : low(k).includes("andamento") ? "blue" : low(k).includes("elabora") ? "cyan" : low(k).includes("cancel") ? "red" : "gray"; return `<div data-status-toggle="true" onclick="toggleSelectFilter('filterStatus','${attr(k)}','Filtro de status')" title="Clique para filtrar ou remover este status" style="display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:9px 0"><b>${esc(k)}</b><span class="chip ${cls}">${fmt(v)}</span></div>`; }).join("") || `<div class="alert">Sem dados.</div>`; }
+  function etapaChipClass(etapa){ const l = low(etapa); if(l.includes("conclu")) return "green"; if(l.includes("entrevista")) return "blue"; if(l.includes("análise") || l.includes("analise")) return "cyan"; if(l.includes("resultado")) return "yellow"; if(l.includes("cancel")) return "red"; return "gray"; }
+
+  function renderStatusSummary(){ $("statusSummary").innerHTML = group("etapa").map(([k,v]) => { const cls = etapaChipClass(k); return `<div data-etapa-toggle="true" onclick="toggleSelectFilter('filterEtapa','${attr(k)}','Filtro de etapa')" title="Clique para filtrar ou remover esta etapa" style="display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:9px 0"><b>${esc(k)}</b><span class="chip ${cls}">${fmt(v)}</span></div>`; }).join("") || `<div class="alert">Sem dados.</div>`; }
+
+  function renderMultiUnits(){
+    const card = $("multiUnitsCard");
+    if(!card) return;
+    const counts = {};
+    filtered.forEach(r => { const unidade = txt(r.unidade) || "Não informada"; counts[unidade] = (counts[unidade] || 0) + 1; });
+    const units = Object.entries(counts).filter(([,count]) => count > 1).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR")).slice(0, 8);
+    if(!units.length){ card.classList.add("hidden"); card.innerHTML = ""; return; }
+    card.classList.remove("hidden");
+    card.innerHTML = `<div class="multi-units-title"><i class="fa-solid fa-layer-group"></i> Unidades com mais de um processo seletivo</div><div class="multi-units-list">${units.map(([unit,count]) => `<button type="button" class="multi-unit-chip" data-unit="${attr(unit)}" title="Filtrar por ${attr(unit)}">${esc(unit)} <span class="chip blue">${fmt(count)}</span></button>`).join("")}</div>`;
+    card.querySelectorAll(".multi-unit-chip").forEach(btn => btn.addEventListener("click", () => toggleSelectFilter("filterUnidade", btn.dataset.unit, "Filtro de unidade")));
+  }
 
   function renderChart(){
     const canvas = $("statusChart"); if(!canvas || !window.Chart) return;
@@ -1872,8 +2692,10 @@ body.sidebar-locked #page-dashboard table{
   function riscoChip(risco){ const l = low(risco); const cls = l === "alto" ? "red" : (l === "médio" || l === "medio") ? "yellow" : "green"; return `<span class="chip ${cls}">${esc(risco || "-")}</span>`; }
 
   function renderTable(){
-    $("tableMeta").textContent = `Exibindo ${fmt(filtered.length)} de ${fmt(rows.length)} registros após os filtros.`;
-    $("monitorRows").innerHTML = filtered.map(r => { const link = txt(r.link_edital); const edital = link ? `<a class="link" href="${attr(link)}" target="_blank" rel="noopener">${esc(r.edital || "-")} ↗</a>` : esc(r.edital || "-"); return `<tr><td>${esc(r.unidade)}</td><td>${edital}</td><td>${esc(r.data_inicio || "")}</td><td>${esc(r.data_fim || "")}</td><td class="num">${fmt(r.vagas_total)}</td><td class="num green-text">${fmt(r.contratados)}</td><td class="num red-text">${fmt(r.vagas_ociosas)}</td><td>${statusChip(r.status)}</td><td>${esc(r.etapa)}</td><td>${riscoChip(r.risco)}</td><td><div class="obs" title="${attr(r.observacoes || "-")}">${esc(r.observacoes || "-")}</div></td></tr>`; }).join("") || `<tr><td colspan="11" style="text-align:center;padding:22px">Nenhum registro encontrado com os filtros atuais.</td></tr>`;
+    renderSortIndicators();
+    const sortText = tableSort.field ? ` Ordenação: ${tableSort.direction === "asc" ? "crescente" : "decrescente"}.` : " Clique nos cabeçalhos para ordenar.";
+    $("tableMeta").textContent = `Exibindo ${fmt(filtered.length)} de ${fmt(rows.length)} registros após os filtros.${sortText}`;
+    $("monitorRows").innerHTML = filtered.map(r => { const link = txt(r.link_edital); const edital = link ? `<a class="link" href="${attr(link)}" target="_blank" rel="noopener">${esc(r.edital || "-")} ↗</a>` : esc(r.edital || "-"); return `<tr><td>${esc(r.unidade)}</td><td>${edital}</td><td>${esc(r.data_inicio || "")}</td><td>${esc(r.data_fim || "")}</td><td class="num">${fmt(r.vagas_total)}</td><td class="num green-text">${fmt(r.contratados)}</td><td class="num red-text">${fmt(r.vagas_ociosas)}</td><td>${statusChip(r.status)}</td><td>${esc(r.etapa)}</td><td>${riscoChip(r.risco)}</td><td class="obs-col"><div class="obs" title="${attr(r.observacoes || "-")}">${esc(r.observacoes || "-")}</div></td></tr>`; }).join("") || `<tr><td colspan="11" style="text-align:center;padding:22px">Nenhum registro encontrado com os filtros atuais.</td></tr>`;
   }
 
   function renderNucleo(){
@@ -1882,11 +2704,56 @@ body.sidebar-locked #page-dashboard table{
     $("nucleoRows").innerHTML = data.map(r => `<tr><td>Saúde Indígena</td><td>${esc(r.unidade)}</td><td>${txt(r.link_edital) ? `<a class="link" href="${attr(r.link_edital)}" target="_blank" rel="noopener">${esc(r.edital || "-")}</a>` : esc(r.edital || "-")}</td><td>${statusChip(r.status)}</td><td>${esc(r.etapa)}</td><td class="num">${fmt(r.vagas_total)}</td><td class="num green-text">${fmt(r.contratados)}</td><td class="num red-text">${fmt(r.vagas_ociosas)}</td><td>${riscoChip(r.risco)}</td><td><button class="btn outline" onclick="openEditModal('${attr(r.id)}')">Editar</button></td></tr>`).join("") || `<tr><td colspan="10" style="text-align:center;padding:22px">Nenhum registro encontrado.</td></tr>`;
   }
 
+  function setFieldValue(id, value){ const el = $(id); if(el) el.value = value ?? ""; }
+  function setMetricValue(id, value){ const el = $(id); if(el) el.textContent = fmt(value); }
+  function dateOrNull(id){ const v = txt($(id)?.value); return v || null; }
+
   function openEditModal(id){
     if(!can("cores")) return toast("Sem permissão para editar registros.", "warn");
     const r = id ? rows.find(x => String(x.id) === String(id)) : {};
     $("editModalTitle").textContent = id ? "Editar edital" : "Novo edital";
-    $("mId").value = r?.id || ""; $("mProcesso").value = r?.processo || ""; $("mEdital").value = r?.edital || ""; $("mUnidade").value = r?.unidade || ""; $("mUf").value = r?.uf || ""; $("mCiclo").value = r?.ciclo || ""; $("mVagas").value = r?.vagas_total || 0; $("mContratados").value = r?.contratados || 0; $("mInscritos").value = r?.inscritos || 0; $("mStatus").value = r?.status || ""; $("mEtapa").value = r?.etapa || ""; $("mRisco").value = r?.risco || "Baixo"; $("mResponsavel").value = r?.responsavel || ""; $("mLink").value = r?.link_edital || ""; $("mObs").value = r?.observacoes || "";
+
+    setFieldValue("mId", r?.id || "");
+    setFieldValue("mProcesso", r?.processo || "");
+    setFieldValue("mEdital", r?.edital || "");
+
+    const rowUnit = findUnitForRow(r);
+    const unitValue = rowUnit ? unidadeOptionValue(rowUnit) : "";
+    populateModalUnidades(unitValue);
+    setFieldValue("mUnidade", unitValue);
+    if(rowUnit){
+      onModalUnidadeChange();
+    }else{
+      setFieldValue("mIdUnidade", r?.id_unidade || "");
+      setFieldValue("mSiglaUnidade", r?.sigla_unidade || "");
+      setFieldValue("mTipoUnidade", r?.tipo_unidade || "");
+      setFieldValue("mUf", r?.uf || "");
+    }
+
+    setFieldValue("mCiclo", r?.ciclo || "");
+    setFieldValue("mLink", r?.link_edital || "");
+    setFieldValue("mVagas", r?.vagas_total || 0);
+    setFieldValue("mDataInicio", r?.data_inicio || "");
+    setFieldValue("mDataFim", r?.data_fim || "");
+    setFieldValue("mStatus", r?.status || "");
+    setFieldValue("mEtapa", r?.etapa || "");
+    setFieldValue("mRisco", r?.risco || "Baixo");
+    setFieldValue("mResponsavel", r?.responsavel || "");
+    setFieldValue("mObs", r?.observacoes || "");
+    setFieldValue("mObsInternas", r?.observacoes_internas || "");
+
+    setMetricValue("mAutoInscritos", r?.inscritos);
+    setMetricValue("mAutoAptosAnalise", r?.aptos_analise);
+    setMetricValue("mAutoCancelados", r?.cancelados);
+    setMetricValue("mAutoEliminadosNota", r?.eliminados_nota);
+    setMetricValue("mAutoReprovadosAnalise", r?.reprovados_analise);
+    setMetricValue("mAutoTotalEliminados", r?.total_eliminados);
+    setMetricValue("mAutoAprovadosAnalise", r?.aprovados_analise);
+    setMetricValue("mAutoAprovadosProva", r?.aprovados_prova);
+    setMetricValue("mAutoEntrevistados", r?.entrevistados);
+    setMetricValue("mAutoContratados", r?.contratados);
+    setMetricValue("mAutoOciosas", r?.vagas_ociosas);
+
     $("editModal").classList.add("show");
   }
   function closeEditModal(){ $("editModal").classList.remove("show"); }
@@ -1895,25 +2762,33 @@ body.sidebar-locked #page-dashboard table{
     if(!can("cores")) return toast("Sem permissão para salvar registros.", "warn");
 
     const id = txt($("mId").value);
+    const unit = selectedModalUnidade();
     const payload = {
       processo: txt($("mProcesso").value),
       edital: txt($("mEdital").value),
-      unidade: txt($("mUnidade").value),
-      uf: txt($("mUf").value).toUpperCase(),
+      id_unidade: txt(unit?.id_unidade) || null,
+      sigla_unidade: txt(unit?.sigla) || null,
+      tipo_unidade: txt(unit?.tipo) || null,
+      unidade: txt(unit?.nome_oficial),
+      uf: txt(unit?.uf_sede).toUpperCase(),
       ciclo: txt($("mCiclo").value),
       vagas_total: n($("mVagas").value),
-      contratados: n($("mContratados").value),
-      inscritos: n($("mInscritos").value),
+      data_inicio: dateOrNull("mDataInicio"),
+      data_fim: dateOrNull("mDataFim"),
       status: txt($("mStatus").value),
       etapa: txt($("mEtapa").value),
       risco: txt($("mRisco").value),
       responsavel: txt($("mResponsavel").value),
       link_edital: txt($("mLink").value),
       observacoes: txt($("mObs").value),
+      observacoes_internas: txt($("mObsInternas").value),
       ativo: true
     };
 
-    // Nao enviar vagas_ociosas: no Supabase essa coluna deve ser recalculada por trigger no banco.
+    // Campos automáticos não são enviados neste formulário:
+    // inscritos, aptos_analise, cancelados, eliminados_nota, reprovados_analise,
+    // total_eliminados, aprovados_analise, aprovados_prova, entrevistados,
+    // contratados e vagas_ociosas.
     if(!payload.edital || !payload.unidade){
       toast("Informe pelo menos edital e unidade.", "warn");
       return;
@@ -1924,7 +2799,7 @@ body.sidebar-locked #page-dashboard table{
     btn.textContent = "Salvando...";
     loader(true,"Equipe Núcleo","Salvando e confirmando persistência no Supabase...",70);
 
-    const fieldsToReturn = "id,processo,edital,unidade,uf,ciclo,vagas_total,contratados,inscritos,status,etapa,risco,responsavel,link_edital,observacoes,ativo";
+    const fieldsToReturn = "id,id_unidade,sigla_unidade,tipo_unidade,processo,edital,unidade,uf,ciclo,vagas_total,data_inicio,data_fim,status,etapa,risco,responsavel,link_edital,observacoes,observacoes_internas,ativo,inscritos,aptos_analise,cancelados,eliminados_nota,reprovados_analise,total_eliminados,aprovados_analise,aprovados_prova,entrevistados,contratados,vagas_ociosas,data_ultimo_sync,origem";
     let result;
 
     if(id){
@@ -2037,7 +2912,7 @@ body.sidebar-locked #page-dashboard table{
       return;
     }
     document.body.classList.add("external-clean");
-    currentPanel = panel; currentView = "panel:" + code; enforceResponsiveSidebar(); setActiveNav(currentView);
+    currentPanel = panel; currentView = "panel:" + code; rememberView(currentView); enforceResponsiveSidebar(); setActiveNav(currentView);
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active")); $("page-external").classList.add("active");
     setPageTitle(panel.titulo, "Painel externo incorporado");
     $("externalTitle").textContent = panel.titulo; $("externalOpen").href = panel.url || "#";
@@ -2117,8 +2992,34 @@ body.sidebar-locked #page-dashboard table{
       {chave:"broadcast_type", valor:txt($("cfgBroadcastType").value), descricao:"Tipo do aviso global"},
       {chave:"broadcast_msg", valor:txt($("cfgBroadcastMsg").value), descricao:"Mensagem do aviso global"}
     ];
-    const { error: cfgErr } = await sb.from("configuracoes").upsert(configRows, { onConflict:"chave" });
-    if(cfgErr){ loader(false); return toast("Erro ao salvar configurações: " + friendlyError(cfgErr), "error"); }
+    const { data: savedConfig, error: cfgErr } = await sb
+      .from("configuracoes")
+      .upsert(configRows, { onConflict:"chave" })
+      .select("chave,valor,descricao");
+
+    if(cfgErr){
+      loader(false);
+      return toast("Erro ao salvar configurações: " + friendlyError(cfgErr), "error");
+    }
+
+    const expectedKeys = configRows.map(r => r.chave);
+    const savedKeys = Array.isArray(savedConfig) ? savedConfig.map(r => r.chave) : [];
+    const missingKeys = expectedKeys.filter(k => !savedKeys.includes(k));
+
+    if(missingKeys.length){
+      loader(false);
+      return toast(
+        "Configurações enviadas, mas o Supabase não confirmou persistência das chaves: " + missingKeys.join(", "),
+        "error"
+      );
+    }
+
+    savedConfig.forEach(r => {
+      if(r.chave) appConfig[r.chave] = r.valor ?? "";
+    });
+
+    applyConfigToUi();
+    renderConfigForm();
     for(let i=0;i<panels.length;i++){
       if(!panels[i].id) continue;
       const payload = { titulo:txt($("panelTitulo"+i).value), url:txt($("panelUrl"+i).value), ativo:$("panelAtivo"+i).value === "true", em_manutencao:$("panelManut"+i).value === "true" };
@@ -2162,6 +3063,7 @@ body.sidebar-locked #page-dashboard table{
   });
 
   enforceResponsiveSidebar();
+  initFilterControls();
   boot();
 </script>
 </body>
