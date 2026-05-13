@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgSUS Monitora - Análises Curriculares</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --azul:#003b70; --azul-2:#006fc9; --ciano:#00a8d6; --verde:#0b8f58;
+      --amarelo:#f2b705; --vermelho:#d92d3a; --bg:#f3f7fb; --card:#fff;
+      --line:#d7e5f2; --muted:#60758f; --text:#10243e; --shadow:0 8px 22px rgba(15,35,60,.075);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);font-weight:500;overflow-x:hidden}
+    button,input,select{font:inherit}
+    .shell{min-height:100vh;padding:16px;display:grid;gap:12px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#f8fbfe;border:1px solid var(--line);border-left:4px solid var(--ciano);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px}
+    .brand{display:flex;gap:12px;align-items:center;min-width:0}
+    .mark{width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,var(--azul),var(--ciano));display:grid;place-items:center;color:white;box-shadow:0 8px 18px rgba(0,59,112,.18);flex:0 0 auto}
+    h1{margin:0;color:var(--azul);font-size:26px;line-height:1.05;letter-spacing:-.03em;font-weight:800}
+    .subtitle{margin:4px 0 0;color:var(--muted);font-size:13px;font-weight:700}
+    .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .status-pill{display:inline-flex;align-items:center;gap:8px;background:white;border:1px solid #cce1f2;border-radius:999px;padding:9px 12px;color:#526780;font-size:13px;font-weight:800}
+    .dot{width:10px;height:10px;border-radius:99px;background:var(--verde);box-shadow:0 0 0 5px rgba(14,167,107,.14)}
+    .btn{border:0;border-radius:13px;min-height:40px;padding:0 14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#004c93,#00a8d6);cursor:pointer;display:inline-flex;gap:8px;align-items:center;justify-content:center;text-decoration:none;white-space:nowrap;box-shadow:0 6px 14px rgba(0,77,145,.14)}
+    .btn.secondary{background:white;color:#18324f;border:1px solid var(--line);box-shadow:0 4px 12px rgba(15,35,60,.05)}
+    .btn.green{background:var(--verde)}
+    .btn:disabled{opacity:.62;cursor:not-allowed}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .filters{padding:13px 14px;border-left:4px solid var(--ciano)}
+    .filter-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+    .section-title{font-size:16px;font-weight:900;color:var(--azul);display:flex;gap:8px;align-items:center}
+    .filter-grid{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr)) auto;gap:9px;align-items:end}
+    label{display:block;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#526780;margin-bottom:5px}
+    select,input{width:100%;min-height:40px;border:1px solid #cfdeed;border-radius:12px;background:white;color:#10243e;padding:0 10px;font-weight:700;outline:none}
+    select:focus,input:focus{border-color:var(--azul-2);box-shadow:0 0 0 4px rgba(13,110,253,.12)}
+    .kpis{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:9px}
+    .kpi{position:relative;min-height:86px;padding:12px;background:white;border:1px solid var(--line);border-radius:14px;box-shadow:0 7px 18px rgba(15,35,60,.07);overflow:hidden;display:grid;align-content:center;text-align:center}
+    .kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--azul)}
+    .kpi.blue::before{background:#0075c9}.kpi.green::before{background:var(--verde)}.kpi.yellow::before{background:linear-gradient(90deg,var(--amarelo),#ff7a1a)}.kpi.red::before{background:var(--vermelho)}.kpi.cyan::before{background:var(--ciano)}
+    .kpi span{font-size:11px;font-weight:900;color:#10243e;line-height:1.15;text-transform:uppercase;letter-spacing:.02em}
+    .kpi b{display:block;font-size:28px;line-height:1;margin-top:7px;font-weight:800;color:#07162d}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+    .panel{padding:14px;min-width:0}
+    .panel h2{margin:0 0 10px;color:#18324f;font-size:17px;font-weight:800}
+    .chart-wrap{height:250px;position:relative}.chart-wrap.small{height:210px}
+    .attention{display:grid;gap:8px;max-height:250px;overflow:auto;padding-right:4px}
+    .alert-item{border:1px solid var(--line);border-left:4px solid var(--amarelo);background:#fffdf6;border-radius:12px;padding:10px;display:grid;gap:5px}
+    .alert-item.danger{border-left-color:var(--vermelho);background:#fff7f7}
+    .alert-item b{font-size:13px}.alert-item small{color:#526780;font-weight:700;line-height:1.35}
+    .table-card{overflow:hidden}
+    .table-head{background:var(--azul);color:white;padding:12px 14px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+    .table-head h2{margin:0;font-size:15px;text-transform:uppercase;letter-spacing:.02em;display:flex;gap:8px;align-items:center}
+    .table-head input{max-width:420px;min-height:38px;border-radius:999px;background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.35);color:white}
+    .table-head input::placeholder{color:#d7e8ff}.table-meta{padding:10px 14px;color:#526780;font-weight:800;border-bottom:1px solid var(--line);font-size:13px}
+    .table-wrap{overflow:auto;max-height:520px;background:white}
+    table{width:100%;min-width:1480px;border-collapse:collapse;font-size:12.5px}
+    th{position:sticky;top:0;z-index:2;background:#f4f8fc;color:#10243e;text-align:left;border-bottom:1px solid var(--line);padding:10px 8px;text-transform:uppercase;font-size:10.5px;letter-spacing:.04em;font-weight:900;white-space:nowrap}
+    td{border-bottom:1px solid var(--line);padding:9px 8px;vertical-align:top;font-weight:650;color:#10243e}
+    tr:hover td{background:rgba(0,184,217,.06)}
+    .num{text-align:center}.muted{color:var(--muted)}
+    .chip{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:4px 9px;font-size:10.5px;font-weight:900;border:1px solid transparent;white-space:nowrap}
+    .chip.pendente{background:#fff3c4;color:#7c5900;border-color:#ffe080}.chip.revisar{background:#e0f2fe;color:#075985;border-color:#bae6fd}.chip.aprovado{background:#dff8ea;color:#00824c;border-color:#bfeccd}.chip.reprovado{background:#ffe1e3;color:#b91c1c;border-color:#ffc5ca}.chip.neutro{background:#eef2f7;color:#334155;border-color:#d5dfec}
+    .empty,.error{padding:22px;text-align:center;color:#526780;font-weight:800}.error{color:#b91c1c;background:#fff7f7;border:1px solid #fecdd3;border-radius:14px}
+    .loading{position:fixed;inset:0;display:none;place-items:center;background:rgba(2,8,23,.28);z-index:20}.loading.show{display:grid}.loading-card{background:white;border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:0 24px 60px rgba(0,0,0,.18);font-weight:900;color:var(--azul);display:flex;gap:12px;align-items:center}.spin{width:28px;height:28px;border-radius:50%;border:4px solid #e6eef7;border-top-color:var(--ciano);animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:1320px){.filter-grid{grid-template-columns:repeat(4,1fr)}.kpis{grid-template-columns:repeat(4,1fr)}.grid{grid-template-columns:1fr}}
+    @media(max-width:760px){.shell{padding:8px}.top{border-radius:14px}.filter-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}h1{font-size:21px}}
+    @media(max-width:520px){.filter-grid,.kpis{grid-template-columns:1fr}.actions,.btn{width:100%}.status-pill{width:100%;justify-content:center}}
+  </style>
+</head>
+<body>
+  <div id="loading" class="loading"><div class="loading-card"><div class="spin"></div><span id="loadingText">Carregando...</span></div></div>
+  <main class="shell">
+    <header class="top">
+      <div class="brand">
+        <div class="mark"><i class="fa-solid fa-chart-line"></i></div>
+        <div>
+          <h1>Análises Curriculares</h1>
+          <p class="subtitle">Painel externo integrado ao AgSUS Monitora · Saúde Indígena 2026</p>
+        </div>
+      </div>
+      <div class="actions">
+        <span class="status-pill"><span class="dot"></span><span id="updatedText">Aguardando dados</span></span>
+        <button class="btn secondary" onclick="refreshData()"><i class="fa-solid fa-rotate-right"></i> Atualizar</button>
+        <button class="btn green" onclick="exportCSV()"><i class="fa-solid fa-download"></i> Exportar</button>
+      </div>
+    </header>
+
+    <section id="authWarning" class="error" hidden>
+      Sessão não localizada. Abra este painel pelo menu do AgSUS Monitora ou publique o arquivo no mesmo domínio do INDEX principal para compartilhar a sessão do Supabase Auth.
+    </section>
+
+    <section class="filters card">
+      <div class="filter-head">
+        <div><div class="section-title"><i class="fa-solid fa-filter"></i> Filtros do painel</div><div class="subtitle">Os filtros são locais e não alteram a base no Supabase.</div></div>
+        <button class="btn secondary" onclick="clearFilters()"><i class="fa-solid fa-filter-circle-xmark"></i> Limpar</button>
+      </div>
+      <div class="filter-grid">
+        <div><label>Unidade</label><select id="fUnidade" onchange="applyFilters()"></select></div>
+        <div><label>Edital</label><select id="fEdital" onchange="applyFilters()"></select></div>
+        <div><label>Código da vaga</label><select id="fVaga" onchange="applyFilters()"></select></div>
+        <div><label>Status</label><select id="fStatus" onchange="applyFilters()"></select></div>
+        <div><label>Categoria</label><select id="fCategoria" onchange="applyFilters()"></select></div>
+        <div><label>Modalidade</label><select id="fModalidade" onchange="applyFilters()"></select></div>
+        <div><label>Responsável</label><select id="fResponsavel" onchange="applyFilters()"></select></div>
+        <div><label>Busca</label><input id="fBusca" placeholder="Candidato, vaga, edital..." oninput="applyFilters()"></div>
+      </div>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi blue"><span>Total de aptos</span><b id="kTotal">0</b></article>
+      <article class="kpi yellow"><span>Pendentes</span><b id="kPendente">0</b></article>
+      <article class="kpi cyan"><span>Em revisão</span><b id="kRevisar">0</b></article>
+      <article class="kpi green"><span>Aprovados</span><b id="kAprovado">0</b></article>
+      <article class="kpi red"><span>Reprovados</span><b id="kReprovado">0</b></article>
+      <article class="kpi"><span>Taxa conclusão</span><b id="kTaxa">0%</b></article>
+      <article class="kpi red"><span>Pontos de atenção</span><b id="kAtencao">0</b></article>
+    </section>
+
+    <section class="grid">
+      <article class="panel card"><h2>Status consolidado</h2><div class="chart-wrap small"><canvas id="chartStatus"></canvas></div></article>
+      <article class="panel card"><h2>Carga por responsável</h2><div class="chart-wrap small"><canvas id="chartResponsavel"></canvas></div></article>
+    </section>
+
+    <section class="grid">
+      <article class="panel card"><h2>Top vagas por volume</h2><div class="chart-wrap"><canvas id="chartVagas"></canvas></div></article>
+      <article class="panel card"><h2>Atenções operacionais</h2><div id="attentionList" class="attention"></div></article>
+    </section>
+
+    <section class="table-card card">
+      <div class="table-head"><h2><i class="fa-solid fa-table-list"></i> Fila consolidada</h2><input id="tableSearch" placeholder="Pesquisar na tabela..." oninput="renderTable()"></div>
+      <div id="tableMeta" class="table-meta">Nenhum registro carregado.</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Unidade</th><th>Edital</th><th>Código</th><th>Vaga</th><th>Candidato</th><th>Status</th><th>Etapa</th><th>Data análise</th><th>Responsável</th><th>Nota final</th><th>Modalidade</th><th>PDF</th><th>Validação</th>
+          </tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+<script>
+  // Publishable key pública. Nunca use service_role neste arquivo.
+  const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_Z__In8_fZh4UcgLpCq9jzg_gFlp2nkF";
+
+  let sb, session, profile, rows = [], filtered = [];
+  let chartStatus = null, chartResponsavel = null, chartVagas = null;
+  const $ = id => document.getElementById(id);
+  const txt = v => String(v ?? "").trim();
+  const low = v => txt(v).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const n = v => { const x = Number(v || 0); return Number.isFinite(x) ? x : 0; };
+  const fmt = v => n(v).toLocaleString("pt-BR");
+  const esc = v => String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  const attr = v => esc(v).replaceAll("`","&#096;");
+  const fmtDate = v => { if(!v) return ""; const d = new Date(v); return Number.isNaN(d.getTime()) ? txt(v) : d.toLocaleDateString("pt-BR"); };
+  const fmtDateTime = v => { if(!v) return ""; const d = new Date(v); return Number.isNaN(d.getTime()) ? txt(v) : d.toLocaleString("pt-BR"); };
+
+  function showLoading(show, text="Carregando...") { $("loading").classList.toggle("show", !!show); $("loadingText").textContent = text; }
+
+  async function boot(){
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const res = await sb.auth.getSession();
+    session = res.data && res.data.session;
+    if(!session){ $("authWarning").hidden = false; return; }
+    await loadProfile();
+    if(!canReadAnalises()){ $("authWarning").hidden = false; $("authWarning").textContent = "Seu usuário não possui permissão para visualizar o painel de Análises."; return; }
+    await refreshData();
+  }
+
+  async function loadProfile(){
+    const { data } = await sb.from("app_usuarios").select("*").eq("id", session.user.id).maybeSingle();
+    profile = data || null;
+  }
+  function canReadAnalises(){
+    if(!profile || profile.ativo === false) return false;
+    if(low(profile.perfil) === "master") return true;
+    return profile.p_paineis === true || profile.p_ind === true || profile.p_config === true;
+  }
+
+  async function refreshData(){
+    showLoading(true, "Carregando Análises Curriculares...");
+    const { data, error } = await sb
+      .from("vw_analises_dashboard_base")
+      .select("*")
+      .order("unidade", { ascending: true })
+      .order("edital", { ascending: true })
+      .limit(25000);
+    showLoading(false);
+    if(error){ $("authWarning").hidden = false; $("authWarning").textContent = "Erro ao carregar o painel: " + error.message; return; }
+    rows = Array.isArray(data) ? data : [];
+    populateFilters();
+    applyFilters();
+    const latest = rows.map(r => r.updated_at || r.ultima_atualizacao).filter(Boolean).sort().pop();
+    $("updatedText").textContent = latest ? "Base atualizada em " + fmtDateTime(latest) : "Base carregada";
+  }
+
+  function unique(field){ return [...new Set(rows.map(r => txt(r[field])).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR",{numeric:true})); }
+  function setOptions(id, values, allLabel){
+    const el = $(id); const current = el.value;
+    el.innerHTML = `<option value="">${allLabel}</option>` + values.map(v => `<option value="${attr(v)}">${esc(v)}</option>`).join("");
+    if([...el.options].some(o => o.value === current)) el.value = current;
+  }
+  function populateFilters(){
+    setOptions("fUnidade", unique("unidade"), "Todas");
+    setOptions("fEdital", unique("edital"), "Todos");
+    setOptions("fVaga", unique("codigo_vaga"), "Todas");
+    setOptions("fStatus", unique("status_consolidado"), "Todos");
+    setOptions("fCategoria", unique("categoria"), "Todas");
+    setOptions("fModalidade", unique("modalidade_concorrencia"), "Todas");
+    setOptions("fResponsavel", unique("responsavel_analise"), "Todos");
+  }
+  function clearFilters(){
+    ["fUnidade","fEdital","fVaga","fStatus","fCategoria","fModalidade","fResponsavel","fBusca","tableSearch"].forEach(id => { if($(id)) $(id).value = ""; });
+    applyFilters();
+  }
+  function matches(row, field, id){ return !$(id).value || txt(row[field]) === $(id).value; }
+  function applyFilters(){
+    const q = low($("fBusca").value);
+    filtered = rows.filter(r =>
+      matches(r,"unidade","fUnidade") && matches(r,"edital","fEdital") && matches(r,"codigo_vaga","fVaga") &&
+      matches(r,"status_consolidado","fStatus") && matches(r,"categoria","fCategoria") && matches(r,"modalidade_concorrencia","fModalidade") &&
+      matches(r,"responsavel_analise","fResponsavel") && (!q || [r.unidade,r.edital,r.codigo_vaga,r.nome_vaga,r.candidato,r.responsavel_analise,r.status_consolidado,r.analise].map(low).join(" | ").includes(q))
+    );
+    renderAll();
+  }
+  function countsBy(field, limit=12){
+    const map = {};
+    filtered.forEach(r => { const k = txt(r[field]) || "Não informado"; map[k] = (map[k] || 0) + 1; });
+    return Object.entries(map).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0],"pt-BR")).slice(0, limit).map(([label,value]) => ({label,value}));
+  }
+  function statusClass(status){ const s = low(status); if(s === "aprovado") return "aprovado"; if(s === "reprovado") return "reprovado"; if(s === "revisar") return "revisar"; if(s === "pendente") return "pendente"; return "neutro"; }
+  function renderAll(){ renderKpis(); renderCharts(); renderAttention(); renderTable(); }
+  function renderKpis(){
+    const total = filtered.length;
+    const pendente = filtered.filter(r => txt(r.status_consolidado) === "Pendente").length;
+    const revisar = filtered.filter(r => txt(r.status_consolidado) === "Revisar").length;
+    const aprovado = filtered.filter(r => txt(r.status_consolidado) === "Aprovado").length;
+    const reprovado = filtered.filter(r => txt(r.status_consolidado) === "Reprovado").length;
+    const concluidos = aprovado + reprovado;
+    const atencao = filtered.filter(r => !txt(r.responsavel_analise) || txt(r.data_validacao_status) === "FORA_PERIODO" || low(r.pdf_status) === "erro").length;
+    $("kTotal").textContent = fmt(total); $("kPendente").textContent = fmt(pendente); $("kRevisar").textContent = fmt(revisar); $("kAprovado").textContent = fmt(aprovado); $("kReprovado").textContent = fmt(reprovado); $("kTaxa").textContent = total ? Math.round((concluidos/total)*100) + "%" : "0%"; $("kAtencao").textContent = fmt(atencao);
+  }
+  function destroyChart(c){ if(c) c.destroy(); }
+  function renderCharts(){
+    const status = countsBy("status_consolidado", 10);
+    destroyChart(chartStatus);
+    chartStatus = new Chart($("chartStatus"), { type:"doughnut", data:{ labels:status.map(x=>x.label), datasets:[{ data:status.map(x=>x.value), borderWidth:0 }] }, options:{ maintainAspectRatio:false, cutout:"66%", plugins:{ legend:{ position:"bottom" } } } });
+    const resp = countsBy("responsavel_analise", 10);
+    destroyChart(chartResponsavel);
+    chartResponsavel = new Chart($("chartResponsavel"), { type:"bar", data:{ labels:resp.map(x=>x.label), datasets:[{ label:"Registros", data:resp.map(x=>x.value), borderWidth:0 }] }, options:{ maintainAspectRatio:false, indexAxis:"y", plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true } } } });
+    const vagas = countsBy("codigo_vaga", 12).map(x => ({...x, label: x.label + " - " + txt((filtered.find(r => txt(r.codigo_vaga) === x.label) || {}).nome_vaga).slice(0,45)}));
+    destroyChart(chartVagas);
+    chartVagas = new Chart($("chartVagas"), { type:"bar", data:{ labels:vagas.map(x=>x.label), datasets:[{ label:"Registros", data:vagas.map(x=>x.value), borderWidth:0 }] }, options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ maxRotation:60,minRotation:0 } }, y:{ beginAtZero:true } } } });
+  }
+  function renderAttention(){
+    const items = [];
+    const semResp = filtered.filter(r => !txt(r.responsavel_analise)).length;
+    const foraPeriodo = filtered.filter(r => txt(r.data_validacao_status) === "FORA_PERIODO").length;
+    const pdfErro = filtered.filter(r => low(r.pdf_status) === "erro").length;
+    const semData = filtered.filter(r => txt(r.etapa) && !txt(r.data_analise)).length;
+    if(semResp) items.push({t:"Sem responsável", d:`${fmt(semResp)} registro(s) sem responsável de análise.`, danger:true});
+    if(foraPeriodo) items.push({t:"Data fora do período", d:`${fmt(foraPeriodo)} análise(s) fora da janela do edital.`, danger:true});
+    if(pdfErro) items.push({t:"PDF com erro", d:`${fmt(pdfErro)} espelho(s) com erro na última tentativa.`, danger:true});
+    if(semData) items.push({t:"Etapa sem data", d:`${fmt(semData)} registro(s) com etapa e sem data de análise.`, danger:false});
+    $("attentionList").innerHTML = items.length ? items.map(x => `<div class="alert-item ${x.danger?'danger':''}"><b>${esc(x.t)}</b><small>${esc(x.d)}</small></div>`).join("") : `<div class="empty">Nenhum ponto crítico no recorte atual.</div>`;
+  }
+  function renderTable(){
+    const q = low($("tableSearch").value);
+    const visible = filtered.filter(r => !q || [r.unidade,r.edital,r.codigo_vaga,r.nome_vaga,r.candidato,r.status_consolidado,r.etapa,r.responsavel_analise,r.analise].map(low).join(" | ").includes(q));
+    $("tableMeta").textContent = `Exibindo ${fmt(visible.length)} de ${fmt(rows.length)} registros carregados.`;
+    $("tableBody").innerHTML = visible.slice(0, 1500).map(r => `<tr>
+      <td>${esc(r.unidade)}</td><td>${esc(r.edital)}</td><td>${esc(r.codigo_vaga)}</td><td>${esc(r.nome_vaga)}</td><td>${esc(r.candidato)}</td>
+      <td><span class="chip ${statusClass(r.status_consolidado)}">${esc(r.status_consolidado || 'Pendente')}</span></td><td>${esc(r.etapa)}</td><td>${esc(fmtDate(r.data_analise))}</td><td>${esc(r.responsavel_analise || '-')}</td>
+      <td class="num">${esc(r.nota_final_ajustada ?? '')}</td><td>${esc(r.modalidade_concorrencia || '')}</td><td>${r.link_pdf ? `<a href="${attr(r.link_pdf)}" target="_blank" rel="noopener">Abrir PDF</a>` : `<span class="muted">-</span>`}</td><td>${esc(r.data_validacao_status || '')}</td>
+    </tr>`).join("") || `<tr><td colspan="13" class="empty">Nenhum registro encontrado.</td></tr>`;
+  }
+  function exportCSV(){
+    const source = filtered.length ? filtered : rows;
+    const headers = ["unidade","edital","codigo_vaga","nome_vaga","candidato","status_consolidado","etapa","data_analise","responsavel_analise","nota_final_ajustada","modalidade_concorrencia","link_pdf","data_validacao_status"];
+    const csv = [headers.join(";"), ...source.map(r => headers.map(h => String(r[h] ?? "").replaceAll("\n"," ").replaceAll("\r"," ").replaceAll(";"," ").replaceAll('"',"'")).join(";"))].join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type:"text/csv;charset=utf-8;" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "agsus_analises_curriculares.csv"; a.click(); URL.revokeObjectURL(a.href);
+  }
+  boot();
+</script>
+</body>
+</html>
