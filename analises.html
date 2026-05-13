@@ -360,18 +360,59 @@
     return { outside:false, status:"DENTRO_PERIODO", label:"Dentro do período configurado" };
   }
 
+  const SUPABASE_PAGE_SIZE = 1000;
+
+  async function fetchAllSupabaseRows(tableName, columns, orderSpecs){
+    const allRows = [];
+    let from = 0;
+    const orders = Array.isArray(orderSpecs) ? orderSpecs : [];
+
+    while(true){
+      let query = sb.from(tableName).select(columns).range(from, from + SUPABASE_PAGE_SIZE - 1);
+      orders.forEach(spec => {
+        query = query.order(spec.column, { ascending: spec.ascending !== false });
+      });
+
+      const response = await query;
+      if(response.error){
+        return { data: allRows, error: response.error };
+      }
+
+      const batch = Array.isArray(response.data) ? response.data : [];
+      allRows.push(...batch);
+
+      if(batch.length < SUPABASE_PAGE_SIZE) break;
+      from += SUPABASE_PAGE_SIZE;
+      setProgress(Math.min(34, 14 + Math.floor(allRows.length / 1000) * 6), `Carregando Supabase... ${fmtNum(allRows.length)} registros`);
+
+      if(from > 200000){
+        return { data: allRows, error: new Error("Limite de segurança de 200 mil registros atingido na leitura paginada.") };
+      }
+    }
+
+    return { data: allRows, error: null };
+  }
+
   async function refreshData(){
-    showLoading(true); setProgress(12,"Consultando Supabase...");
+    showLoading(true); setProgress(12,"Consultando Supabase em lotes...");
     const [baseResponse, editaisResponse] = await Promise.all([
-      sb.from(VIEW_NAME).select("*").order("unidade", { ascending:true }).order("edital", { ascending:true }).limit(25000),
-      sb.from("analises_editais").select("grupo,unidade,edital,ativo,data_inicio_analise,data_fim_analise")
+      fetchAllSupabaseRows(VIEW_NAME, "*", [
+        { column: "unidade", ascending: true },
+        { column: "edital", ascending: true },
+        { column: "codigo_vaga", ascending: true },
+        { column: "candidato", ascending: true }
+      ]),
+      fetchAllSupabaseRows("analises_editais", "grupo,unidade,edital,ativo,data_inicio_analise,data_fim_analise", [
+        { column: "unidade", ascending: true },
+        { column: "edital", ascending: true }
+      ])
     ]);
     if(baseResponse.error){ showAuth("Erro ao carregar o painel: " + baseResponse.error.message); return; }
     if(editaisResponse.error){ console.warn("Não foi possível carregar analises_editais:", editaisResponse.error.message); }
-    setProgress(42,"Montando filtros e janelas oficiais...");
+    setProgress(42,`Montando filtros e janelas oficiais para ${fmtNum(baseResponse.data.length)} registros...`);
     editais = Array.isArray(editaisResponse.data) ? editaisResponse.data : [];
     rows = hydrateRowsWithEditalWindows(Array.isArray(baseResponse.data) ? baseResponse.data : []);
-    hydrateFilters(); setProgress(62,"Calculando indicadores..."); currentPage=1; applyFilters(); setUpdatedAt(); setProgress(100,"Painel pronto."); setTimeout(() => showLoading(false), 180);
+    hydrateFilters(); setProgress(62,"Calculando indicadores..."); currentPage=1; applyFilters(); setUpdatedAt(); setProgress(100,`Painel pronto com ${fmtNum(rows.length)} registros.`); setTimeout(() => showLoading(false), 180);
   }
 
   function hydrateFilters(){
