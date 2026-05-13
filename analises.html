@@ -26,8 +26,8 @@
     html,body{margin:0;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
     button,input,select{font:inherit}
     button{cursor:pointer}
-    .shell{min-height:100vh;display:grid;grid-template-rows:auto 1fr auto}
-    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:16px 22px;background:color-mix(in srgb,var(--bg2) 92%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);box-shadow:0 8px 28px rgba(13,35,58,.05)}
+    .shell{min-height:100vh;display:grid;grid-template-rows:1fr auto;padding-top:var(--topbar-height,92px)}
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:16px 22px;background:color-mix(in srgb,var(--bg2) 92%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);box-shadow:0 8px 28px rgba(13,35,58,.05)}
     .brand{display:flex;align-items:center;gap:14px;min-width:0}
     .logo{width:58px;height:58px;border-radius:18px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);display:grid;place-items:center;overflow:hidden;flex:0 0 auto}
     .logo img{width:100%;height:100%;object-fit:contain;padding:8px}.logo-fallback{display:none;color:var(--blue2);font-size:24px}.logo.logo-error img{display:none}.logo.logo-error .logo-fallback{display:block}
@@ -43,6 +43,27 @@
     @media(max-width:1380px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.filter-grid{grid-template-columns:repeat(3,minmax(160px,1fr))}.oper-grid{grid-template-columns:1fr}.chart-wrap{height:300px}}
     @media(max-width:820px){.content{padding:12px}.topbar{padding:13px}.kpis,.filter-grid,.detail-grid{grid-template-columns:1fr 1fr}h1{font-size:28px}.pdf-strip{grid-template-columns:1fr}.table-head{align-items:stretch}.table-tools{width:100%}.table-tools input{width:100%}}
     @media(max-width:560px){.kpis,.filter-grid,.detail-grid{grid-template-columns:1fr}.top-actions,.top-actions .btn,.status-pill{width:100%;justify-content:center}.btn.icon{width:calc(50% - 6px)}.brand{align-items:flex-start}.logo{width:48px;height:48px}h1{font-size:24px}}
+
+    /* v4: cabeçalho realmente congelado + filtros com marcação */
+    .filter-select-native{position:absolute!important;inline-size:1px!important;block-size:1px!important;opacity:0!important;pointer-events:none!important;}
+    .multi-select{position:relative;width:100%;}
+    .multi-select-trigger{width:100%;min-height:44px;border-radius:12px;border:1px solid var(--line2);background:var(--card2);color:var(--text);padding:0 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:800;text-align:left;}
+    .multi-select-trigger:hover{border-color:rgba(15,93,183,.45);}
+    .multi-select-trigger:focus-visible{outline:none;border-color:rgba(15,93,183,.55);box-shadow:0 0 0 4px rgba(15,93,183,.12);}
+    .multi-select-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+    .multi-select-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:999px;background:rgba(15,93,183,.12);color:var(--blue2);font-size:12px;font-weight:900;padding:0 7px;}
+    .multi-select-menu{position:absolute;z-index:1200;top:calc(100% + 6px);left:0;width:100%;min-width:290px;max-height:340px;overflow:hidden;border:1px solid var(--line2);border-radius:14px;background:var(--card);box-shadow:0 24px 60px rgba(13,35,58,.22);padding:10px;display:grid;gap:8px;}
+    .multi-select-menu[hidden]{display:none!important;}
+    .multi-select-search{min-height:38px;border-radius:10px;padding:0 10px;font-weight:650;}
+    .multi-select-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:850;}
+    .multi-select-link{border:0;background:transparent;color:var(--blue2);font-weight:900;padding:4px 2px;}
+    .multi-select-options{display:grid;gap:4px;max-height:230px;overflow:auto;padding-right:3px;}
+    .multi-select-option{display:flex;align-items:center;gap:9px;padding:8px 7px;border-radius:10px;color:var(--text);font-size:13px;font-weight:700;line-height:1.25;cursor:pointer;}
+    .multi-select-option:hover{background:var(--card2);}
+    .multi-select-option input{width:16px;height:16px;min-height:16px;accent-color:var(--blue2);flex:0 0 auto;}
+    .multi-select-empty{padding:12px;color:var(--muted);font-weight:750;text-align:center;font-size:13px;}
+    @media(max-width:820px){.multi-select-menu{position:fixed;left:12px;right:12px;top:auto;width:auto;min-width:0;}}
+
   </style>
 </head>
 <body>
@@ -54,7 +75,7 @@
   </div>
 
   <div class="shell">
-    <header class="topbar">
+    <header class="topbar" id="topbar">
       <div class="brand">
         <div class="logo" id="brandLogo">
           <img src="https://i.postimg.cc/7PztC6jq/79255fad-06f0-4963-81f5-1fa4a116475e.png" alt="AgSUS" onerror="document.getElementById('brandLogo').classList.add('logo-error')">
@@ -190,7 +211,8 @@
   const VIEW_NAME = "vw_analises_dashboard_base";
   const THEME_KEY = "agsus_analises_theme_v3";
   let sb, session, profile;
-  let rows = [], baseFilteredRows = [], panelRows = [], tableRows = [];
+  let rows = [], editais = [], baseFilteredRows = [], panelRows = [], tableRows = [];
+  const multiSelectState = {};
   let currentPage = 1, rowsPerPage = 25, activeKpi = "total", activeResponsavel = "";
   let charts = {}, expanded = new Set();
 
@@ -208,7 +230,7 @@
 
   document.addEventListener("DOMContentLoaded", boot);
   async function boot(){
-    applyTheme(); bindEvents(); setProgress(6,"Preparando sessão..."); showLoading(true);
+    applyTheme(); setupFixedTopbar(); bindEvents(); setProgress(6,"Preparando sessão..."); showLoading(true);
     try{
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       const res = await sb.auth.getSession(); session = res.data && res.data.session;
@@ -229,6 +251,8 @@
     $("rowsPerPage").addEventListener("change", () => { rowsPerPage = Number($("rowsPerPage").value)||25; currentPage=1; renderTable(); });
     $("firstBtn").onclick = () => goPage(1); $("prevBtn").onclick = () => goPage(currentPage-1); $("nextBtn").onclick = () => goPage(currentPage+1); $("lastBtn").onclick = () => goPage(Math.ceil(getTableRows().length/rowsPerPage));
     document.querySelectorAll("[data-kpi]").forEach(card => card.addEventListener("click", () => { activeKpi = activeKpi === card.dataset.kpi ? "total" : card.dataset.kpi; currentPage=1; applyFilters(); }));
+    document.addEventListener("click", event => { document.querySelectorAll(".multi-select-menu:not([hidden])").forEach(menu => { const root = menu.closest(".multi-select"); if(root && !root.contains(event.target)) closeMultiSelect(root.dataset.sourceId); }); });
+    window.addEventListener("resize", setupFixedTopbar);
   }
   async function loadProfile(){ const { data } = await sb.from("app_usuarios").select("*").eq("id", session.user.id).maybeSingle(); profile = data || null; }
   function canReadAnalises(){ if(!profile || profile.ativo === false) return false; if(norm(profile.perfil) === "master") return true; return profile.p_paineis === true || profile.p_ind === true || profile.p_config === true || profile.p_admin === true; }
@@ -236,29 +260,152 @@
   function showLoading(show){ $("loading").classList.toggle("show", !!show); }
   function setProgress(value, text){ $("progressBar").style.width = Math.max(0, Math.min(100, value)) + "%"; $("loadingText").textContent = text || ""; }
 
+  
+  function setupFixedTopbar(){
+    const bar = $("topbar"); if(!bar) return;
+    document.documentElement.style.setProperty("--topbar-height", `${bar.offsetHeight}px`);
+  }
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(setupFixedTopbar).catch(()=>{}); }
+  setTimeout(setupFixedTopbar, 250);
+
+  function ensureMultiSelect(id){
+    const select = $(id); if(!select || $(`ms-${id}`)) return;
+    select.classList.add("filter-select-native");
+    const root = document.createElement("div");
+    root.className = "multi-select"; root.id = `ms-${id}`; root.dataset.sourceId = id;
+    root.innerHTML = `
+      <button type="button" class="multi-select-trigger" id="ms-trigger-${id}" aria-haspopup="listbox" aria-expanded="false">
+        <span class="multi-select-label" id="ms-label-${id}"></span>
+        <span class="multi-select-count" id="ms-count-${id}" hidden>0</span>
+        <i class="fa-solid fa-chevron-down"></i>
+      </button>
+      <div class="multi-select-menu" id="ms-menu-${id}" hidden>
+        <input type="search" class="multi-select-search" id="ms-search-${id}" placeholder="Buscar..." autocomplete="off">
+        <div class="multi-select-actions"><button type="button" class="multi-select-link" id="ms-all-${id}">Selecionar visíveis</button><button type="button" class="multi-select-link" id="ms-clear-${id}">Limpar</button></div>
+        <div class="multi-select-options" id="ms-options-${id}" role="listbox" aria-multiselectable="true"></div>
+      </div>`;
+    select.insertAdjacentElement("afterend", root);
+    $(`ms-trigger-${id}`).addEventListener("click", e => { e.stopPropagation(); toggleMultiSelect(id); });
+    $(`ms-search-${id}`).addEventListener("click", e => e.stopPropagation());
+    $(`ms-search-${id}`).addEventListener("input", e => { multiSelectState[id].search = e.target.value || ""; renderMultiSelectOptions(id); });
+    $(`ms-all-${id}`).addEventListener("click", e => { e.stopPropagation(); selectVisibleOptions(id); });
+    $(`ms-clear-${id}`).addEventListener("click", e => { e.stopPropagation(); multiSelectState[id].selected=[]; renderMultiSelect(id); currentPage=1; applyFilters(); });
+  }
+  function toggleMultiSelect(id){
+    document.querySelectorAll(".multi-select-menu:not([hidden])").forEach(menu => { const root=menu.closest(".multi-select"); if(root && root.dataset.sourceId!==id) closeMultiSelect(root.dataset.sourceId); });
+    const menu=$(`ms-menu-${id}`), trigger=$(`ms-trigger-${id}`); if(!menu) return;
+    const open = menu.hidden; menu.hidden = !open; if(trigger) trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    if(open){ const search=$(`ms-search-${id}`); if(search) setTimeout(()=>search.focus(),0); }
+  }
+  function closeMultiSelect(id){ const menu=$(`ms-menu-${id}`), trigger=$(`ms-trigger-${id}`); if(menu) menu.hidden=true; if(trigger) trigger.setAttribute("aria-expanded","false"); }
+  function renderMultiSelect(id){ renderMultiSelectTrigger(id); renderMultiSelectOptions(id); }
+  function renderMultiSelectTrigger(id){
+    const state=multiSelectState[id] || {selected:[],placeholder:"Todos"}; const label=$(`ms-label-${id}`), count=$(`ms-count-${id}`); if(!label) return;
+    const selected=state.selected||[];
+    label.textContent = selected.length ? (selected.length <= 2 ? selected.map(v=>displayOptionLabel(id,v)).join(", ") : `${selected.length} opções selecionadas`) : (state.placeholder || "Todos");
+    if(count){ count.hidden = !selected.length; count.textContent = selected.length; }
+  }
+  function renderMultiSelectOptions(id){
+    const state=multiSelectState[id] || {options:[],selected:[],search:""}; const wrap=$(`ms-options-${id}`); if(!wrap) return;
+    const selected = new Set((state.selected||[]).map(norm)); const q=norm(state.search||"");
+    const visible = (state.options||[]).filter(v => !q || norm(displayOptionLabel(id,v)).includes(q) || norm(v).includes(q));
+    if(!visible.length){ wrap.innerHTML = `<div class="multi-select-empty">Nenhuma opção encontrada.</div>`; return; }
+    wrap.innerHTML = visible.map(v => `<label class="multi-select-option" title="${attr(displayOptionLabel(id,v))}"><input type="checkbox" value="${attr(v)}" ${selected.has(norm(v))?'checked':''}><span>${esc(displayOptionLabel(id,v))}</span></label>`).join("");
+    wrap.querySelectorAll('input[type="checkbox"]').forEach(input => input.addEventListener("change", e => { const value=e.target.value; const current = new Map((state.selected||[]).map(v=>[norm(v),v])); if(e.target.checked) current.set(norm(value), value); else current.delete(norm(value)); state.selected=[...current.values()].sort((a,b)=>displayOptionLabel(id,a).localeCompare(displayOptionLabel(id,b),"pt-BR",{numeric:true})); renderMultiSelect(id); currentPage=1; applyFilters(); }));
+  }
+  function selectVisibleOptions(id){
+    const state=multiSelectState[id]; if(!state) return; const q=norm(state.search||""); const current=new Map((state.selected||[]).map(v=>[norm(v),v]));
+    (state.options||[]).filter(v => !q || norm(displayOptionLabel(id,v)).includes(q) || norm(v).includes(q)).forEach(v=>current.set(norm(v),v));
+    state.selected=[...current.values()].sort((a,b)=>displayOptionLabel(id,a).localeCompare(displayOptionLabel(id,b),"pt-BR",{numeric:true})); renderMultiSelect(id); currentPage=1; applyFilters();
+  }
+
+  function hydrateRowsWithEditalWindows(sourceRows){
+    return (sourceRows || []).map(r => {
+      const row = Object.assign({}, r);
+      const meta = resolveEditalMeta(row);
+      if(meta){
+        if(!txt(row.data_inicio_analise)) row.data_inicio_analise = meta.data_inicio_analise;
+        if(!txt(row.data_fim_analise)) row.data_fim_analise = meta.data_fim_analise;
+        row.edital_meta_match = row.edital_meta_match || meta.__match || "frontend";
+      }
+      const validation = computeWindowValidation(row);
+      row.data_validacao_status = validation.status;
+      row.data_validacao_label = validation.label;
+      row.fora_periodo_analise = validation.outside ? "SIM" : "NAO";
+      return row;
+    });
+  }
+  function editalKey(grupo, unidade, edital){ return [norm(grupo), norm(unidade), norm(edital)].join("|"); }
+  function isActiveEdital(meta){ return ["sim","s","ativo","1","true","x"].includes(norm(meta && meta.ativo)); }
+  function resolveEditalMeta(row){
+    const list = editais || [];
+    const fullKey = editalKey(row.grupo,row.unidade,row.edital);
+    let exact = list.find(e => editalKey(e.grupo,e.unidade,e.edital) === fullKey);
+    if(exact) return Object.assign({__match:"full"}, exact);
+    const unitMatches = list.filter(e => norm(e.unidade) === norm(row.unidade) && norm(e.edital) === norm(row.edital));
+    if(unitMatches.length === 1) return Object.assign({__match:"unit_edital"}, unitMatches[0]);
+    const editalMatches = list.filter(e => norm(e.edital) === norm(row.edital));
+    const active = editalMatches.filter(isActiveEdital);
+    if(active.length === 1) return Object.assign({__match:"edital_ativo_unico"}, active[0]);
+    if(editalMatches.length === 1) return Object.assign({__match:"edital_unico"}, editalMatches[0]);
+    return null;
+  }
+  function computeWindowValidation(row){
+    const analysisDate = dateObj(row.data_analise);
+    const startDate = dateObj(row.data_inicio_analise);
+    const endDate = dateObj(row.data_fim_analise);
+    if(!analysisDate) return { outside:false, status:"SEM_DATA", label:"Sem data de análise informada" };
+    if(!startDate && !endDate) return { outside:false, status:"SEM_JANELA", label:"Sem janela configurada no edital" };
+    if((startDate && analysisDate < startDate) || (endDate && analysisDate > endDate)) return { outside:true, status:"FORA_PERIODO", label:"Fora do período configurado" };
+    return { outside:false, status:"DENTRO_PERIODO", label:"Dentro do período configurado" };
+  }
+
   async function refreshData(){
     showLoading(true); setProgress(12,"Consultando Supabase...");
-    const { data, error } = await sb.from(VIEW_NAME).select("*").order("unidade", { ascending:true }).order("edital", { ascending:true }).limit(25000);
-    if(error){ showAuth("Erro ao carregar o painel: " + error.message); return; }
-    setProgress(42,"Montando filtros..."); rows = Array.isArray(data) ? data : [];
+    const [baseResponse, editaisResponse] = await Promise.all([
+      sb.from(VIEW_NAME).select("*").order("unidade", { ascending:true }).order("edital", { ascending:true }).limit(25000),
+      sb.from("analises_editais").select("grupo,unidade,edital,ativo,data_inicio_analise,data_fim_analise")
+    ]);
+    if(baseResponse.error){ showAuth("Erro ao carregar o painel: " + baseResponse.error.message); return; }
+    if(editaisResponse.error){ console.warn("Não foi possível carregar analises_editais:", editaisResponse.error.message); }
+    setProgress(42,"Montando filtros e janelas oficiais...");
+    editais = Array.isArray(editaisResponse.data) ? editaisResponse.data : [];
+    rows = hydrateRowsWithEditalWindows(Array.isArray(baseResponse.data) ? baseResponse.data : []);
     hydrateFilters(); setProgress(62,"Calculando indicadores..."); currentPage=1; applyFilters(); setUpdatedAt(); setProgress(100,"Painel pronto."); setTimeout(() => showLoading(false), 180);
   }
 
   function hydrateFilters(){
     setOptions("fUnidade", unique("unidade"), "Todas as unidades"); setOptions("fEdital", unique("edital"), "Todos os editais"); setOptions("fVaga", unique("codigo_vaga"), "Todas as vagas");
     setOptions("fStatus", unique("status_consolidado"), "Todos os status"); setOptions("fResponsavel", unique("responsavel_analise"), "Todos os responsáveis"); setOptions("fCategoria", unique("categoria"), "Todas as categorias"); setOptions("fModalidade", unique("modalidade_concorrencia"), "Todas as modalidades");
+    setOptions("fPdf", ["COM_PDF","SEM_PDF","ERRO","DESATUALIZADO"], "Todas"); setOptions("fValidacao", ["DENTRO_PERIODO","FORA_PERIODO","SEM_DATA","SEM_JANELA"], "Todas");
   }
   function unique(field){ return [...new Set(rows.map(r => txt(r[field])).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR",{numeric:true})); }
-  function setOptions(id, values, label){ const el=$(id), cur=el.value; el.innerHTML = `<option value="">${esc(label)}</option>` + values.map(v => `<option value="${attr(v)}">${esc(v)}</option>`).join(""); if([...el.options].some(o => o.value===cur)) el.value=cur; }
-  function clearFilters(){ ["fUnidade","fEdital","fVaga","fStatus","fResponsavel","fCategoria","fModalidade","fPdf","fValidacao","fBusca","tableSearch"].forEach(id => { if($(id)) $(id).value=""; }); activeKpi="total"; activeResponsavel=""; currentPage=1; applyFilters(); }
-  function selected(id){ return txt($(id).value); }
-  function match(row, field, id){ return !selected(id) || txt(row[field]) === selected(id); }
+  function displayOptionLabel(id, value){ const maps={ fPdf:{COM_PDF:"Com PDF",SEM_PDF:"Sem PDF",ERRO:"PDF com erro",DESATUALIZADO:"PDF desatualizado"}, fValidacao:{DENTRO_PERIODO:"Dentro do período",FORA_PERIODO:"Fora do período",SEM_DATA:"Sem data de análise",SEM_JANELA:"Sem janela configurada"} }; return (maps[id]&&maps[id][value]) || value; }
+  function setOptions(id, values, label){
+    const el=$(id); if(!el) return;
+    const previous = selectedValues(id);
+    const normalized = (values||[]).map(v=>txt(v)).filter(Boolean);
+    el.innerHTML = `<option value="">${esc(label)}</option>` + normalized.map(v => `<option value="${attr(v)}">${esc(displayOptionLabel(id,v))}</option>`).join("");
+    multiSelectState[id] = multiSelectState[id] || { selected:[], options:[], placeholder:label, search:"" };
+    const allowed = new Set(normalized.map(norm));
+    multiSelectState[id].options = normalized;
+    multiSelectState[id].placeholder = label;
+    multiSelectState[id].selected = previous.filter(v => allowed.has(norm(v)));
+    ensureMultiSelect(id);
+    renderMultiSelect(id);
+  }
+  function clearFilters(){
+    ["fUnidade","fEdital","fVaga","fStatus","fResponsavel","fCategoria","fModalidade","fPdf","fValidacao"].forEach(id => { if(multiSelectState[id]){ multiSelectState[id].selected=[]; multiSelectState[id].search=""; renderMultiSelect(id); } if($(id)) $(id).value=""; });
+    ["fBusca","tableSearch"].forEach(id => { if($(id)) $(id).value=""; }); activeKpi="total"; activeResponsavel=""; currentPage=1; applyFilters(); }
+  function selectedValues(id){ if(multiSelectState[id]) return (multiSelectState[id].selected || []).slice(); const el=$(id); return el && txt(el.value) ? [txt(el.value)] : []; }
+  function selected(id){ const vals = selectedValues(id); return vals[0] || ""; }
+  function match(row, field, id){ const vals = selectedValues(id); return !vals.length || vals.some(v => txt(row[field]) === v); }
   function applyFilters(){
-    const q = norm($("fBusca").value); const pdfFilter = selected("fPdf"); const validacao = selected("fValidacao");
-    baseFilteredRows = rows.filter(r => match(r,"unidade","fUnidade") && match(r,"edital","fEdital") && match(r,"codigo_vaga","fVaga") && match(r,"status_consolidado","fStatus") && match(r,"responsavel_analise","fResponsavel") && match(r,"categoria","fCategoria") && match(r,"modalidade_concorrencia","fModalidade") && (!validacao || txt(r.data_validacao_status) === validacao) && matchesPdf(r,pdfFilter) && (!q || norm([r.grupo,r.unidade,r.edital,r.codigo_vaga,r.nome_vaga,r.candidato,r.responsavel_analise,r.status_consolidado,r.analise,r.categoria,r.modalidade_concorrencia].join(" ")).includes(q)));
+    const q = norm($("fBusca").value); const pdfFilter = selectedValues("fPdf"); const validacao = selectedValues("fValidacao");
+    baseFilteredRows = rows.filter(r => match(r,"unidade","fUnidade") && match(r,"edital","fEdital") && match(r,"codigo_vaga","fVaga") && match(r,"status_consolidado","fStatus") && match(r,"responsavel_analise","fResponsavel") && match(r,"categoria","fCategoria") && match(r,"modalidade_concorrencia","fModalidade") && (!validacao.length || validacao.includes(txt(r.data_validacao_status))) && matchesPdf(r,pdfFilter) && (!q || norm([r.grupo,r.unidade,r.edital,r.codigo_vaga,r.nome_vaga,r.candidato,r.responsavel_analise,r.status_consolidado,r.analise,r.categoria,r.modalidade_concorrencia].join(" ")).includes(q)));
     panelRows = applyVisualFilters(baseFilteredRows); renderAll();
   }
-  function matchesPdf(r, filter){ if(!filter) return true; const hasPdf = !!txt(r.link_pdf); const status = norm(r.pdf_status); if(filter==="COM_PDF") return hasPdf; if(filter==="SEM_PDF") return !hasPdf; if(filter==="ERRO") return status === "erro"; return true; }
+  function matchesPdf(r, filter){ const filters = Array.isArray(filter) ? filter : (filter ? [filter] : []); if(!filters.length) return true; const hasPdf = !!txt(r.link_pdf); const status = norm(r.pdf_status); return filters.some(f => (f==="COM_PDF" && hasPdf) || (f==="SEM_PDF" && !hasPdf) || (f==="ERRO" && status === "erro") || (f==="DESATUALIZADO" && status === "desatualizado")); }
   function applyVisualFilters(source){ const statuses = kpiStatuses(activeKpi); return source.filter(r => (!statuses.length || statuses.includes(txt(r.status_consolidado))) && (!activeResponsavel || txt(r.responsavel_analise) === activeResponsavel)); }
   function kpiStatuses(k){ const m = { total:[], analisado:["Revisar","Aprovado","Reprovado"], pendente:["Pendente"], revisar:["Revisar"], aprovado:["Aprovado"], reprovado:["Reprovado"] }; return m[k] || []; }
   function renderAll(){ renderKpis(); renderContext(); renderWindowMeta(); renderPdfMetrics(); renderResponsavelChart(); renderTrendChart(); renderAttention(); renderTable(); }
@@ -268,7 +415,7 @@
     document.querySelectorAll("[data-kpi]").forEach(el => el.classList.toggle("is-active", el.dataset.kpi === activeKpi && activeKpi !== "total"));
   }
   function renderContext(){
-    const parts = []; [["fUnidade","Unidade"],["fEdital","Edital"],["fVaga","Vaga"],["fStatus","Status"],["fResponsavel","Responsável"],["fCategoria","Categoria"],["fModalidade","Modalidade"],["fPdf","PDF"],["fValidacao","Validação"]].forEach(([id,label]) => { if(selected(id)) parts.push(`${label}: ${selected(id)}`); }); if(txt($("fBusca").value)) parts.push(`Busca: ${txt($("fBusca").value)}`); if(activeKpi!=="total") parts.push(`KPI: ${activeKpiLabel(activeKpi)}`); if(activeResponsavel) parts.push(`Responsável visual: ${activeResponsavel}`);
+    const parts = []; [["fUnidade","Unidade"],["fEdital","Edital"],["fVaga","Vaga"],["fStatus","Status"],["fResponsavel","Responsável"],["fCategoria","Categoria"],["fModalidade","Modalidade"],["fPdf","PDF"],["fValidacao","Validação"]].forEach(([id,label]) => { const vals=selectedValues(id); if(vals.length) parts.push(`${label}: ${vals.map(v=>displayOptionLabel(id,v)).join(", ")}`); }); if(txt($("fBusca").value)) parts.push(`Busca: ${txt($("fBusca").value)}`); if(activeKpi!=="total") parts.push(`KPI: ${activeKpiLabel(activeKpi)}`); if(activeResponsavel) parts.push(`Responsável visual: ${activeResponsavel}`);
     $("contextLine").textContent = parts.length ? `Recorte ativo: ${parts.join(" · ")}` : "Sem filtros aplicados. Recorte base: toda a carteira carregada.";
     $("filterChips").innerHTML = parts.length ? parts.map(p => `<span class="chip-filter"><b>Filtro</b>${esc(p)}</span>`).join("") : `<span class="hint">Sem filtros aplicados. Use filtros e KPIs para navegar pela base.</span>`;
   }
