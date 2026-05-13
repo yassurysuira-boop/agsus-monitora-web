@@ -223,6 +223,7 @@
   const attr = v => esc(v).replaceAll("`","&#096;");
   const num = v => { const x = Number(v || 0); return Number.isFinite(x) ? x : 0; };
   const fmt = v => num(v).toLocaleString("pt-BR");
+  const fmtNum = fmt;
   const dateObj = v => { if(!v) return null; const raw = txt(v); if(/^\d{2}\/\d{2}\/\d{4}$/.test(raw)){ const [d,m,y]=raw.split("/").map(Number); return new Date(y,m-1,d); } const d = new Date(raw); return Number.isNaN(d.getTime()) ? null : d; };
   const fmtDate = v => { const d = dateObj(v); return d ? d.toLocaleDateString("pt-BR") : txt(v); };
   const fmtDateTime = v => { const d = dateObj(v); return d ? d.toLocaleString("pt-BR") : txt(v); };
