@@ -1637,6 +1637,10 @@ td{font-weight:650!important;color:#10243e!important}
   // IMPORTANTE: cole aqui a Publishable Key real do Supabase. Nao use service_role.
   const SUPABASE_URL = "https://vmjicwysdvnborqpczvl.supabase.co";
   const SUPABASE_KEY = "sb_publishable_Z__In8_fZh4UcgLpCq9jzg_gFlp2nkF";
+  const RPC_SAVE_MONITORAMENTO = "salvar_monitoramento_indigena";
+  const RPC_SAVE_CONFIG = "salvar_configuracoes_e_paineis";
+  const RPC_ACCESS_LOG = "registrar_evento_acesso";
+  const ACCESS_HEARTBEAT_MS = 5 * 60 * 1000;
 
   const DEFAULT_CONFIG = {
     monit_id:"MONIT_001",
@@ -1686,6 +1690,8 @@ td{font-weight:650!important;color:#10243e!important}
   let dataLoadedAtLeastOnce = false;
   let passwordRecoveryMode = false;
   let externalPanelsWarmed = false;
+  let manualLogoutInProgress = false;
+  let accessHeartbeatHandle = null;
   const SIDEBAR_LOCK_BREAKPOINT = 1480;
   const SIDEBAR_FORCE_LOCK_VIEWS = new Set([]);
 
@@ -1699,6 +1705,7 @@ td{font-weight:650!important;color:#10243e!important}
   function fmt(v){ return n(v).toLocaleString("pt-BR"); }
   function esc(v){ return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
   function attr(v){ return esc(v).replaceAll("`","&#096;"); }
+  function rpcFirst(data){ return Array.isArray(data) ? (data[0] || null) : (data || null); }
 
   function sleep(ms){
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -1748,6 +1755,85 @@ td{font-weight:650!important;color:#10243e!important}
     return profile[key] === true;
   }
 
+  function getClientSessionId(){
+    try{
+      const key = "agsus_monitora_client_session_id";
+      let value = sessionStorage.getItem(key);
+      if(!value){
+        value = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        sessionStorage.setItem(key, value);
+      }
+      return value;
+    }catch(e){
+      return `${Date.now()}-fallback`;
+    }
+  }
+
+  async function trackAccess(evento, options={}){
+    if(!sb || !currentUser?.id || !evento) return;
+    try{
+      await sb.rpc(RPC_ACCESS_LOG, {
+        p_evento: evento,
+        p_tela: options.tela ?? currentView ?? null,
+        p_origem: "index",
+        p_detalhes: options.detalhes ?? {},
+        p_client_session_id: getClientSessionId(),
+        p_user_agent: navigator.userAgent || "",
+        p_app_version: APP_VERSION
+      });
+    }catch(error){
+      console.warn("Falha ao registrar auditoria de acesso:", error);
+    }
+  }
+
+  function stopAccessHeartbeat(){
+    if(accessHeartbeatHandle){
+      clearInterval(accessHeartbeatHandle);
+      accessHeartbeatHandle = null;
+    }
+  }
+
+  function startAccessHeartbeat(){
+    stopAccessHeartbeat();
+    if(!currentUser?.id) return;
+    accessHeartbeatHandle = setInterval(() => {
+      trackAccess("heartbeat", {
+        detalhes: {
+          current_view: currentView,
+          page_title: document.title
+        }
+      });
+    }, ACCESS_HEARTBEAT_MS);
+  }
+
+  function resetSignedOutState(message="", type="warn"){
+    currentUser = null;
+    profile = null;
+    rows = [];
+    filtered = [];
+    dataLoadedAtLeastOnce = false;
+    stopAccessHeartbeat();
+    clearExternalPanelCache();
+    $("appScreen").classList.add("hidden");
+    $("loginScreen").classList.remove("hidden");
+    $("loginPassword").value = "";
+    if(message) showAlert("loginMsg", message, type);
+  }
+
+  async function refreshProfileAfterSessionUpdate(nextSession){
+    currentUser = nextSession?.user || null;
+    if(!currentUser || passwordRecoveryMode || $("appScreen").classList.contains("hidden")) return;
+    try{
+      await loadProfile();
+      buildNav();
+      if(!isViewAllowed(currentView)){
+        navigate(startView());
+      }
+    }catch(error){
+      console.error("Falha ao atualizar perfil após mudança de sessão:", error);
+    }
+  }
+
   async function boot(){
     if(!initSupabase()) return;
     applyStoredSidebarState();
@@ -1760,6 +1846,23 @@ td{font-weight:650!important;color:#10243e!important}
         }
         currentUser = session?.user || null;
         enterPasswordRecoveryMode();
+        return;
+      }
+
+      if(event === "SIGNED_OUT"){
+        const message = manualLogoutInProgress ? "" : "Sessão encerrada. Faça login novamente.";
+        manualLogoutInProgress = false;
+        resetSignedOutState(message);
+        return;
+      }
+
+      if(event === "TOKEN_REFRESHED"){
+        currentUser = session?.user || currentUser;
+        return;
+      }
+
+      if(event === "USER_UPDATED"){
+        refreshProfileAfterSessionUpdate(session);
       }
     });
 
@@ -1784,6 +1887,8 @@ td{font-weight:650!important;color:#10243e!important}
       currentUser = data.session.user;
       openApp(currentUser);
       await loadInitialData();
+      await trackAccess("sessao_restaurada", { tela: "boot" });
+      startAccessHeartbeat();
     }
   }
 
@@ -1956,16 +2061,27 @@ td{font-weight:650!important;color:#10243e!important}
     currentUser = data.user;
     openApp(currentUser);
     await loadInitialData();
+    await trackAccess("login", {
+      tela: "login",
+      detalhes: {
+        email
+      }
+    });
+    startAccessHeartbeat();
     loader(false);
     toast("Login realizado com sucesso.");
     $("loginBtn").disabled = false; $("loginBtn").textContent = "Iniciar sessão";
   }
 
   async function logout(){
+    await trackAccess("logout", {
+      detalhes: {
+        current_view: currentView
+      }
+    });
+    manualLogoutInProgress = true;
     if(sb) await sb.auth.signOut();
-    currentUser = null; profile = null; rows = []; filtered = []; dataLoadedAtLeastOnce = false;
-    clearExternalPanelCache();
-    $("appScreen").classList.add("hidden"); $("loginScreen").classList.remove("hidden"); $("loginPassword").value = "";
+    resetSignedOutState("", "");
   }
 
   function openApp(user){
@@ -2038,11 +2154,7 @@ td{font-weight:650!important;color:#10243e!important}
   async function loadProfile(){
     if(!currentUser?.id) return;
 
-    const { data, error } = await sb
-      .from("app_usuarios")
-      .select("*")
-      .eq("id", currentUser.id)
-      .maybeSingle();
+    const { data, error } = await sb.rpc("meu_usuario");
 
     if(error){
       await logout();
@@ -2050,13 +2162,15 @@ td{font-weight:650!important;color:#10243e!important}
       throw new Error("Falha ao carregar perfil do usuário");
     }
 
-    if(!data || data.ativo === false){
+    const row = rpcFirst(data);
+
+    if(!row){
       await logout();
-      showAlert("loginMsg", "Usuário sem perfil ativo no sistema. Verifique app_usuarios no Supabase.", "error");
+      showAlert("loginMsg", "Usuário sem perfil ativo no sistema. Verifique o cadastro de permissões no Supabase.", "error");
       throw new Error("Usuário sem perfil ativo");
     }
 
-    profile = data;
+    profile = { ...row, ativo:true };
   }
 
   async function loadConfig(options={}){
@@ -2337,6 +2451,7 @@ td{font-weight:650!important;color:#10243e!important}
   function setActiveNav(view){ document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view)); }
 
   function navigate(view){
+    const previousView = currentView;
     document.body.classList.remove("external-clean");
     currentView = view;
     rememberView(view);
@@ -2346,19 +2461,19 @@ td{font-weight:650!important;color:#10243e!important}
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
     if(view === "dashboard"){
       if(!can("ind")) return toast("Sem permissão para Saúde Indígena.", "warn");
-      $("page-dashboard").classList.add("active"); setPageTitle("Saúde Indígena","Monitoramento DSEI/CASAI"); renderAll(); return;
+      $("page-dashboard").classList.add("active"); setPageTitle("Saúde Indígena","Monitoramento DSEI/CASAI"); renderAll(); if(previousView !== view) trackAccess("abertura_tela", { tela: view }); return;
     }
     if(view === "nucleo"){
       if(!can("cores")) return toast("Sem permissão para Equipe Núcleo.", "warn");
-      $("page-nucleo").classList.add("active"); setPageTitle("Equipe Núcleo","Controle de Editais (Inserir/Editar)"); renderNucleo(); return;
+      $("page-nucleo").classList.add("active"); setPageTitle("Equipe Núcleo","Controle de Editais (Inserir/Editar)"); renderNucleo(); if(previousView !== view) trackAccess("abertura_tela", { tela: view }); return;
     }
     if(view === "config"){
       if(!can("config")) return toast("Sem permissão para Configurações.", "warn");
-      $("page-config").classList.add("active"); setPageTitle("Configurações","Parametrização do Sistema"); renderConfigForm(); return;
+      $("page-config").classList.add("active"); setPageTitle("Configurações","Parametrização do Sistema"); renderConfigForm(); if(previousView !== view) trackAccess("abertura_tela", { tela: view }); return;
     }
     if(view.startsWith("panel:")){
       if(!can("paineis")) return toast("Sem permissão para painéis externos.", "warn");
-      openPanel(view.split(":")[1]); return;
+      openPanel(view.split(":")[1]); if(previousView !== view) trackAccess("abertura_tela", { tela: view }); return;
     }
   }
 
@@ -2784,6 +2899,7 @@ td{font-weight:650!important;color:#10243e!important}
       observacoes_internas: txt($("mObsInternas").value),
       ativo: true
     };
+    if(id) payload.id = id;
 
     // Campos automáticos não são enviados neste formulário:
     // inscritos, aptos_analise, cancelados, eliminados_nota, reprovados_analise,
@@ -2799,21 +2915,7 @@ td{font-weight:650!important;color:#10243e!important}
     btn.textContent = "Salvando...";
     loader(true,"Equipe Núcleo","Salvando e confirmando persistência no Supabase...",70);
 
-    const fieldsToReturn = "id,id_unidade,sigla_unidade,tipo_unidade,processo,edital,unidade,uf,ciclo,vagas_total,data_inicio,data_fim,status,etapa,risco,responsavel,link_edital,observacoes,observacoes_internas,ativo,inscritos,aptos_analise,cancelados,eliminados_nota,reprovados_analise,total_eliminados,aprovados_analise,aprovados_prova,entrevistados,contratados,vagas_ociosas,data_ultimo_sync,origem";
-    let result;
-
-    if(id){
-      result = await sb
-        .from("monitoramento_indigena")
-        .update(payload)
-        .eq("id", id)
-        .select(fieldsToReturn);
-    }else{
-      result = await sb
-        .from("monitoramento_indigena")
-        .insert(payload)
-        .select(fieldsToReturn);
-    }
+    const result = await sb.rpc(RPC_SAVE_MONITORAMENTO, { p_payload: payload });
 
     btn.disabled = false;
     btn.textContent = "Salvar";
@@ -2824,23 +2926,10 @@ td{font-weight:650!important;color:#10243e!important}
       return;
     }
 
-    const saved = Array.isArray(result.data) ? result.data[0] : null;
+    const saved = rpcFirst(result.data);
     if(!saved || !saved.id){
       loader(false);
       toast("Não foi possível confirmar o salvamento. Verifique se seu usuário tem permissão de edição na Equipe Núcleo.", "error");
-      return;
-    }
-
-    // Confirma a persistência lendo de novo o registro salvo.
-    const check = await sb
-      .from("monitoramento_indigena")
-      .select(fieldsToReturn)
-      .eq("id", saved.id)
-      .maybeSingle();
-
-    if(check.error || !check.data){
-      loader(false);
-      toast("O registro foi enviado, mas não foi possível confirmar a leitura no banco. Atualize e confira.", "warn");
       return;
     }
 
@@ -2992,40 +3081,30 @@ td{font-weight:650!important;color:#10243e!important}
       {chave:"broadcast_type", valor:txt($("cfgBroadcastType").value), descricao:"Tipo do aviso global"},
       {chave:"broadcast_msg", valor:txt($("cfgBroadcastMsg").value), descricao:"Mensagem do aviso global"}
     ];
-    const { data: savedConfig, error: cfgErr } = await sb
-      .from("configuracoes")
-      .upsert(configRows, { onConflict:"chave" })
-      .select("chave,valor,descricao");
+    const panelRows = panels
+      .filter(panel => !!panel.id)
+      .map((panel, i) => ({
+        id: txt(panel.id),
+        titulo: txt($("panelTitulo"+i).value),
+        url: txt($("panelUrl"+i).value),
+        ativo: $("panelAtivo"+i).value === "true",
+        em_manutencao: $("panelManut"+i).value === "true"
+      }));
+    const { data: savedConfig, error: cfgErr } = await sb.rpc(RPC_SAVE_CONFIG, {
+      p_config_rows: configRows,
+      p_paineis: panelRows
+    });
 
     if(cfgErr){
       loader(false);
       return toast("Erro ao salvar configurações: " + friendlyError(cfgErr), "error");
     }
 
-    const expectedKeys = configRows.map(r => r.chave);
-    const savedKeys = Array.isArray(savedConfig) ? savedConfig.map(r => r.chave) : [];
-    const missingKeys = expectedKeys.filter(k => !savedKeys.includes(k));
-
-    if(missingKeys.length){
+    if(!savedConfig){
       loader(false);
-      return toast(
-        "Configurações enviadas, mas o Supabase não confirmou persistência das chaves: " + missingKeys.join(", "),
-        "error"
-      );
+      return toast("O Supabase não confirmou a gravação das configurações.", "error");
     }
 
-    savedConfig.forEach(r => {
-      if(r.chave) appConfig[r.chave] = r.valor ?? "";
-    });
-
-    applyConfigToUi();
-    renderConfigForm();
-    for(let i=0;i<panels.length;i++){
-      if(!panels[i].id) continue;
-      const payload = { titulo:txt($("panelTitulo"+i).value), url:txt($("panelUrl"+i).value), ativo:$("panelAtivo"+i).value === "true", em_manutencao:$("panelManut"+i).value === "true" };
-      const { error } = await sb.from("paineis_externos").update(payload).eq("id", panels[i].id);
-      if(error){ loader(false); return toast("Erro ao salvar painel " + panels[i].titulo + ": " + friendlyError(error), "error"); }
-    }
     await loadConfig(); await loadPanels(); buildNav(); loader(false); toast("Configurações salvas.");
   }
 
@@ -3042,7 +3121,10 @@ td{font-weight:650!important;color:#10243e!important}
   function friendlyError(error){
     const msg = error?.message || String(error || "Erro desconhecido");
     if(msg.includes("vagas_ociosas")) return "Campo calculado protegido pelo banco. Atualize a página e tente novamente.";
-    if(msg.includes("permission denied") || msg.includes("violates row-level security")) return "Permissão insuficiente para esta ação. Verifique o perfil em app_usuarios e as políticas RLS.";
+    if(msg.includes(RPC_SAVE_MONITORAMENTO) || msg.includes(RPC_SAVE_CONFIG)) return "As funções RPC necessárias ainda não estão disponíveis. Aplique primeiro o script SQL institucional no Supabase.";
+    if(msg.includes("Sem permissão para salvar monitoramento indígena")) return "Seu usuário não tem permissão para salvar registros da Equipe Núcleo.";
+    if(msg.includes("Sem permissão para salvar configurações")) return "Seu usuário não tem permissão para alterar configurações do sistema.";
+    if(msg.includes("permission denied") || msg.includes("violates row-level security")) return "Permissão insuficiente para esta ação. Verifique o perfil do usuário e as políticas RLS.";
     if(msg.includes("JWT") || msg.includes("session")) return "Sessão expirada. Faça login novamente.";
     return msg;
   }
