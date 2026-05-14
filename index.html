@@ -314,8 +314,11 @@
     #page-dashboard .filter-body{grid-template-columns:1.25fr 1fr 1fr 1fr 1fr .75fr auto}
     #page-dashboard .details-table{width:100%;min-width:1360px;table-layout:auto}
     #page-dashboard .details-table th.obs-col,#page-dashboard .details-table td.obs-col{min-width:380px;width:34%}
-    .obs{max-width:none;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;line-height:1.35;color:#435973;font-style:italic;font-weight:650}
-    .obs:hover{-webkit-line-clamp:unset;overflow:visible}
+    .obs-cell{display:grid;gap:8px;align-items:start}
+    .obs{max-width:100%;white-space:normal;overflow:hidden;overflow-wrap:anywhere;word-break:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;line-height:1.42;color:#435973;font-style:italic;font-weight:650}
+    .obs.expanded{-webkit-line-clamp:unset;overflow:visible}
+    .obs-toggle{justify-self:start;border:0;background:transparent;color:#00529b;font-weight:900;font-size:12px;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+    .obs-toggle:hover{color:#003b70}
     .multi-units-card{margin-top:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
     .multi-units-title{font-weight:900;color:#003b70;display:flex;gap:8px;align-items:center}
     .multi-units-list{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
@@ -1328,14 +1331,31 @@ th{
   font-weight:800!important;
 }
 td{font-weight:650!important;color:#10243e!important}
+.obs-cell{display:grid!important;gap:8px!important;align-items:start!important}
 .obs{
   white-space:normal!important;
-  max-width:none!important;
-  min-width:360px!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
   display:-webkit-box!important;
   -webkit-line-clamp:3!important;
   -webkit-box-orient:vertical!important;
-  line-height:1.35!important;
+  line-height:1.42!important;
+}
+.obs.expanded{-webkit-line-clamp:unset!important;overflow:visible!important}
+.obs-toggle{
+  justify-self:start!important;
+  border:0!important;
+  background:transparent!important;
+  color:#00529b!important;
+  font-weight:900!important;
+  font-size:12px!important;
+  padding:0!important;
+  cursor:pointer!important;
+  text-decoration:underline!important;
+  text-underline-offset:3px!important;
 }
 
 .multi-select-toggle{
@@ -1641,6 +1661,7 @@ td{font-weight:650!important;color:#10243e!important}
   const RPC_SAVE_CONFIG = "salvar_configuracoes_e_paineis";
   const RPC_ACCESS_LOG = "registrar_evento_acesso";
   const ACCESS_HEARTBEAT_MS = 5 * 60 * 1000;
+  const DETAILS_TABLE_SOURCE_MODE = "client";
 
   const DEFAULT_CONFIG = {
     monit_id:"MONIT_001",
@@ -1692,6 +1713,9 @@ td{font-weight:650!important;color:#10243e!important}
   let externalPanelsWarmed = false;
   let manualLogoutInProgress = false;
   let accessHeartbeatHandle = null;
+  let activeLoadDataPromise = null;
+  let loadDataRunCounter = 0;
+  let activeRefreshDataPromise = null;
   const SIDEBAR_LOCK_BREAKPOINT = 1480;
   const SIDEBAR_FORCE_LOCK_VIEWS = new Set([]);
 
@@ -2304,6 +2328,16 @@ td{font-weight:650!important;color:#10243e!important}
     return null;
   }
 
+  function getDetailsTableRows(){
+    if(DETAILS_TABLE_SOURCE_MODE === "client") return filtered;
+    return filtered;
+  }
+
+  function getDetailsTableTotalRows(){
+    if(DETAILS_TABLE_SOURCE_MODE === "client") return rows;
+    return rows;
+  }
+
   function populateModalUnidades(selectedValue=""){
     const select = $("mUnidade");
     if(!select) return;
@@ -2349,42 +2383,55 @@ td{font-weight:650!important;color:#10243e!important}
   }
 
   async function loadData(options={}){
+    if(activeLoadDataPromise) return activeLoadDataPromise;
+
     const showOwnLoader = options.showLoader !== false;
+    const runId = ++loadDataRunCounter;
 
-    if(!can("ind") && !can("cores")) {
-      rows = [];
-      filtered = [];
-      buildNav();
-      return true;
-    }
+    activeLoadDataPromise = (async () => {
+      if(!can("ind") && !can("cores")) {
+        rows = [];
+        filtered = [];
+        buildNav();
+        return true;
+      }
 
-    if(showOwnLoader){
-      loader(true,"Atualizando","Sincronizando dados do monitoramento...",62);
-    }
+      if(showOwnLoader){
+        loader(true,"Atualizando","Sincronizando dados do monitoramento...",62);
+      }
 
-    const { data, error } = await sb
-      .from("monitoramento_indigena")
-      .select("*")
-      .eq("ativo", true)
-      .order("unidade", { ascending: true })
-      .order("edital", { ascending: true });
+      const { data, error } = await sb
+        .from("monitoramento_indigena")
+        .select("*")
+        .eq("ativo", true)
+        .order("unidade", { ascending: true })
+        .order("edital", { ascending: true });
 
-    if(error){
+      if(runId !== loadDataRunCounter) return false;
+
+      if(error){
+        if(showOwnLoader) loader(false);
+        toast("Erro ao carregar dados: " + friendlyError(error), "error");
+        return false;
+      }
+
+      rows = Array.isArray(data) ? data : [];
+      dataLoadedAtLeastOnce = true;
+      populateModalUnidades();
+      populateFilters();
+      applyFilters();
+      setUpdated();
+
       if(showOwnLoader) loader(false);
-      toast("Erro ao carregar dados: " + friendlyError(error), "error");
-      return false;
+
+      return true;
+    })();
+
+    try{
+      return await activeLoadDataPromise;
+    }finally{
+      activeLoadDataPromise = null;
     }
-
-    rows = Array.isArray(data) ? data : [];
-    dataLoadedAtLeastOnce = true;
-    populateModalUnidades();
-    populateFilters();
-    applyFilters();
-    setUpdated();
-
-    if(showOwnLoader) loader(false);
-
-    return true;
   }
 
   function setUpdated(){
@@ -2394,45 +2441,56 @@ td{font-weight:650!important;color:#10243e!important}
   }
 
   async function refreshData(){
+    if(activeRefreshDataPromise) return activeRefreshDataPromise;
+
     const previousView = currentView;
     const previousPanelCode = previousView && previousView.startsWith("panel:") ? previousView.split(":")[1] : "";
 
-    loader(true,"Atualizando configurações","Buscando parâmetros e painéis externos...",24);
-    await loadConfig();
-    await loadPanels();
-    buildNav();
+    activeRefreshDataPromise = (async () => {
+      loader(true,"Atualizando configurações","Buscando parâmetros e painéis externos...",24);
+      await loadConfig();
+      await loadPanels();
+      buildNav();
 
-    loader(true,"Atualizando painéis","Reconstruindo cache dos painéis externos...",48);
-    warmExternalPanels(true);
-    await sleep(180);
+      loader(true,"Atualizando painéis","Reconstruindo cache dos painéis externos...",48);
+      warmExternalPanels(true);
+      await sleep(180);
 
-    loader(true,"Atualizando unidades","Atualizando catálogo oficial DSEI/CASAI...",58);
-    await loadUnidades();
+      loader(true,"Atualizando unidades","Atualizando catálogo oficial DSEI/CASAI...",58);
+      await loadUnidades();
 
-    loader(true,"Atualizando dados","Sincronizando dados do monitoramento...",68);
-    const dataOk = await loadData({ showLoader:false });
-    if(!dataOk){
-      loader(false);
-      return;
-    }
+      loader(true,"Atualizando dados","Sincronizando dados do monitoramento...",68);
+      const dataOk = await loadData({ showLoader:false });
+      if(!dataOk){
+        loader(false);
+        return false;
+      }
 
-    if(previousPanelCode){
-      const activePanel = panels.find(p => p.codigo === previousPanelCode && p.ativo !== false);
-      if(activePanel){
-        currentPanel = activePanel;
-        openPanel(previousPanelCode);
+      if(previousPanelCode){
+        const activePanel = panels.find(p => p.codigo === previousPanelCode && p.ativo !== false);
+        if(activePanel){
+          currentPanel = activePanel;
+          openPanel(previousPanelCode);
+        }else{
+          currentPanel = null;
+          navigate(startView());
+        }
+      }else if(isViewAllowed(previousView)){
+        navigate(previousView);
       }else{
-        currentPanel = null;
         navigate(startView());
       }
-    }else if(isViewAllowed(previousView)){
-      navigate(previousView);
-    }else{
-      navigate(startView());
-    }
 
-    loader(false);
-    toast("Dados atualizados.");
+      loader(false);
+      toast("Dados atualizados.");
+      return true;
+    })();
+
+    try{
+      return await activeRefreshDataPromise;
+    }finally{
+      activeRefreshDataPromise = null;
+    }
   }
 
   function buildNav(){
@@ -2805,12 +2863,30 @@ td{font-weight:650!important;color:#10243e!important}
 
   function statusChip(status){ const l = low(status); const cls = l.includes("conclu") ? "green" : l.includes("andamento") ? "blue" : l.includes("elabora") ? "cyan" : l.includes("cancel") ? "red" : "gray"; return `<span class="chip ${cls}">${esc(status || "-")}</span>`; }
   function riscoChip(risco){ const l = low(risco); const cls = l === "alto" ? "red" : (l === "médio" || l === "medio") ? "yellow" : "green"; return `<span class="chip ${cls}">${esc(risco || "-")}</span>`; }
+  function shouldShowObsToggle(value){ return txt(value).length > 180; }
+  function toggleObs(button){
+    const cell = button.closest(".obs-cell");
+    if(!cell) return;
+    const text = cell.querySelector(".obs");
+    if(!text) return;
+    const expanded = text.classList.toggle("expanded");
+    button.textContent = expanded ? "Ver menos" : "Ver mais";
+    button.setAttribute("aria-expanded", expanded ? "true" : "false");
+  }
 
   function renderTable(){
+    const detailRows = getDetailsTableRows();
+    const totalRows = getDetailsTableTotalRows();
     renderSortIndicators();
     const sortText = tableSort.field ? ` Ordenação: ${tableSort.direction === "asc" ? "crescente" : "decrescente"}.` : " Clique nos cabeçalhos para ordenar.";
-    $("tableMeta").textContent = `Exibindo ${fmt(filtered.length)} de ${fmt(rows.length)} registros após os filtros.${sortText}`;
-    $("monitorRows").innerHTML = filtered.map(r => { const link = txt(r.link_edital); const edital = link ? `<a class="link" href="${attr(link)}" target="_blank" rel="noopener">${esc(r.edital || "-")} ↗</a>` : esc(r.edital || "-"); return `<tr><td>${esc(r.unidade)}</td><td>${edital}</td><td>${esc(r.data_inicio || "")}</td><td>${esc(r.data_fim || "")}</td><td class="num">${fmt(r.vagas_total)}</td><td class="num green-text">${fmt(r.contratados)}</td><td class="num red-text">${fmt(r.vagas_ociosas)}</td><td>${statusChip(r.status)}</td><td>${esc(r.etapa)}</td><td>${riscoChip(r.risco)}</td><td class="obs-col"><div class="obs" title="${attr(r.observacoes || "-")}">${esc(r.observacoes || "-")}</div></td></tr>`; }).join("") || `<tr><td colspan="11" style="text-align:center;padding:22px">Nenhum registro encontrado com os filtros atuais.</td></tr>`;
+    $("tableMeta").textContent = `Exibindo ${fmt(detailRows.length)} de ${fmt(totalRows.length)} registros após os filtros.${sortText}`;
+    $("monitorRows").innerHTML = detailRows.map(r => {
+      const link = txt(r.link_edital);
+      const edital = link ? `<a class="link" href="${attr(link)}" target="_blank" rel="noopener">${esc(r.edital || "-")} ↗</a>` : esc(r.edital || "-");
+      const observacoes = txt(r.observacoes) || "-";
+      const obsToggle = shouldShowObsToggle(observacoes) ? `<button type="button" class="obs-toggle" onclick="toggleObs(this)" aria-expanded="false">Ver mais</button>` : "";
+      return `<tr><td>${esc(r.unidade)}</td><td>${edital}</td><td>${esc(r.data_inicio || "")}</td><td>${esc(r.data_fim || "")}</td><td class="num">${fmt(r.vagas_total)}</td><td class="num green-text">${fmt(r.contratados)}</td><td class="num red-text">${fmt(r.vagas_ociosas)}</td><td>${statusChip(r.status)}</td><td>${esc(r.etapa)}</td><td>${riscoChip(r.risco)}</td><td class="obs-col"><div class="obs-cell"><div class="obs">${esc(observacoes)}</div>${obsToggle}</div></td></tr>`;
+    }).join("") || `<tr><td colspan="11" style="text-align:center;padding:22px">Nenhum registro encontrado com os filtros atuais.</td></tr>`;
   }
 
   function renderNucleo(){
