@@ -220,6 +220,9 @@
   let charts = {}, expanded = new Set();
   let panelBootstrapPromise = null;
   let accessHeartbeatHandle = null;
+  let activeRefreshPromise = null;
+  let refreshRunCounter = 0;
+  let lastTrackedOpenKey = "";
 
   const $ = id => document.getElementById(id);
   const txt = v => String(v ?? "").trim();
@@ -300,12 +303,18 @@
     activeKpi = "total";
     activeResponsavel = "";
     stopAccessHeartbeat();
+    lastTrackedOpenKey = "";
   }
 
   function hideAuth(){ $("authWarning").hidden = true; $("authWarning").textContent = ""; }
 
+  function currentOpenAuditKey(){
+    return [session?.user?.id || "", getClientSessionId(), APP_VERSION].join("|");
+  }
+
   async function bootstrapPanel(nextSession, options={}){
     const reloadData = options.reloadData !== false;
+    const trackOpen = options.trackOpen !== false;
     session = nextSession || null;
 
     if(!session){
@@ -333,11 +342,17 @@
       await refreshData();
     }
 
-    await trackAccess("abertura_tela", {
-      detalhes: {
-        reload_data: reloadData
+    if(trackOpen){
+      const openKey = currentOpenAuditKey();
+      if(openKey && openKey !== lastTrackedOpenKey){
+        await trackAccess("abertura_tela", {
+          detalhes: {
+            reload_data: reloadData
+          }
+        });
+        lastTrackedOpenKey = openKey;
       }
-    });
+    }
     startAccessHeartbeat();
 
     return true;
@@ -361,14 +376,14 @@
         }
 
         if(event === "SIGNED_IN" || event === "USER_UPDATED"){
-          panelBootstrapPromise = bootstrapPanel(nextSession, { reloadData:true }).catch(err => {
+          panelBootstrapPromise = bootstrapPanel(nextSession, { reloadData:true, trackOpen:true }).catch(err => {
             showAuth("Falha ao atualizar painel: " + (err && err.message ? err.message : err));
           });
         }
       });
 
       const res = await sb.auth.getSession();
-      panelBootstrapPromise = bootstrapPanel(res.data && res.data.session, { reloadData:true });
+      panelBootstrapPromise = bootstrapPanel(res.data && res.data.session, { reloadData:true, trackOpen:true });
       await panelBootstrapPromise;
     }catch(err){ showAuth("Falha ao iniciar painel: " + (err && err.message ? err.message : err)); }
     finally{ showLoading(false); }
@@ -541,25 +556,38 @@
   }
 
   async function refreshData(){
-    showLoading(true); setProgress(12,"Consultando Supabase em lotes...");
-    const [baseResponse, editaisResponse] = await Promise.all([
-      fetchAllSupabaseRows(VIEW_NAME, "*", [
-        { column: "unidade", ascending: true },
-        { column: "edital", ascending: true },
-        { column: "codigo_vaga", ascending: true },
-        { column: "candidato", ascending: true }
-      ]),
-      fetchAllSupabaseRows("analises_editais", "grupo,unidade,edital,ativo,data_inicio_analise,data_fim_analise", [
-        { column: "unidade", ascending: true },
-        { column: "edital", ascending: true }
-      ])
-    ]);
-    if(baseResponse.error){ showAuth("Erro ao carregar o painel: " + baseResponse.error.message); return; }
-    if(editaisResponse.error){ console.warn("Não foi possível carregar analises_editais:", editaisResponse.error.message); }
-    setProgress(42,`Montando filtros e janelas oficiais para ${fmtNum(baseResponse.data.length)} registros...`);
-    editais = Array.isArray(editaisResponse.data) ? editaisResponse.data : [];
-    rows = hydrateRowsWithEditalWindows(Array.isArray(baseResponse.data) ? baseResponse.data : []);
-    hydrateFilters(); setProgress(62,"Calculando indicadores..."); currentPage=1; applyFilters(); setUpdatedAt(); setProgress(100,`Painel pronto com ${fmtNum(rows.length)} registros.`); setTimeout(() => showLoading(false), 180);
+    if(activeRefreshPromise) return activeRefreshPromise;
+
+    const runId = ++refreshRunCounter;
+    activeRefreshPromise = (async () => {
+      showLoading(true); setProgress(12,"Consultando Supabase em lotes...");
+      const [baseResponse, editaisResponse] = await Promise.all([
+        fetchAllSupabaseRows(VIEW_NAME, "*", [
+          { column: "unidade", ascending: true },
+          { column: "edital", ascending: true },
+          { column: "codigo_vaga", ascending: true },
+          { column: "candidato", ascending: true }
+        ]),
+        fetchAllSupabaseRows("analises_editais", "grupo,unidade,edital,ativo,data_inicio_analise,data_fim_analise", [
+          { column: "unidade", ascending: true },
+          { column: "edital", ascending: true }
+        ])
+      ]);
+      if(runId !== refreshRunCounter) return false;
+      if(baseResponse.error){ showAuth("Erro ao carregar o painel: " + baseResponse.error.message); return false; }
+      if(editaisResponse.error){ console.warn("Não foi possível carregar analises_editais:", editaisResponse.error.message); }
+      setProgress(42,`Montando filtros e janelas oficiais para ${fmtNum(baseResponse.data.length)} registros...`);
+      editais = Array.isArray(editaisResponse.data) ? editaisResponse.data : [];
+      rows = hydrateRowsWithEditalWindows(Array.isArray(baseResponse.data) ? baseResponse.data : []);
+      hydrateFilters(); setProgress(62,"Calculando indicadores..."); currentPage=1; applyFilters(); setUpdatedAt(); setProgress(100,`Painel pronto com ${fmtNum(rows.length)} registros.`); setTimeout(() => showLoading(false), 180);
+      return true;
+    })();
+
+    try{
+      return await activeRefreshPromise;
+    }finally{
+      activeRefreshPromise = null;
+    }
   }
 
   function hydrateFilters(){
