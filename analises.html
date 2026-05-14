@@ -210,11 +210,16 @@
   const SUPABASE_KEY = "sb_publishable_Z__In8_fZh4UcgLpCq9jzg_gFlp2nkF";
   const VIEW_NAME = "vw_analises_dashboard_base";
   const THEME_KEY = "agsus_analises_theme_v3";
-  let sb, session, profile;
+  const RPC_ACCESS_LOG = "registrar_evento_acesso";
+  const APP_VERSION = "institucional-2026-05-14";
+  const ACCESS_HEARTBEAT_MS = 5 * 60 * 1000;
+  let sb, session, profile, canReadAnalisesRpc = null;
   let rows = [], editais = [], baseFilteredRows = [], panelRows = [], tableRows = [];
   const multiSelectState = {};
   let currentPage = 1, rowsPerPage = 25, activeKpi = "total", activeResponsavel = "";
   let charts = {}, expanded = new Set();
+  let panelBootstrapPromise = null;
+  let accessHeartbeatHandle = null;
 
   const $ = id => document.getElementById(id);
   const txt = v => String(v ?? "").trim();
@@ -228,17 +233,143 @@
   const fmtDate = v => { const d = dateObj(v); return d ? d.toLocaleDateString("pt-BR") : txt(v); };
   const fmtDateTime = v => { const d = dateObj(v); return d ? d.toLocaleString("pt-BR") : txt(v); };
   const debounce = (fn, wait=180) => { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); }; };
+  const rpcFirst = data => Array.isArray(data) ? (data[0] || null) : (data || null);
+
+  function getClientSessionId(){
+    try{
+      const key = "agsus_analises_client_session_id";
+      let value = sessionStorage.getItem(key);
+      if(!value){
+        value = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        sessionStorage.setItem(key, value);
+      }
+      return value;
+    }catch(e){
+      return `${Date.now()}-fallback`;
+    }
+  }
+
+  async function trackAccess(evento, options={}){
+    if(!sb || !session?.user?.id || !evento) return;
+    try{
+      await sb.rpc(RPC_ACCESS_LOG, {
+        p_evento: evento,
+        p_tela: options.tela ?? "analises",
+        p_origem: "analises",
+        p_detalhes: options.detalhes ?? {},
+        p_client_session_id: getClientSessionId(),
+        p_user_agent: navigator.userAgent || "",
+        p_app_version: APP_VERSION
+      });
+    }catch(error){
+      console.warn("Falha ao registrar auditoria de acesso no painel de análises:", error);
+    }
+  }
+
+  function stopAccessHeartbeat(){
+    if(accessHeartbeatHandle){
+      clearInterval(accessHeartbeatHandle);
+      accessHeartbeatHandle = null;
+    }
+  }
+
+  function startAccessHeartbeat(){
+    stopAccessHeartbeat();
+    if(!session?.user?.id) return;
+    accessHeartbeatHandle = setInterval(() => {
+      trackAccess("heartbeat", {
+        detalhes: {
+          current_page: currentPage,
+          active_kpi: activeKpi,
+          active_responsavel: activeResponsavel
+        }
+      });
+    }, ACCESS_HEARTBEAT_MS);
+  }
+
+  function resetPanelState(){
+    session = null;
+    profile = null;
+    canReadAnalisesRpc = null;
+    rows = [];
+    editais = [];
+    baseFilteredRows = [];
+    panelRows = [];
+    tableRows = [];
+    currentPage = 1;
+    activeKpi = "total";
+    activeResponsavel = "";
+    stopAccessHeartbeat();
+  }
+
+  function hideAuth(){ $("authWarning").hidden = true; $("authWarning").textContent = ""; }
+
+  async function bootstrapPanel(nextSession, options={}){
+    const reloadData = options.reloadData !== false;
+    session = nextSession || null;
+
+    if(!session){
+      resetPanelState();
+      showAuth("Sessão não localizada. Abra este painel pelo menu do AgSUS Monitora para compartilhar a sessão do Supabase Auth.");
+      return false;
+    }
+
+    await loadProfile();
+    await loadAnalisesPermission();
+
+    if(!canReadAnalises()){
+      await trackAccess("acesso_negado", {
+        detalhes: {
+          motivo: "usuario_sem_permissao_analises"
+        }
+      });
+      showAuth("Seu usuário não possui permissão para visualizar o painel de Análises Curriculares.");
+      return false;
+    }
+
+    hideAuth();
+
+    if(reloadData){
+      await refreshData();
+    }
+
+    await trackAccess("abertura_tela", {
+      detalhes: {
+        reload_data: reloadData
+      }
+    });
+    startAccessHeartbeat();
+
+    return true;
+  }
 
   document.addEventListener("DOMContentLoaded", boot);
   async function boot(){
     applyTheme(); setupFixedTopbar(); bindEvents(); setProgress(6,"Preparando sessão..."); showLoading(true);
     try{
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      const res = await sb.auth.getSession(); session = res.data && res.data.session;
-      if(!session){ showAuth("Sessão não localizada. Abra este painel pelo menu do AgSUS Monitora para compartilhar a sessão do Supabase Auth."); return; }
-      await loadProfile();
-      if(!canReadAnalises()){ showAuth("Seu usuário não possui permissão para visualizar o painel de Análises Curriculares."); return; }
-      await refreshData();
+      sb.auth.onAuthStateChange((event, nextSession) => {
+        if(event === "SIGNED_OUT"){
+          resetPanelState();
+          showAuth("Sessão encerrada. Reabra o painel pelo menu do AgSUS Monitora.");
+          return;
+        }
+
+        if(event === "TOKEN_REFRESHED"){
+          session = nextSession || null;
+          return;
+        }
+
+        if(event === "SIGNED_IN" || event === "USER_UPDATED"){
+          panelBootstrapPromise = bootstrapPanel(nextSession, { reloadData:true }).catch(err => {
+            showAuth("Falha ao atualizar painel: " + (err && err.message ? err.message : err));
+          });
+        }
+      });
+
+      const res = await sb.auth.getSession();
+      panelBootstrapPromise = bootstrapPanel(res.data && res.data.session, { reloadData:true });
+      await panelBootstrapPromise;
     }catch(err){ showAuth("Falha ao iniciar painel: " + (err && err.message ? err.message : err)); }
     finally{ showLoading(false); }
   }
@@ -255,8 +386,23 @@
     document.addEventListener("click", event => { document.querySelectorAll(".multi-select-menu:not([hidden])").forEach(menu => { const root = menu.closest(".multi-select"); if(root && !root.contains(event.target)) closeMultiSelect(root.dataset.sourceId); }); });
     window.addEventListener("resize", setupFixedTopbar);
   }
-  async function loadProfile(){ const { data } = await sb.from("app_usuarios").select("*").eq("id", session.user.id).maybeSingle(); profile = data || null; }
-  function canReadAnalises(){ if(!profile || profile.ativo === false) return false; if(norm(profile.perfil) === "master") return true; return profile.p_paineis === true || profile.p_ind === true || profile.p_config === true || profile.p_admin === true; }
+  async function loadProfile(){
+    const { data, error } = await sb.rpc("meu_usuario");
+    if(error) throw new Error("Não foi possível carregar o perfil do usuário pelo RPC meu_usuario().");
+    const row = rpcFirst(data);
+    profile = row ? { ...row, ativo:true } : null;
+    if(!profile) throw new Error("Usuário autenticado sem perfil ativo liberado para este painel.");
+  }
+  async function loadAnalisesPermission(){
+    const { data, error } = await sb.rpc("usuario_pode_ler_analises");
+    if(error){
+      canReadAnalisesRpc = null;
+      return;
+    }
+    canReadAnalisesRpc = Array.isArray(data) ? Boolean(data[0]) : Boolean(data);
+  }
+  function canReadAnalisesFromProfile(){ if(!profile || profile.ativo === false) return false; if(norm(profile.perfil) === "master") return true; return profile.p_paineis === true || profile.p_ind === true || profile.p_config === true || profile.p_admin === true; }
+  function canReadAnalises(){ return canReadAnalisesRpc === null ? canReadAnalisesFromProfile() : canReadAnalisesRpc; }
   function showAuth(message){ showLoading(false); $("authWarning").hidden=false; $("authWarning").textContent = message; }
   function showLoading(show){ $("loading").classList.toggle("show", !!show); }
   function setProgress(value, text){ $("progressBar").style.width = Math.max(0, Math.min(100, value)) + "%"; $("loadingText").textContent = text || ""; }
