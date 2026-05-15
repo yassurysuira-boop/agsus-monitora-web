@@ -590,13 +590,78 @@
     }
   }
 
+  const FILTER_CONFIG = [
+    { id:"fUnidade", placeholder:"Todas as unidades", getValues: row => [txt(row.unidade)] },
+    { id:"fEdital", placeholder:"Todos os editais", getValues: row => [txt(row.edital)] },
+    { id:"fVaga", placeholder:"Todas as vagas", getValues: row => [txt(row.codigo_vaga)] },
+    { id:"fStatus", placeholder:"Todos os status", getValues: row => [txt(row.status_consolidado)] },
+    { id:"fResponsavel", placeholder:"Todos os responsáveis", getValues: row => [txt(row.responsavel_analise)] },
+    { id:"fCategoria", placeholder:"Todas as categorias", getValues: row => [txt(row.categoria)] },
+    { id:"fModalidade", placeholder:"Todas as modalidades", getValues: row => [txt(row.modalidade_concorrencia)] },
+    {
+      id:"fPdf",
+      placeholder:"Todas",
+      getValues: row => {
+        const values = [];
+        const status = txt(row.pdf_status).toUpperCase();
+        values.push(txt(row.link_pdf) ? "COM_PDF" : "SEM_PDF");
+        if(status === "ERRO") values.push("ERRO");
+        if(status === "DESATUALIZADO") values.push("DESATUALIZADO");
+        return values;
+      }
+    },
+    { id:"fValidacao", placeholder:"Todas", getValues: row => [txt(row.data_validacao_status)] }
+  ];
+  const FILTER_IDS = FILTER_CONFIG.map(filter => filter.id);
+  const FILTER_CONFIG_MAP = Object.fromEntries(FILTER_CONFIG.map(filter => [filter.id, filter]));
+
   function hydrateFilters(){
-    setOptions("fUnidade", unique("unidade"), "Todas as unidades"); setOptions("fEdital", unique("edital"), "Todos os editais"); setOptions("fVaga", unique("codigo_vaga"), "Todas as vagas");
-    setOptions("fStatus", unique("status_consolidado"), "Todos os status"); setOptions("fResponsavel", unique("responsavel_analise"), "Todos os responsáveis"); setOptions("fCategoria", unique("categoria"), "Todas as categorias"); setOptions("fModalidade", unique("modalidade_concorrencia"), "Todas as modalidades");
-    setOptions("fPdf", ["COM_PDF","SEM_PDF","ERRO","DESATUALIZADO"], "Todas"); setOptions("fValidacao", ["DENTRO_PERIODO","FORA_PERIODO","SEM_DATA","SEM_JANELA"], "Todas");
+    refreshFilterOptions();
   }
   function unique(field){ return [...new Set(rows.map(r => txt(r[field])).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR",{numeric:true})); }
   function displayOptionLabel(id, value){ const maps={ fPdf:{COM_PDF:"Com PDF",SEM_PDF:"Sem PDF",ERRO:"PDF com erro",DESATUALIZADO:"PDF desatualizado"}, fValidacao:{DENTRO_PERIODO:"Dentro do período",FORA_PERIODO:"Fora do período",SEM_DATA:"Sem data de análise",SEM_JANELA:"Sem janela configurada"} }; return (maps[id]&&maps[id][value]) || value; }
+  function valuesForFilter(id, row){
+    const config = FILTER_CONFIG_MAP[id];
+    if(!config) return [];
+    return (config.getValues(row) || []).map(v => txt(v)).filter(Boolean);
+  }
+  function optionValues(id, sourceRows){
+    const seen = new Set();
+    const values = [];
+    (sourceRows || []).forEach(row => {
+      valuesForFilter(id, row).forEach(value => {
+        const key = norm(value);
+        if(seen.has(key)) return;
+        seen.add(key);
+        values.push(value);
+      });
+    });
+    return values.sort((a,b)=>displayOptionLabel(id,a).localeCompare(displayOptionLabel(id,b),"pt-BR",{numeric:true}));
+  }
+  function matchesSearch(row){
+    const q = norm($("fBusca").value);
+    return !q || norm([row.grupo,row.unidade,row.edital,row.codigo_vaga,row.nome_vaga,row.candidato,row.responsavel_analise,row.status_consolidado,row.analise,row.categoria,row.modalidade_concorrencia].join(" ")).includes(q);
+  }
+  function matchConfiguredFilter(row, id, ignoreId=""){
+    if(id === ignoreId) return true;
+    const selected = selectedValues(id);
+    if(!selected.length) return true;
+    const rowValues = valuesForFilter(id, row);
+    if(!rowValues.length) return false;
+    const selectedSet = new Set(selected.map(norm));
+    return rowValues.some(value => selectedSet.has(norm(value)));
+  }
+  function rowMatchesCurrentFilters(row, options={}){
+    const ignoreId = options.ignoreId || "";
+    const includeSearch = options.includeSearch !== false;
+    return FILTER_IDS.every(id => matchConfiguredFilter(row, id, ignoreId)) && (!includeSearch || matchesSearch(row));
+  }
+  function refreshFilterOptions(){
+    FILTER_CONFIG.forEach(filter => {
+      const sourceRows = rows.filter(row => rowMatchesCurrentFilters(row, { ignoreId:filter.id, includeSearch:false }));
+      setOptions(filter.id, optionValues(filter.id, sourceRows), filter.placeholder);
+    });
+  }
   function setOptions(id, values, label){
     const el=$(id); if(!el) return;
     const previous = selectedValues(id);
@@ -611,14 +676,14 @@
     renderMultiSelect(id);
   }
   function clearFilters(){
-    ["fUnidade","fEdital","fVaga","fStatus","fResponsavel","fCategoria","fModalidade","fPdf","fValidacao"].forEach(id => { if(multiSelectState[id]){ multiSelectState[id].selected=[]; multiSelectState[id].search=""; renderMultiSelect(id); } if($(id)) $(id).value=""; });
+    FILTER_IDS.forEach(id => { if(multiSelectState[id]){ multiSelectState[id].selected=[]; multiSelectState[id].search=""; renderMultiSelect(id); } if($(id)) $(id).value=""; });
     ["fBusca","tableSearch"].forEach(id => { if($(id)) $(id).value=""; }); activeKpi="total"; activeResponsavel=""; currentPage=1; applyFilters(); }
   function selectedValues(id){ if(multiSelectState[id]) return (multiSelectState[id].selected || []).slice(); const el=$(id); return el && txt(el.value) ? [txt(el.value)] : []; }
   function selected(id){ const vals = selectedValues(id); return vals[0] || ""; }
   function match(row, field, id){ const vals = selectedValues(id); return !vals.length || vals.some(v => txt(row[field]) === v); }
   function applyFilters(){
-    const q = norm($("fBusca").value); const pdfFilter = selectedValues("fPdf"); const validacao = selectedValues("fValidacao");
-    baseFilteredRows = rows.filter(r => match(r,"unidade","fUnidade") && match(r,"edital","fEdital") && match(r,"codigo_vaga","fVaga") && match(r,"status_consolidado","fStatus") && match(r,"responsavel_analise","fResponsavel") && match(r,"categoria","fCategoria") && match(r,"modalidade_concorrencia","fModalidade") && (!validacao.length || validacao.includes(txt(r.data_validacao_status))) && matchesPdf(r,pdfFilter) && (!q || norm([r.grupo,r.unidade,r.edital,r.codigo_vaga,r.nome_vaga,r.candidato,r.responsavel_analise,r.status_consolidado,r.analise,r.categoria,r.modalidade_concorrencia].join(" ")).includes(q)));
+    refreshFilterOptions();
+    baseFilteredRows = rows.filter(row => rowMatchesCurrentFilters(row));
     panelRows = applyVisualFilters(baseFilteredRows); renderAll();
   }
   function matchesPdf(r, filter){ const filters = Array.isArray(filter) ? filter : (filter ? [filter] : []); if(!filters.length) return true; const hasPdf = !!txt(r.link_pdf); const status = norm(r.pdf_status); return filters.some(f => (f==="COM_PDF" && hasPdf) || (f==="SEM_PDF" && !hasPdf) || (f==="ERRO" && status === "erro") || (f==="DESATUALIZADO" && status === "desatualizado")); }
