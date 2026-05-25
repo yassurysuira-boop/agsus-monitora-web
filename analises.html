@@ -232,7 +232,20 @@
   const num = v => { const x = Number(v || 0); return Number.isFinite(x) ? x : 0; };
   const fmt = v => num(v).toLocaleString("pt-BR");
   const fmtNum = fmt;
-  const dateObj = v => { if(!v) return null; const raw = txt(v); if(/^\d{2}\/\d{2}\/\d{4}$/.test(raw)){ const [d,m,y]=raw.split("/").map(Number); return new Date(y,m-1,d); } const d = new Date(raw); return Number.isNaN(d.getTime()) ? null : d; };
+  const dateObj = v => {
+    if(!v) return null;
+    const raw = txt(v);
+    if(/^\d{2}\/\d{2}\/\d{4}$/.test(raw)){
+      const [d,m,y] = raw.split("/").map(Number);
+      return new Date(y, m - 1, d);
+    }
+    if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){
+      const [y,m,d] = raw.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
   const fmtDate = v => { const d = dateObj(v); return d ? d.toLocaleDateString("pt-BR") : txt(v); };
   const fmtDateTime = v => { const d = dateObj(v); return d ? d.toLocaleString("pt-BR") : txt(v); };
   const debounce = (fn, wait=180) => { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); }; };
@@ -733,12 +746,22 @@
   function renderPagination(pages){ const wrap=$("pageNumbers"); const list=pageWindow(currentPage,pages,5); wrap.innerHTML=list.map(p=>p==="..."?`<span style="padding:8px;color:var(--muted)">...</span>`:`<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`).join(""); $("firstBtn").disabled=currentPage<=1; $("prevBtn").disabled=currentPage<=1; $("nextBtn").disabled=currentPage>=pages; $("lastBtn").disabled=currentPage>=pages; }
   function pageWindow(page,total,max){ if(total<=max+2) return Array.from({length:total},(_,i)=>i+1); const out=[1]; let start=Math.max(2,page-2), end=Math.min(total-1,page+2); if(start>2) out.push("..."); for(let i=start;i<=end;i++) out.push(i); if(end<total-1) out.push("..."); out.push(total); return out; }
   function goPage(p){ const pages=Math.max(1,Math.ceil(getTableRows().length/rowsPerPage)); currentPage=Math.max(1,Math.min(p,pages)); renderTable(); }
-  function setUpdatedAt(){ const latest=rows.map(r=>r.updated_at || r.ultima_atualizacao).filter(Boolean).sort().pop(); const label=latest?`Atualizado em ${fmtDateTime(latest)}`:"Base carregada"; $("updatedText").textContent=label; $("footerUpdated").textContent=label; }
+  function setUpdatedAt(){
+    const latest = rows
+      .map(r => r.updated_at || r.ultima_atualizacao)
+      .map(value => ({ value, parsed: dateObj(value) }))
+      .filter(item => item.value && item.parsed)
+      .sort((a, b) => a.parsed.getTime() - b.parsed.getTime())
+      .pop();
+    const label = latest ? `Atualizado em ${fmtDateTime(latest.value)}` : "Base carregada";
+    $("updatedText").textContent = label;
+    $("footerUpdated").textContent = label;
+  }
   function truncate(v,n){ const s=txt(v); return s.length>n ? s.slice(0,n-1)+"…" : s; }
   function applyTheme(){ const saved=localStorage.getItem(THEME_KEY); if(saved==="dark") document.documentElement.dataset.theme="dark"; }
   function toggleTheme(){ const dark=document.documentElement.dataset.theme==="dark"; document.documentElement.dataset.theme=dark?"":"dark"; if(!dark) localStorage.setItem(THEME_KEY,"dark"); else localStorage.removeItem(THEME_KEY); renderResponsavelChart(); renderTrendChart(); }
   function toggleFullscreen(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
-  function exportCSV(){ const source = panelRows.length ? panelRows : rows; const headers=["grupo","unidade","edital","codigo_vaga","nome_vaga","candidato","status_consolidado","etapa","data_analise","responsavel_analise","nota_final_ajustada","modalidade_concorrencia","link_pdf","data_validacao_status","analise"]; const csv=[headers.join(";"), ...source.map(r=>headers.map(h=>String(r[h] ?? "").replaceAll("\n"," ").replaceAll("\r"," ").replaceAll(";"," ").replaceAll('"',"'")).join(";"))].join("\n"); const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="agsus_analises_curriculares_v3.csv"; a.click(); URL.revokeObjectURL(a.href); }
+  function exportCSV(){ const source = panelRows; const headers=["grupo","unidade","edital","codigo_vaga","nome_vaga","candidato","status_consolidado","etapa","data_analise","responsavel_analise","nota_final_ajustada","modalidade_concorrencia","link_pdf","data_validacao_status","analise"]; const csv=[headers.join(";"), ...source.map(r=>headers.map(h=>String(r[h] ?? "").replaceAll("\n"," ").replaceAll("\r"," ").replaceAll(";"," ").replaceAll('"',"'")).join(";"))].join("\n"); const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="agsus_analises_curriculares_v3.csv"; a.click(); URL.revokeObjectURL(a.href); }
   window.toggleDetails = toggleDetails; window.goPage = goPage;
 </script>
 </body>
