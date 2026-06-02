@@ -1402,6 +1402,139 @@ td{font-weight:650!important;color:#10243e!important}
 @media(max-width:820px){.kpis-main{grid-template-columns:repeat(2,1fr)!important}}
 @media(max-width:540px){.kpis-main{grid-template-columns:1fr!important}}
 
+/* Ajustes solicitados: sidebar mais compacto, logo sem caixa, mapa maior e acessibilidade. */
+:root{
+  --sidebar:224px;
+  --sidebar-mini:58px;
+}
+
+.app{grid-template-columns:var(--sidebar) minmax(0,1fr)!important}
+body.sidebar-collapsed .app,
+body.sidebar-locked .app{grid-template-columns:var(--sidebar-mini) minmax(0,1fr)!important}
+
+.sidebar{
+  padding:10px 8px 12px!important;
+  overflow-x:hidden!important;
+}
+
+.side-brand{
+  min-height:172px!important;
+  margin:0 0 12px!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  background:transparent!important;
+  border:0!important;
+  border-bottom:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+
+.side-brand::before,
+.side-brand::after,
+.side-brand h2,
+.side-brand small{
+  display:none!important;
+}
+
+.side-logo{
+  width:168px!important;
+  height:168px!important;
+  margin:0 auto!important;
+  padding:0!important;
+  object-fit:contain!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  transform:none!important;
+  filter:drop-shadow(0 8px 14px rgba(0,0,0,.18))!important;
+}
+
+.nav{gap:6px!important}
+.nav button{
+  min-height:46px!important;
+  padding:0 10px!important;
+  border-radius:10px!important;
+  font-size:14px!important;
+  letter-spacing:0!important;
+}
+.nav-ico{width:22px!important;font-size:16px!important}
+.side-user,.side-version{font-size:12px!important;margin-top:14px!important;padding-top:12px!important}
+.side-logout{margin-top:10px!important;padding:10px 8px!important;border-radius:10px!important}
+
+body.sidebar-collapsed .side-brand,
+body.sidebar-locked .side-brand{
+  min-height:48px!important;
+  margin-bottom:8px!important;
+}
+body.sidebar-collapsed .side-logo,
+body.sidebar-locked .side-logo{
+  width:44px!important;
+  height:44px!important;
+}
+body.sidebar-collapsed .nav button,
+body.sidebar-locked .nav button{
+  min-height:44px!important;
+  padding:0!important;
+}
+
+.dashboard-grid{
+  grid-template-columns:minmax(0,2.55fr) minmax(280px,.82fr)!important;
+  gap:10px!important;
+  align-items:stretch!important;
+}
+.map-card{
+  min-height:clamp(390px,55vh,680px)!important;
+  padding:0!important;
+}
+#map{
+  width:100%!important;
+  height:clamp(390px,55vh,680px)!important;
+  min-height:390px!important;
+}
+#map svg{display:block!important;margin:auto!important}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible{
+  outline:3px solid #00b8d9!important;
+  outline-offset:3px!important;
+  box-shadow:0 0 0 6px rgba(0,184,217,.20)!important;
+}
+
+.btn,input,select,textarea,.nav button,.chip,.multi-unit-chip,.obs-toggle,.sort-th{letter-spacing:0!important}
+.btn,input,select,.nav button,.multi-unit-chip{min-height:40px}
+.page-title p,.risk-item small,.table-meta,.mini-help,.filter-summary,.kpi span{color:#43566d!important}
+.chip.yellow{color:#684600!important;background:#fff1b8!important;border-color:#f3cf54!important}
+.chip.red{color:#9f0714!important;background:#ffe1e3!important;border-color:#ffb8bf!important}
+
+@media(max-width:1220px){
+  :root{--sidebar:204px;--sidebar-mini:58px}
+  .side-logo{width:142px!important;height:142px!important}
+  .side-brand{min-height:146px!important}
+  .dashboard-grid{grid-template-columns:1fr!important}
+}
+
+@media(max-width:820px){
+  .side-brand{min-height:76px!important;justify-content:start!important}
+  .side-logo{width:72px!important;height:72px!important;margin:0!important}
+  .map-card,#map{min-height:340px!important;height:340px!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    scroll-behavior:auto!important;
+    transition-duration:.01ms!important;
+  }
+}
+
   </style>
 </head>
 
@@ -1446,9 +1579,7 @@ td{font-weight:650!important;color:#10243e!important}
     </button>
     <aside class="sidebar">
       <div class="side-brand">
-        <img id="sideLogo" class="side-logo" src="https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png" alt="AgSUS Monitora" onerror="this.onerror=null;this.src="https://i.postimg.cc/7PztC6jq/79255fad-06f0-4963-81f5-1fa4a116475e.png";">
-        <h2 id="sideTitle">AgSUS Monitora</h2>
-        <small id="sideSlogan">Painel da Saúde Indígena</small>
+        <img id="sideLogo" class="side-logo" src="https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png" alt="Logo AgSUS" onerror="this.onerror=null;this.src='https://i.postimg.cc/7PztC6jq/79255fad-06f0-4963-81f5-1fa4a116475e.png';">
       </div>
       <nav id="nav" class="nav"></nav>
       <div class="side-user">Usuário<b id="userEmail">-</b></div>
@@ -1501,7 +1632,7 @@ td{font-weight:650!important;color:#10243e!important}
           </div>
           <div id="multiUnitsCard" class="multi-units-card card hidden"></div>
           <div class="dashboard-grid">
-            <div class="card map-card"><div id="map"></div></div>
+            <div class="card map-card"><div id="map" role="img" aria-label="Mapa do Brasil com processos seletivos por UF"></div></div>
             <div class="card panel-pad"><h3 class="panel-title">Resumo por etapa</h3><div id="statusSummary"></div></div>
           </div>
           <div class="lower-grid">
@@ -2254,7 +2385,8 @@ const SUPABASE_KEY = "sb_publishable_7uDcRD6KoroXlyHBp2K4rA_Ex242hpI";
     const loginLogo = appConfig.login_logo_url || DEFAULT_CONFIG.login_logo_url;
     const loginBg = appConfig.login_bg_url || DEFAULT_CONFIG.login_bg_url;
     $("loginTitle").textContent = title; $("loginSlogan").textContent = slogan;
-    $("sideTitle").textContent = title; $("sideSlogan").textContent = slogan;
+    if($("sideTitle")) $("sideTitle").textContent = title;
+    if($("sideSlogan")) $("sideSlogan").textContent = slogan;
     $("loginFoot").textContent = appConfig.footer_text || DEFAULT_CONFIG.footer_text;
     $("loginLogo").src = loginLogo; $("sideLogo").src = mascot;
     document.querySelector(".login-screen").style.background = `linear-gradient(90deg,rgba(0,21,50,.28),rgba(0,45,92,.18)), url("${loginBg}")`;
@@ -2524,7 +2656,7 @@ const SUPABASE_KEY = "sb_publishable_7uDcRD6KoroXlyHBp2K4rA_Ex242hpI";
   }
 
   function navIconHTML(ico){ return `<i class="fa-solid ${attr(/^fa-/.test(String(ico||"")) ? ico : "fa-circle")}" aria-hidden="true"></i>`; }
-  function navButton(view,label,ico){ return `<button data-view="${attr(view)}" onclick="navigate('${attr(view)}')"><span class="nav-ico">${navIconHTML(ico)}</span><span class="nav-text">${esc(label)}</span></button>`; }
+  function navButton(view,label,ico){ return `<button data-view="${attr(view)}" onclick="navigate('${attr(view)}')" aria-label="${attr(label)}" title="${attr(label)}"><span class="nav-ico">${navIconHTML(ico)}</span><span class="nav-text">${esc(label)}</span></button>`; }
   function setActiveNav(view){ document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view)); }
 
   function navigate(view){
@@ -2872,7 +3004,21 @@ const SUPABASE_KEY = "sb_publishable_7uDcRD6KoroXlyHBp2K4rA_Ex242hpI";
     if(!dt.getNumberOfRows()){ el.innerHTML = "<div class='alert'>Sem UF para plotar no mapa.</div>"; return; }
     const chart = new google.visualization.GeoChart(el);
     google.visualization.events.addListener(chart, "select", () => { const sel = chart.getSelection(); if(!sel.length) return; const uf = dt.getValue(sel[0].row,0).replace("BR-",""); toggleSelectFilter("filterUf", uf, "Filtro de UF"); chart.setSelection([]); });
-    chart.draw(dt, { region:"BR", resolution:"provinces", displayMode:"regions", colorAxis:{ colors:["#dbeafe","#003b70"] }, datalessRegionColor:"#edf2f7", backgroundColor:"transparent", legend:"none" });
+    const bounds = el.getBoundingClientRect();
+    const width = Math.max(640, Math.floor(bounds.width || el.clientWidth || 640));
+    const height = Math.max(390, Math.floor(bounds.height || el.clientHeight || 390));
+    chart.draw(dt, {
+      region:"BR",
+      resolution:"provinces",
+      displayMode:"regions",
+      width,
+      height,
+      colorAxis:{ colors:["#cfe8ff","#00529b","#003b70"] },
+      datalessRegionColor:"#edf2f7",
+      backgroundColor:"transparent",
+      legend:"none",
+      tooltip:{ textStyle:{ color:"#07162d", fontSize:13 }, showColorCode:true }
+    });
   }
 
   function renderRisks(){
