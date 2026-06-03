@@ -13,7 +13,7 @@
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AgSUS Monitora Web V2.7.3</title>
+  <title>AgSUS Monitora Web V2.7.3-bugfix</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -740,7 +740,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
             alt="COGIP" onerror="this.style.display='none'">
           <div class="login-cogip-info">
             <div class="login-cogip-name" id="loginCogipName">COGIP</div>
-            <div class="login-cogip-role" id="loginCogipRole">Desenvolvimento e sustentação · <span id="loginVersion">V.2.7.3</span></div>
+            <div class="login-cogip-role" id="loginCogipRole">Desenvolvimento e sustentação · <span id="loginVersion">V.2.7.3-bugfix</span></div>
             <div class="login-cogip-dept" id="loginFoot">Gestão da Informação de Pessoal</div>
           </div>
         </div>
@@ -762,7 +762,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
         Usuário<b id="userEmail">-</b>
         <span id="userProfileBadge" style="display:inline-block;margin-top:6px;font-size:10px;padding:2px 9px;border-radius:999px;background:rgba(0,184,217,.18);color:#7dd3fc;font-weight:900;letter-spacing:.04em;text-transform:uppercase;"></span>
       </div>
-      <div class="side-version">Versão<b>AgSUS Monitora Web V2.7.3</b></div>
+      <div class="side-version">Versão<b>AgSUS Monitora Web V2.7.3-bugfix</b></div>
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:space-between;gap:8px;">
         <span style="font-size:12px;color:#c7ddf7;font-weight:700;"><i class="fa-solid fa-moon" style="margin-right:5px;"></i><span class="nav-text">Modo escuro</span></span>
         <button id="darkModeToggle" onclick="toggleDarkMode()" aria-label="Alternar modo escuro" style="width:40px;height:22px;border-radius:999px;border:0;background:#334e6a;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;">
@@ -1058,7 +1058,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   //   - Segurança: grants anon removidos (ver script SQL 03)
   // ============================================================
 
-  const APP_VERSION = "AgSUS Monitora Web V2.7.3";
+  const APP_VERSION = "AgSUS Monitora Web V2.7.3-bugfix";
 
   const SUPABASE_URL = "https://gnudtaxhjfgtvwkwpsel.supabase.co";
   const SUPABASE_KEY = "sb_publishable_7uDcRD6KoroXlyHBp2K4rA_Ex242hpI";
@@ -1080,7 +1080,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     cogip_nome:"COGIP",
     cogip_logo_url:"https://i.postimg.cc/sf77CQ6F/foto-slogan.png",
     cogip_funcao:"Desenvolvimento e sustentação",
-    cogip_versao:"V.2.7.3",
+    cogip_versao:"V.2.7.3-bugfix",
     cogip_dept:"Gestão da Informação de Pessoal",
     broadcast_msg:"",
     broadcast_type:"info"
@@ -1605,16 +1605,67 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   function setActiveNav(view){ document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===view)); }
 
   function navigate(view){
-    const previousView=currentView;
+    const previousView = currentView;
+    const requestedView = txt(view) || startView();
+
+    // Valida permissão antes de alterar currentView e antes de esconder páginas.
+    // A versão anterior mudava o estado primeiro; se a permissão falhasse,
+    // o painel podia ficar sem página ativa.
+    if(requestedView === "dashboard" && !can("ind")){
+      toast("Sem permissão para Saúde Indígena.","warn");
+      return;
+    }
+    if(requestedView === "nucleo" && !can("cores")){
+      toast("Sem permissão para Equipe Núcleo.","warn");
+      return;
+    }
+    if(requestedView === "config" && !can("config")){
+      toast("Sem permissão para Configurações.","warn");
+      return;
+    }
+    if(requestedView.startsWith("panel:")){
+      const code = requestedView.split(":")[1];
+      const panelOk = can("paineis") && panels.some(p=>p.codigo===code && p.ativo!==false);
+      if(!panelOk){
+        toast("Sem permissão para este painel externo ou painel inativo.","warn");
+        return;
+      }
+    }
+
     document.body.classList.remove("external-clean");
-    currentView=view; rememberView(view);
-    if(!view.startsWith("panel:")) currentPanel=null;
-    enforceResponsiveSidebar(); applyExecutiveModeForCurrentView(); setActiveNav(view);
+    currentView = requestedView;
+    rememberView(requestedView);
+    if(!requestedView.startsWith("panel:")) currentPanel = null;
+    enforceResponsiveSidebar();
+    applyExecutiveModeForCurrentView();
+    setActiveNav(requestedView);
     document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-    if(view==="dashboard"){ if(!can("ind")) return toast("Sem permissão para Saúde Indígena.","warn"); $("page-dashboard").classList.add("active"); setPageTitle("Saúde Indígena","Monitoramento DSEI/CASAI"); renderAll(); if(previousView!==view) trackAccess("abertura_tela",{tela:view}); return; }
-    if(view==="nucleo"){    if(!can("cores")) return toast("Sem permissão para Equipe Núcleo.","warn"); $("page-nucleo").classList.add("active"); setPageTitle("Equipe Núcleo","Controle de Editais"); renderNucleo(); if(previousView!==view) trackAccess("abertura_tela",{tela:view}); return; }
-    if(view==="config"){    if(!can("config")) return toast("Sem permissão para Configurações.","warn"); $("page-config").classList.add("active"); setPageTitle("Configurações","Parametrização do Sistema"); renderConfigForm(); if(previousView!==view) trackAccess("abertura_tela",{tela:view}); return; }
-    if(view.startsWith("panel:")){ if(!can("paineis")) return toast("Sem permissão para painéis externos.","warn"); openPanel(view.split(":")[1]); if(previousView!==view) trackAccess("abertura_tela",{tela:view}); return; }
+
+    if(requestedView === "dashboard"){
+      $("page-dashboard").classList.add("active");
+      setPageTitle("Saúde Indígena","Monitoramento DSEI/CASAI");
+      renderAll();
+      if(previousView !== requestedView) trackAccess("abertura_tela",{tela:requestedView});
+      return;
+    }
+    if(requestedView === "nucleo"){
+      $("page-nucleo").classList.add("active");
+      setPageTitle("Equipe Núcleo","Controle de Editais");
+      renderNucleo();
+      if(previousView !== requestedView) trackAccess("abertura_tela",{tela:requestedView});
+      return;
+    }
+    if(requestedView === "config"){
+      $("page-config").classList.add("active");
+      setPageTitle("Configurações","Parametrização do Sistema");
+      renderConfigForm();
+      if(previousView !== requestedView) trackAccess("abertura_tela",{tela:requestedView});
+      return;
+    }
+    if(requestedView.startsWith("panel:")){
+      openPanel(requestedView.split(":")[1]);
+      if(previousView !== requestedView) trackAccess("abertura_tela",{tela:requestedView});
+    }
   }
 
   function setPageTitle(title,sub){ $("pageTitle").textContent=title; $("pageSubtitle").textContent=sub; document.title=title+" - AgSUS Monitora"; }
@@ -1663,21 +1714,36 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   function clearFilters(){ filterState=Object.fromEntries(FILTER_CONFIG.map(f=>[f.field,new Set()])); ["tableSearch"].forEach(id=>{ const el=$(id); if(el) el.value=""; }); renderFilterControls(); applyFilters(); }
 
   function applyFilters(){
-    const qt=low($("tableSearch")?.value);
-    // Captura o conjunto de UFs antes de filtrar para comparar depois
-    const prevUfKey = lastMapUfKey;
-    filtered=rows.filter(r=>{
-      const hay=[r.processo,r.edital,r.unidade,r.ciclo,r.uf,r.status,r.etapa,r.responsavel,r.cargos,r.risco,r.observacoes,r.observacoes_internas,r.link_edital].map(low).join(" | ");
-      return rowMatchesFilterState(r)&&(!qt||hay.includes(qt));
+    const qt = low($("tableSearch")?.value);
+    filtered = rows.filter(r=>{
+      const hay = [r.processo,r.edital,r.unidade,r.ciclo,r.uf,r.status,r.etapa,r.responsavel,r.cargos,r.risco,r.observacoes,r.observacoes_internas,r.link_edital].map(low).join(" | ");
+      return rowMatchesFilterState(r) && (!qt || hay.includes(qt));
     }).sort(compareRowsForTable);
-    // Calcula a chave de UFs do resultado atual
-    const newUfKey = [...new Set(filtered.map(r=>txt(r.uf)).filter(Boolean))].sort().join(",");
-    const ufChanged = newUfKey !== prevUfKey;
+
+    // A chave do mapa precisa considerar UF e quantidade.
+    // Antes era apenas a lista de UFs; quando a busca mudava a quantidade,
+    // mas mantinha as mesmas UFs, o mapa ficava visualmente desatualizado.
+    const mapCounts = {};
+    filtered.forEach(r=>{
+      const uf = txt(r.uf).toUpperCase();
+      if(uf) mapCounts[uf] = (mapCounts[uf] || 0) + 1;
+    });
+    const newUfKey = Object.entries(mapCounts)
+      .sort((a,b)=>a[0].localeCompare(b[0],"pt-BR"))
+      .map(([uf,count])=>`${uf}:${count}`)
+      .join("|");
+    const mapChanged = newUfKey !== lastMapUfKey;
     lastMapUfKey = newUfKey;
-    renderKpis(); renderMultiUnits(); renderStatusSummary(); renderChart();
-    if(ufChanged) renderMap(); // mapa só re-renderiza se as UFs mudaram
-    renderRisks(); renderTable();
-    if(currentView==="nucleo") renderNucleo();
+
+    renderKpis();
+    renderMultiUnits();
+    renderStatusSummary();
+    renderChart();
+    if(mapChanged) renderMap();
+    renderRisks();
+    renderActiveFilters();
+    renderTable();
+    if(currentView === "nucleo") renderNucleo();
   }
 
   function toggleSelectFilter(selectId,value,label){
@@ -1742,34 +1808,57 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     const contrat = sum("contratados");
     const ociosas = sum("vagas_ociosas");
     const inscritos = sum("inscritos");
-    $("kProcessos").textContent = fmt(filtered.length);
-    $("kVagas").textContent     = fmt(vagas);
-    $("kContratados").textContent = fmt(contrat);
-    $("kOciosas").textContent   = fmt(ociosas);
-    $("kCriticos").textContent  = fmt(filtered.filter(r=>["alto","médio","medio"].includes(low(r.risco))).length);
-    if($("kInscritos")) $("kInscritos").textContent = fmt(inscritos);
+    const kProcessos = $("kProcessos");
+    const kVagas = $("kVagas");
+    const kContratados = $("kContratados");
+    const kOciosas = $("kOciosas");
+    const kCriticos = $("kCriticos");
+    const kInscritos = $("kInscritos");
 
-    // taxa de preenchimento abaixo de cada KPI relevante
-    function setRate(containerId, pct, color){
-      const el = $(containerId); if(!el) return;
-      let bar = el.querySelector(".kpi-rate");
+    if(kProcessos) kProcessos.textContent = fmt(filtered.length);
+    if(kVagas) kVagas.textContent = fmt(vagas);
+    if(kContratados) kContratados.textContent = fmt(contrat);
+    if(kOciosas) kOciosas.textContent = fmt(ociosas);
+    if(kCriticos) kCriticos.textContent = fmt(filtered.filter(r=>["alto","médio","medio"].includes(low(r.risco))).length);
+    if(kInscritos) kInscritos.textContent = fmt(inscritos);
+
+    // Taxa de preenchimento: o alvo correto é o card .kpi, não o <b>.
+    // Na versão anterior a barra era injetada dentro do número do KPI,
+    // quebrando a semântica visual e podendo deixar barras antigas.
+    function setRate(valueElementId, pct, color){
+      const valueEl = $(valueElementId);
+      const card = valueEl?.closest(".kpi");
+      if(!card) return;
+      let bar = card.querySelector(".kpi-rate");
       if(!bar){
-        bar = document.createElement("div"); bar.className = "kpi-rate";
+        bar = document.createElement("div");
+        bar.className = "kpi-rate";
         bar.innerHTML = `<div class="kpi-rate-bar"><div class="kpi-rate-fill"></div></div><span class="kpi-rate-pct"></span>`;
-        el.appendChild(bar);
+        card.appendChild(bar);
       }
-      bar.querySelector(".kpi-rate-fill").style.cssText = `width:${Math.min(100,pct)}%;background:${color}`;
-      bar.querySelector(".kpi-rate-pct").textContent = pct + "% das vagas";
+      const safePct = Math.max(0, Math.min(100, Number.isFinite(Number(pct)) ? Number(pct) : 0));
+      const fill = bar.querySelector(".kpi-rate-fill");
+      const label = bar.querySelector(".kpi-rate-pct");
+      if(fill) fill.style.cssText = `width:${safePct}%;background:${color}`;
+      if(label) label.textContent = `${safePct}% das vagas`;
     }
+    function clearRate(valueElementId){
+      const card = $(valueElementId)?.closest(".kpi");
+      card?.querySelector(".kpi-rate")?.remove();
+    }
+
     if(vagas){
       setRate("kContratados", Math.round((contrat/vagas)*100), "#0b8f58");
       setRate("kOciosas",     Math.round((ociosas/vagas)*100), "#d92d3a");
+    }else{
+      clearRate("kContratados");
+      clearRate("kOciosas");
     }
 
-    const criticalActive=isCriticalRiskFilterActive();
-    const criticalCard=$("kpiCriticosCard");
-    if(criticalCard) criticalCard.classList.toggle("active-filter",criticalActive);
-    if($("panicChip")) $("panicChip").textContent=criticalActive?"FILTRO ATIVO":"MÉDIO/ALTO";
+    const criticalActive = isCriticalRiskFilterActive();
+    const criticalCard = $("kpiCriticosCard");
+    if(criticalCard) criticalCard.classList.toggle("active-filter", criticalActive);
+    if($("panicChip")) $("panicChip").textContent = criticalActive ? "FILTRO ATIVO" : "MÉDIO/ALTO";
   }
 
   function group(field){ const out={}; filtered.forEach(r=>{ const k=txt(r[field])||"Não informado"; out[k]=(out[k]||0)+1; }); return Object.entries(out).sort((a,b)=>b[1]-a[1]); }
@@ -1816,18 +1905,58 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   }
 
   function renderMap(){
-    if(!chartsReady||!window.google||!google.visualization) return;
-    const el=$("map"); if(!el||currentView!=="dashboard") return;
-    const groups={}; filtered.forEach(r=>{ const uf=txt(r.uf).toUpperCase(); if(!uf) return; const key="BR-"+uf; groups[key]=(groups[key]||0)+1; });
-    const dt=new google.visualization.DataTable(); dt.addColumn("string","UF"); dt.addColumn("number","Processos"); dt.addColumn({type:"string",role:"tooltip"});
-    Object.entries(groups).forEach(([key,value])=>dt.addRow([key,value,`UF: ${key.replace("BR-","")}\nProcessos: ${value}`]));
-    if(!dt.getNumberOfRows()){ el.innerHTML="<div class='alert'>Sem UF para plotar no mapa.</div>"; return; }
-    const chart=new google.visualization.GeoChart(el);
-    google.visualization.events.addListener(chart,"select",()=>{ const sel=chart.getSelection(); if(!sel.length) return; const uf=dt.getValue(sel[0].row,0).replace("BR-",""); toggleSelectFilter("filterUf",uf,"Filtro de UF"); chart.setSelection([]); });
-    const bounds=el.getBoundingClientRect();
-    const width=Math.max(640,Math.floor(bounds.width||el.clientWidth||640));
-    const height=Math.max(390,Math.floor(bounds.height||el.clientHeight||390));
-    chart.draw(dt,{ region:"BR", resolution:"provinces", displayMode:"regions", width, height, colorAxis:{colors:["#cfe8ff","#00529b","#003b70"]}, datalessRegionColor:"#edf2f7", backgroundColor:"transparent", legend:"none", tooltip:{textStyle:{color:"#07162d",fontSize:13},showColorCode:true} });
+    if(!chartsReady || !window.google || !google.visualization) return;
+    const el = $("map");
+    if(!el || currentView !== "dashboard") return;
+
+    const groups = {};
+    filtered.forEach(r=>{
+      const uf = txt(r.uf).toUpperCase();
+      if(!uf) return;
+      const key = "BR-" + uf;
+      groups[key] = (groups[key] || 0) + 1;
+    });
+
+    if(!Object.keys(groups).length){
+      el.innerHTML = "<div class='alert'>Sem UF para plotar no mapa.</div>";
+      return;
+    }
+
+    try{
+      const dt = new google.visualization.DataTable();
+      dt.addColumn("string","UF");
+      dt.addColumn("number","Processos");
+      dt.addColumn({type:"string",role:"tooltip"});
+      Object.entries(groups).forEach(([key,value])=>dt.addRow([key,value,`UF: ${key.replace("BR-","")}\nProcessos: ${value}`]));
+
+      const chart = new google.visualization.GeoChart(el);
+      google.visualization.events.addListener(chart,"select",()=>{
+        const sel = chart.getSelection();
+        if(!sel.length) return;
+        const uf = dt.getValue(sel[0].row,0).replace("BR-","");
+        toggleSelectFilter("filterUf",uf,"Filtro de UF");
+        chart.setSelection([]);
+      });
+
+      const bounds = el.getBoundingClientRect();
+      const width = Math.max(640, Math.floor(bounds.width || el.clientWidth || 640));
+      const height = Math.max(390, Math.floor(bounds.height || el.clientHeight || 390));
+      chart.draw(dt,{
+        region:"BR",
+        resolution:"provinces",
+        displayMode:"regions",
+        width,
+        height,
+        colorAxis:{colors:["#cfe8ff","#00529b","#003b70"]},
+        datalessRegionColor:"#edf2f7",
+        backgroundColor:"transparent",
+        legend:"none",
+        tooltip:{textStyle:{color:"#07162d",fontSize:13},showColorCode:true}
+      });
+    }catch(error){
+      console.warn("Falha ao renderizar mapa:", error);
+      el.innerHTML = "<div class='alert warn'>Mapa temporariamente indisponível. Os demais indicadores continuam ativos.</div>";
+    }
   }
 
   function renderRisks(){
@@ -2182,11 +2311,28 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
       {chave:"broadcast_type", valor:txt($("cfgBroadcastType").value), descricao:"Tipo do aviso global"},
       {chave:"broadcast_msg",  valor:txt($("cfgBroadcastMsg").value),  descricao:"Mensagem do aviso global"}
     ];
-    const panelRows=panels.filter(panel=>!!panel.id).map((panel,i)=>({ id:txt(panel.id), titulo:txt($("panelTitulo"+i).value), url:txt($("panelUrl"+i).value), ativo:$("panelAtivo"+i).value==="true", em_manutencao:$("panelManut"+i).value==="true" }));
-    const { data:savedConfig, error:cfgErr } = await sb.rpc(RPC_SAVE_CONFIG,{ p_config_rows:configRows, p_paineis:panelRows });
+
+    // Preserva o índice original da lista renderizada.
+    // A versão anterior aplicava filter(...).map((panel,i)=>...), e o índice podia
+    // apontar para inputs errados quando houvesse painéis padrão/sem id no array.
+    const panelRows = panels
+      .map((panel,i)=> panel.id ? {
+        id:txt(panel.id),
+        titulo:txt($("panelTitulo"+i)?.value),
+        url:txt($("panelUrl"+i)?.value),
+        ativo:$("panelAtivo"+i)?.value === "true",
+        em_manutencao:$("panelManut"+i)?.value === "true"
+      } : null)
+      .filter(Boolean);
+
+    const { error:cfgErr } = await sb.rpc(RPC_SAVE_CONFIG,{ p_config_rows:configRows, p_paineis:panelRows });
     if(cfgErr){ loader(false); return toast("Erro ao salvar configurações: "+friendlyError(cfgErr),"error"); }
-    if(!savedConfig){ loader(false); return toast("O Supabase não confirmou a gravação das configurações.","error"); }
-    await loadConfig(); await loadPanels(); buildNav(); loader(false); toast("Configurações salvas.");
+
+    await loadConfig();
+    await loadPanels();
+    buildNav();
+    loader(false);
+    toast("Configurações salvas.");
   }
 
   function isDashboardView(){ return currentView==="dashboard"; }
@@ -2347,18 +2493,30 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   }
   function selectSearchResult(id){
     closeSearchModal();
-    // Se estiver no dashboard, aplica filtro de unidade do registro
     const r = rows.find(x=>String(x.id)===String(id));
     if(!r) return;
+
+    if(!can("ind")){
+      toast("Busca localizada, mas seu perfil não tem acesso ao dashboard de Saúde Indígena.","warn");
+      return;
+    }
+
+    // Garante que o item escolhido fique visível, mesmo se havia filtros/busca ativos.
+    FILTER_CONFIG.forEach(cfg=>{ filterState[cfg.field] = new Set(); });
+    if($("tableSearch")) $("tableSearch").value = "";
+    if(r.unidade) filterState.unidade = new Set([txt(r.unidade)]);
+    if(r.edital)  filterState.edital  = new Set([txt(r.edital)]);
+
     navigate("dashboard");
-    // scroll para o item na tabela após render
+    applyFilters();
+
     setTimeout(()=>{
       const rows2 = document.querySelectorAll("#monitorRows tr");
       rows2.forEach(tr=>{
         if(tr.textContent.includes(r.edital||"") && tr.textContent.includes(r.unidade||"")){
           tr.scrollIntoView({behavior:"smooth",block:"center"});
-          tr.style.outline="2px solid var(--agsus-ciano)";
-          tr.style.borderRadius="8px";
+          tr.style.outline = "2px solid var(--agsus-ciano)";
+          tr.style.borderRadius = "8px";
           setTimeout(()=>{ tr.style.outline=""; tr.style.borderRadius=""; },2500);
         }
       });
