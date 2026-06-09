@@ -255,6 +255,18 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 
 .app { min-height: 100vh; display: grid; grid-template-columns: var(--sidebar) minmax(0,1fr); }
 body.sidebar-collapsed .app, body.sidebar-locked .app { grid-template-columns: var(--sidebar-mini) minmax(0,1fr); }
+body.app-fullscreen-fallback { overflow: hidden; }
+body.app-fullscreen-fallback .app {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9998 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  background: var(--bg);
+}
+body.app-fullscreen-fallback .toast-box { z-index: 10000; }
+body.app-fullscreen-fallback .global-side-toggle { top: 16px; }
 
 @media (min-width: 1481px) {
   .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar); height: 100vh; height: 100dvh; overflow-y: auto; overflow-x: hidden; }
@@ -1989,7 +2001,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     let alvo=LMAP.dsei.find(d=>norm(d.n).includes(q)||norm(d.k).includes(q));
     if(alvo){ _leaflet.flyTo([alvo.lat,alvo.lon],6,{duration:0.6}); toast("DSEI "+alvo.n+" localizado."); return; }
     for(const d of LMAP.dsei){
-      const p=(d.polos||[]).find(p=>norm(p.n).includes(q));
+      const p=polosCorrigidosPorCnes(d).find(p=>norm(p.n).includes(q));
       if(p){ _leaflet.flyTo([p.lat,p.lon],8,{duration:0.6}); toast("Polo "+p.n+" ("+d.n+") localizado."); return; }
     }
     for(const k in (REDE_CNES.rede||{})){
@@ -2015,6 +2027,50 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     u=u.replace(/^DSEI\s+/,"").replace(/^CASAI\s+/,"").replace(/\bNACIONAL\b/g," ").replace(/-/g," ");
     u=u.replace(/\b(DE|DO|DA|DOS|DAS|E)\b/g," ").replace(/\s+/g," ").trim();
     return u;
+  }
+  function mapNameKey(s){
+    let u=txt(s).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    u=u.replace(/\([^)]*\)/g," ");
+    u=u.replace(/\b(DISTRITO|SANITARIO|ESPECIAL|INDIGENA|SAUDE|DE|DO|DA|DOS|DAS|E|TIPO|I|II|III|IV)\b/g," ");
+    u=u.replace(/\b(POLO|BASE|DSEI|UBSI|UBS|UNIDADE|BASICA|POSTO)\b/g," ");
+    u=u.replace(/[^A-Z0-9]+/g," ").replace(/\s+/g," ").trim();
+    return u;
+  }
+  function findOfficialPoloCoord(d,p){
+    const rede=REDE_CNES.rede[d.k]; if(!rede) return null;
+    const poloKey=mapNameKey(p.n);
+    const poloUf=txt(p.uf).toUpperCase();
+    const candidates=(rede.u||[])
+      .filter(a=>/\bPOLO\b/i.test(txt(a[0])))
+      .map(a=>{
+        const nameKey=mapNameKey(a[0]);
+        const munKey=mapNameKey(a[4]);
+        const uf=txt(a[5]).toUpperCase();
+        let score=0;
+        if(nameKey && poloKey && (nameKey.includes(poloKey)||poloKey.includes(nameKey))) score+=100;
+        if(munKey && poloKey && (munKey.includes(poloKey)||poloKey.includes(munKey))) score+=60;
+        if(poloUf && uf && poloUf===uf) score+=10;
+        return {a,nameKey,munKey,score};
+      })
+      .filter(x=>x.score>=70)
+      .sort((a,b)=>b.score-a.score);
+    return candidates[0]?.a || null;
+  }
+  function polosCorrigidosPorCnes(d){
+    return (d.polos||[]).map(p=>{
+      const oficial=findOfficialPoloCoord(d,p);
+      if(!oficial) return p;
+      return Object.assign({},p,{
+        lat:oficial[2],
+        lon:oficial[3],
+        coord_oficial:true,
+        coord_fonte:"CNES",
+        coord_nome:oficial[0],
+        cnes:oficial[1],
+        mun_cnes:oficial[4],
+        uf_cnes:oficial[5]
+      });
+    });
   }
   function procCounts(){
     const byUf={}, byDsei={}, vagasDsei={}, ociosasDsei={};
@@ -2255,16 +2311,15 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   }
 
   function polosBounds(d){
-    let pts=[[d.lat,d.lon]].concat((d.polos||[]).map(p=>[p.lat,p.lon]));
+    let pts=[[d.lat,d.lon]].concat(polosCorrigidosPorCnes(d).map(p=>[p.lat,p.lon]));
     const rede=REDE_CNES.rede[d.k];
     if(rede){
-      (rede.u||[]).forEach(a=>pts.push([a[2],a[3]]));
       (rede.c||[]).forEach(a=>pts.push([a[2],a[3]]));
     }
     return L.latLngBounds(pts);
   }
 
-  // Nível 2 (complemento): UBSIs e CASAIs locais do DSEI (coordenadas oficiais do CNES)
+  // Nível 2 (complemento): CASAIs locais do DSEI (coordenadas oficiais do CNES)
   function _spread(items){
     // desempilha estabelecimentos na mesma coordenada
     const seen={};
@@ -2284,20 +2339,6 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     if(_layerCasaiLocal) _layerCasaiLocal.clearLayers();
     const rede = REDE_CNES.rede[d.k];
     if(!rede) return;
-
-    // UBSIs — quadrado azul-ciano
-    const ubsis=_spread((rede.u||[]).map(_unpackEstab));
-    ubsis.forEach(u=>{
-      const mk=L.marker([u._lat,u._lon],{ icon:L.divIcon({
-        className:"",
-        html:'<div style="width:12px;height:12px;background:#00a8d6;border:2px solid #fff;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.4);"></div>',
-        iconSize:[12,12], iconAnchor:[6,6]
-      })});
-      mk.bindTooltip(`<b>UBSI</b> ${esc(u.n)}<br>${esc(u.mun||"")}${u.uf?(" – "+u.uf):""}<br><i>clique para filtrar processos</i>`,{direction:"top"});
-      mk.bindPopup(`<b>UBSI — Unidade Básica de Saúde Indígena</b><br>${esc(u.n)}<br>${esc(u.mun||"")}${u.uf?(" – "+u.uf):""}<br>CNES: ${esc(u.cnes||"-")}<br><span style="font-size:10px;color:#6b7d92">📍 coordenada oficial do CNES</span>`);
-      mk.on("click",()=>{ const s=$("tableSearch"); if(s){ s.value=d.n; applyFilters(); } toast("Filtrando processos do DSEI "+d.n+"."); });
-      _layerUbsi.addLayer(mk);
-    });
 
     // CASAIs locais/DSEI — losango verde-escuro
     const casais=_spread((rede.c||[]).map(_unpackEstab));
@@ -2319,10 +2360,11 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     if(!_leaflet) return;
     _layerPolos.clearLayers();
     drawRedeAssistencial(d);
-    const sede=(d.polos||[]).find(p=>!p.fora)||(d.polos||[])[0];
+    const polosBase = polosCorrigidosPorCnes(d);
+    const sede=polosBase.find(p=>!p.fora)||polosBase[0];
     // desempilhar polos na mesma coordenada (vários polos no mesmo município)
     const seen={};
-    const polos=(d.polos||[]).map(p=>{
+    const polos=polosBase.map(p=>{
       const key=p.lat.toFixed(3)+","+p.lon.toFixed(3);
       let lat=p.lat, lon=p.lon;
       if(seen[key]!==undefined){
@@ -2342,7 +2384,10 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
         fillColor:p.fora?"#e8730c":"#1d4e89", fillOpacity:0.95
       });
       mk.bindTooltip(esc(p.n)+(p.fora?` <i>(${p.uf}, fora da sede)</i>`:""),{direction:"top"});
-      mk.bindPopup(`<b>Polo base: ${esc(p.n)}</b><br>UF: ${p.uf}<br>População do polo: ${fmt(p.p)} indígenas${p.fora?'<br><i>Pertence ao DSEI '+esc(d.n)+', em outro estado</i>':''}<br><span style="font-size:10px;color:#6b7d92">${p.coord_oficial?'📍 coordenada oficial do CNES':'≈ posição aproximada (centro do município)'}</span>`);
+      const fonte = p.coord_oficial
+        ? `📍 coordenada oficial do CNES<br>CNES: ${esc(p.cnes||"-")}${p.coord_nome?`<br>Registro: ${esc(p.coord_nome)}`:""}`
+        : "≈ posição aproximada (centro do município)";
+      mk.bindPopup(`<b>Polo base: ${esc(p.n)}</b><br>UF: ${p.uf}<br>População do polo: ${fmt(p.p)} indígenas${p.fora?'<br><i>Pertence ao DSEI '+esc(d.n)+', em outro estado</i>':''}<br><span style="font-size:10px;color:#6b7d92">${fonte}</span>`);
       _layerPolos.addLayer(mk);
     });
     syncMapLevelUI();
@@ -2460,7 +2505,6 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
 
   function syncMapLevelUI(){
     const showingPolos = (_layerPolos && _layerPolos.getLayers().length>0)
-      || (_layerUbsi && _layerUbsi.getLayers().length>0)
       || (_layerCasaiLocal && _layerCasaiLocal.getLayers().length>0);
     const box=$("mapLegendBox");
     if(box){
@@ -2469,7 +2513,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
       const tracejado='<span style="border-top:2.5px dashed #e8730c;width:18px;display:inline-block;vertical-align:middle;margin-right:6px;"></span>';
       const quadUF='<span style="width:12px;height:12px;background:#2e8b57;opacity:.45;border:1.5px solid #1f6f4a;display:inline-block;vertical-align:middle;margin-right:6px;"></span>';
       box.innerHTML = showingPolos
-        ? `<b style="color:#22577a">Polos base do DSEI</b><br>${dot('#1d4e89')}polo base<br>${dot('#e8730c')}polo em outro estado<br><span style="width:11px;height:11px;background:#00a8d6;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2);display:inline-block;border-radius:3px;vertical-align:middle;margin-right:6px;"></span>UBSI (Unidade Básica)<br>${losango('#d92d3a')}CASAI (Casa de Saúde)<br>${tracejado}ligação ao DSEI<br>${quadUF}estado atendido`
+        ? `<b style="color:#22577a">Polos base do DSEI</b><br>${dot('#1d4e89')}polo base<br>${dot('#e8730c')}polo em outro estado<br>${losango('#d92d3a')}CASAI (Casa de Saúde)<br>${tracejado}ligação ao DSEI<br>${quadUF}estado atendido`
         : `<b style="color:#22577a">Legenda</b><br>${dot('#5b9bd5')}DSEI (tamanho = nº de indígenas)<br>${dot('#0b8f58')}DSEI com processo ativo<br>${losango('#7b2ff7')}CASAI Nacional`;
     }
     const lgDsei=$("mapLegendDsei");
@@ -2904,7 +2948,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     const exec=$("executiveModeBtn"); const dashboard=isDashboardView();
     const executiveActive=dashboard&&document.body.classList.contains("executive-mode");
     if(exec){ exec.classList.toggle("hidden",!dashboard); exec.setAttribute("aria-hidden",dashboard?"false":"true"); exec.setAttribute("aria-pressed",executiveActive?"true":"false"); exec.innerHTML=executiveActive?`<i class="fa-solid fa-display"></i> Sair do executivo`:`<i class="fa-solid fa-display"></i> Modo executivo`; }
-    const fullscreenActive = !!document.fullscreenElement;
+    const fullscreenActive = !!document.fullscreenElement || document.body.classList.contains("app-fullscreen-fallback");
     const moreMenu = $("moreActionsMenu");
     if(moreMenu){
       const fsBtn = moreMenu.querySelector("button:first-child i");
@@ -2930,21 +2974,34 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     return document.documentElement;
   }
 
+  function toggleAppFullscreenFallback(force){
+    const active = typeof force === "boolean" ? force : !document.body.classList.contains("app-fullscreen-fallback");
+    document.body.classList.toggle("app-fullscreen-fallback", active);
+    document.body.classList.toggle("system-fullscreen-mode", active || !!document.fullscreenElement);
+    syncDisplayModeButtons();
+    if(currentView==="dashboard") scheduleMapResize(220);
+    toast(active ? "Modo expandido ativado." : "Modo expandido desativado.");
+  }
+
   function toggleBrowserFullscreen(){
     try{
+      if(document.body.classList.contains("app-fullscreen-fallback")){
+        toggleAppFullscreenFallback(false);
+        return;
+      }
       if(document.fullscreenElement){
         const exiting = document.exitFullscreen?.();
-        if(exiting?.catch) exiting.catch(()=>toast("Não foi possível sair da tela cheia pelo aplicativo.","warn"));
+        if(exiting?.catch) exiting.catch(()=>toggleAppFullscreenFallback(false));
         return;
       }
       const target = getFullscreenTarget();
-      if(!target?.requestFullscreen){ toast("Este navegador não permite tela cheia pela aplicação.","warn"); return; }
+      if(!document.fullscreenEnabled || !target?.requestFullscreen){ toggleAppFullscreenFallback(true); return; }
       const entering = target.requestFullscreen();
-      if(entering?.catch) entering.catch(()=>toast("O navegador bloqueou a tela cheia. Use Abrir em nova guia e tente novamente.","warn"));
-    }catch(error){ toast("O navegador bloqueou a tela cheia. Use Abrir em nova guia e tente novamente.","warn"); }
+      if(entering?.catch) entering.catch(()=>toggleAppFullscreenFallback(true));
+    }catch(error){ toggleAppFullscreenFallback(true); }
   }
 
-  document.addEventListener("fullscreenchange",()=>{ document.body.classList.toggle("system-fullscreen-mode",!!document.fullscreenElement); syncDisplayModeButtons(); if(currentView==="dashboard") scheduleMapResize(220); });
+  document.addEventListener("fullscreenchange",()=>{ document.body.classList.toggle("system-fullscreen-mode",!!document.fullscreenElement||document.body.classList.contains("app-fullscreen-fallback")); syncDisplayModeButtons(); if(currentView==="dashboard") scheduleMapResize(220); });
 
   function exportCSV(){
     const source = filtered.length ? filtered : rows;
