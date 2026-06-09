@@ -586,15 +586,28 @@ th.sorted-desc .sort-icon::before { content: "↓"; font-size: 11px; }
 .external-frame { width: 100%; height: calc(100vh - 148px); min-height: 720px; border: 0; background: #fff; border-radius: var(--radius); display: block; }
 .external-placeholder { min-height: calc(100vh - 170px); display: grid; place-items: center; text-align: center; color: #63748d; font-weight: 800; background: var(--card); border-radius: var(--radius); }
 .external-panel[hidden] { display: none !important; }
-#page-external .table-head { display: none !important; }
+#page-external .table-head { display: flex !important; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 0; background: #ffffff; border-bottom: 1px solid var(--line); }
+#page-external .table-head h3 { margin: 0; color: var(--agsus-azul); font-size: 16px; font-weight: 900; }
 #page-external .table-card { margin-top: 0; border-radius: var(--radius); background: transparent; box-shadow: none; border: 0; overflow: visible; }
 #page-external #externalMount { border-radius: var(--radius); overflow: hidden; }
 body.external-clean .top { display: none !important; }
 body.external-clean .content { padding: 0 !important; }
 body.external-clean #page-external .table-card { margin: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; overflow: visible !important; }
 body.external-clean #page-external #externalMount { border-radius: 0 !important; overflow: hidden !important; }
-body.external-clean .external-frame { height: 100vh !important; min-height: 100vh !important; border-radius: 0 !important; }
+body.external-clean .external-frame { height: calc(100vh - 52px) !important; min-height: calc(100vh - 52px) !important; border-radius: 0 !important; }
 body.external-clean .external-placeholder { min-height: 100vh !important; border-radius: 0 !important; border: 0 !important; box-shadow: none !important; }
+body.external-clean.system-fullscreen-mode .sidebar,
+body.external-clean.app-fullscreen-fallback .sidebar,
+body.external-clean.system-fullscreen-mode .global-side-toggle,
+body.external-clean.app-fullscreen-fallback .global-side-toggle { display: none !important; }
+body.external-clean.system-fullscreen-mode .app,
+body.external-clean.app-fullscreen-fallback .app { grid-template-columns: minmax(0,1fr) !important; }
+body.external-clean.system-fullscreen-mode .main,
+body.external-clean.app-fullscreen-fallback .main { grid-column: 1 !important; width: 100vw !important; }
+body.external-clean.system-fullscreen-mode #page-external .table-head,
+body.external-clean.app-fullscreen-fallback #page-external .table-head { display: none !important; }
+body.external-clean.system-fullscreen-mode .external-frame,
+body.external-clean.app-fullscreen-fallback .external-frame { width: 100vw !important; height: 100vh !important; min-height: 100vh !important; border-radius: 0 !important; }
 
 #page-nucleo .table-card { height: calc(100vh - 138px); min-height: 680px; display: flex; flex-direction: column; margin-top: 0; }
 #page-nucleo .table-wrap { flex: 1; max-height: none; min-height: 0; }
@@ -950,6 +963,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
             <div class="table-head">
               <h3 id="externalTitle">Painel Externo</h3>
               <div style="display:flex;gap:8px;align-items:center">
+                <button class="btn outline" onclick="toggleBrowserFullscreen()"><i class="fa-solid fa-expand"></i> Expandir</button>
                 <button class="btn secondary" onclick="reloadExternal()"><i class="fa-solid fa-rotate-right"></i> Atualizar painel</button>
                 <a id="externalOpen" class="btn green" target="_blank" rel="noopener">Abrir em nova guia</a>
               </div>
@@ -2966,11 +2980,8 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   }
 
   function getFullscreenTarget(){
-    if(currentView && currentView.startsWith("panel:") && currentPanel){
-      const holder = document.getElementById("external-panel-"+currentPanel.codigo);
-      const frame = holder?.querySelector?.(".external-frame");
-      if(frame) return frame;
-    }
+    // Expandir o documento inteiro é mais confiável que pedir fullscreen ao iframe.
+    // Alguns navegadores e painéis incorporados bloqueiam fullscreen direto no iframe.
     return document.documentElement;
   }
 
