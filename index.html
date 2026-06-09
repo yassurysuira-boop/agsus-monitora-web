@@ -628,7 +628,14 @@ body.executive-mode #statusSummary { font-size: 16px; }
 body.executive-mode .panel-title   { font-size: 18px; }
 body.executive-mode .actions .btn  { min-height: 38px; padding: 0 12px; }
 body.system-fullscreen-mode .external-frame,
-body.system-fullscreen-mode.external-clean .external-frame { height: 100vh !important; min-height: 100vh !important; border-radius: 0 !important; }
+body.system-fullscreen-mode.external-clean .external-frame,
+.external-frame:fullscreen,
+.external-frame:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  border-radius: 0 !important;
+}
 body.system-fullscreen-mode.external-clean .global-side-toggle { top: 12px; }
 
 body.sidebar-locked { overflow-x: hidden; }
@@ -811,7 +818,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
               <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
             <div id="moreActionsMenu" hidden style="position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid #d7e5f2;border-radius:14px;box-shadow:0 14px 34px rgba(15,35,60,.14);min-width:180px;z-index:200;overflow:hidden;">
-              <button type="button" onclick="toggleBrowserFullscreen();closeMoreActions()" style="width:100%;border:0;background:transparent;padding:11px 16px;text-align:left;cursor:pointer;font:inherit;font-weight:700;font-size:13px;color:#10243e;display:flex;align-items:center;gap:10px;">
+              <button type="button" onclick="closeMoreActions();toggleBrowserFullscreen()" style="width:100%;border:0;background:transparent;padding:11px 16px;text-align:left;cursor:pointer;font:inherit;font-weight:700;font-size:13px;color:#10243e;display:flex;align-items:center;gap:10px;">
                 <i class="fa-solid fa-expand" style="width:16px;text-align:center;color:#60758f"></i> Tela cheia
               </button>
               <button type="button" onclick="refreshData();closeMoreActions()" style="width:100%;border:0;background:transparent;padding:11px 16px;text-align:left;cursor:pointer;font:inherit;font-weight:700;font-size:13px;color:#10243e;display:flex;align-items:center;gap:10px;border-top:1px solid #edf3f9;">
@@ -1700,10 +1707,10 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
 
   function toggleSidebar(){
     enforceResponsiveSidebar();
-    if(shouldLockSidebar()){ document.body.classList.add("sidebar-collapsed"); setTimeout(()=>{ if(currentView==="dashboard") renderMap(); },220); return; }
+    if(shouldLockSidebar()){ document.body.classList.add("sidebar-collapsed"); if(currentView==="dashboard") scheduleMapResize(240); return; }
     document.body.classList.toggle("sidebar-collapsed");
     try{ localStorage.setItem("agsus_monitora_sidebar_collapsed_v1",document.body.classList.contains("sidebar-collapsed")?"1":"0"); }catch(e){}
-    setTimeout(()=>{ if(currentView==="dashboard") renderMap(); },220);
+    if(currentView==="dashboard") scheduleMapResize(240);
   }
 
   function toggleFilters(){ $("filterBody").classList.toggle("hidden"); $("filterToggleBtn").textContent=$("filterBody").classList.contains("hidden")?"⌄ Mostrar filtros":"⌃ Ocultar filtros"; }
@@ -1970,6 +1977,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   function _unpackEstab(a){ return {n:a[0], cnes:a[1], lat:a[2], lon:a[3], mun:a[4], uf:a[5]}; }
 
   let _leaflet=null, _layerDSEI=null, _layerPolos=null, _layerCasai=null, _layerUF=null, _layerBR=null, _mapInited=false;
+  let _lastMapAutoFitKey = "";
   let _ptsZoom=null;  // pontos a enquadrar no zoom (DSEIs + CASAIs nacionais filtradas)
   let _heatMode=false; // mapa de calor de vagas ociosas
   const _BRASIL_VIEW = [[-33.5,-73.0],[5.5,-34.5]]; // enquadramento padrão (Brasil, justo)
@@ -2099,6 +2107,13 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     _leaflet.addControl(new LegendCtl());
   }
 
+  function scheduleMapResize(delay=80){
+    clearTimeout(window.__mapResizeTimer);
+    window.__mapResizeTimer = setTimeout(()=>{
+      try{ _leaflet?.invalidateSize?.({ animate:false, pan:false }); }catch(e){}
+    }, delay);
+  }
+
   // Contorno do Brasil (linha tracejada ao redor do território) — desenhado uma vez
   function drawBrasilOutline(){
     if(!_leaflet || !_layerBR) return;
@@ -2181,17 +2196,23 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     { const _b=$("drillBackBtn"); if(_b) _b.style.display="none"; }
     // Zoom automático: com filtro ativo, enquadra apenas os DSEIs/CASAIs filtrados.
     // Sem filtro, volta para a visão geral do Brasil.
-    try{
-      if(filtroAtivo && ptsVisiveis.length){
+    const autoFitKey = (filtroAtivo ? "F|" : "A|") + ptsVisiveis
+      .map(p=>p.map(v=>Number(v).toFixed(4)).join(","))
+      .join("|");
+    if(autoFitKey !== _lastMapAutoFitKey){
+      _lastMapAutoFitKey = autoFitKey;
+      try{
+        if(filtroAtivo && ptsVisiveis.length){
         if(ptsVisiveis.length===1){
-          _leaflet.flyTo(ptsVisiveis[0], 7, {duration:0.6});
+          _leaflet.setView(ptsVisiveis[0], 7, {animate:false});
         } else {
-          _leaflet.flyToBounds(L.latLngBounds(ptsVisiveis), {padding:[60,60], maxZoom:7, duration:0.6});
+          _leaflet.fitBounds(L.latLngBounds(ptsVisiveis), {padding:[60,60], maxZoom:7, animate:false});
         }
-      } else if(!filtroAtivo){
-        _leaflet.flyToBounds(L.latLngBounds(_BRASIL_VIEW[0],_BRASIL_VIEW[1]), {duration:0.6});
-      }
-    }catch(e){}
+        } else if(!filtroAtivo){
+          _leaflet.fitBounds(L.latLngBounds(_BRASIL_VIEW[0],_BRASIL_VIEW[1]), {animate:false});
+        }
+      }catch(e){}
+    }
     _ptsZoom=null;
     syncMapLevelUI();
   }
@@ -2332,7 +2353,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     if(currentView!=="dashboard") return;
     initLeaflet();
     if(!_leaflet) return;
-    setTimeout(()=>{ try{ _leaflet.invalidateSize(); }catch(e){} }, 60);
+    scheduleMapResize(60);
     drawDSEIBubbles();
   }
 
@@ -2766,7 +2787,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     if(panel.em_manutencao){ holder.innerHTML=`<div class="external-placeholder"><div><div style="font-size:58px;color:#555"><i class="fa-solid fa-screwdriver-wrench"></i></div><h2>Módulo em Manutenção</h2><p>A AgSUS está atualizando esta base de dados.<br>Por favor, tente novamente mais tarde.</p></div></div>`; return; }
     const safePanelUrl = safeUrl(panel.url);
     if(!safePanelUrl){ holder.innerHTML=`<div class="external-placeholder"><div><h2>${esc(panel.titulo)}</h2><p>Cadastre uma URL http(s) válida deste painel em paineis_externos.</p></div></div>`; return; }
-    holder.innerHTML=`<iframe class="external-frame" src="${attr(safePanelUrl)}" loading="eager" referrerpolicy="no-referrer-when-downgrade" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals" allow="fullscreen; clipboard-read; clipboard-write; encrypted-media; geolocation" allowfullscreen></iframe>`;
+    holder.innerHTML=`<iframe class="external-frame" src="${attr(safePanelUrl)}" loading="eager" referrerpolicy="no-referrer-when-downgrade" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-presentation allow-top-navigation-by-user-activation" allow="fullscreen *; clipboard-read *; clipboard-write *; encrypted-media *; geolocation *" allowfullscreen="true"></iframe>`;
   }
 
   function reloadExternal(){
@@ -2883,11 +2904,11 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     const exec=$("executiveModeBtn"); const dashboard=isDashboardView();
     const executiveActive=dashboard&&document.body.classList.contains("executive-mode");
     if(exec){ exec.classList.toggle("hidden",!dashboard); exec.setAttribute("aria-hidden",dashboard?"false":"true"); exec.setAttribute("aria-pressed",executiveActive?"true":"false"); exec.innerHTML=executiveActive?`<i class="fa-solid fa-display"></i> Sair do executivo`:`<i class="fa-solid fa-display"></i> Modo executivo`; }
-    // atualiza ícone do menu de ações secundárias se existir
+    const fullscreenActive = !!document.fullscreenElement;
     const moreMenu = $("moreActionsMenu");
     if(moreMenu){
       const fsBtn = moreMenu.querySelector("button:first-child i");
-      if(fsBtn) fsBtn.className = document.fullscreenElement ? "fa-solid fa-compress" : "fa-solid fa-expand";
+      if(fsBtn) fsBtn.className = fullscreenActive ? "fa-solid fa-compress" : "fa-solid fa-expand";
     }
   }
   function applyStoredDisplayModes(){ applyExecutiveModeForCurrentView(); }
@@ -2896,18 +2917,34 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     const active=!document.body.classList.contains("executive-mode");
     document.body.classList.toggle("executive-mode",active);
     try{ localStorage.setItem("agsus_monitora_executive_mode_v1",active?"1":"0"); }catch(e){}
-    syncDisplayModeButtons(); setTimeout(()=>{ if(currentView==="dashboard") renderMap(); },180);
+    syncDisplayModeButtons(); if(currentView==="dashboard") scheduleMapResize(220);
     toast(active?"Modo executivo ativado: foco em KPIs, mapa e resumo por etapa.":"Modo executivo desativado.");
   }
 
-  async function toggleBrowserFullscreen(){
+  function getFullscreenTarget(){
+    if(currentView && currentView.startsWith("panel:") && currentPanel){
+      const holder = document.getElementById("external-panel-"+currentPanel.codigo);
+      const frame = holder?.querySelector?.(".external-frame");
+      if(frame) return frame;
+    }
+    return document.documentElement;
+  }
+
+  function toggleBrowserFullscreen(){
     try{
-      if(!document.fullscreenElement){ const target=document.documentElement; if(target.requestFullscreen) await target.requestFullscreen(); else { toast("Este navegador não permite tela cheia pela aplicação.","warn"); return; } }
-      else await document.exitFullscreen();
+      if(document.fullscreenElement){
+        const exiting = document.exitFullscreen?.();
+        if(exiting?.catch) exiting.catch(()=>toast("Não foi possível sair da tela cheia pelo aplicativo.","warn"));
+        return;
+      }
+      const target = getFullscreenTarget();
+      if(!target?.requestFullscreen){ toast("Este navegador não permite tela cheia pela aplicação.","warn"); return; }
+      const entering = target.requestFullscreen();
+      if(entering?.catch) entering.catch(()=>toast("O navegador bloqueou a tela cheia. Use Abrir em nova guia e tente novamente.","warn"));
     }catch(error){ toast("O navegador bloqueou a tela cheia. Use Abrir em nova guia e tente novamente.","warn"); }
   }
 
-  document.addEventListener("fullscreenchange",()=>{ document.body.classList.toggle("system-fullscreen-mode",!!document.fullscreenElement); syncDisplayModeButtons(); setTimeout(()=>{ if(currentView==="dashboard") renderMap(); },180); });
+  document.addEventListener("fullscreenchange",()=>{ document.body.classList.toggle("system-fullscreen-mode",!!document.fullscreenElement); syncDisplayModeButtons(); if(currentView==="dashboard") scheduleMapResize(220); });
 
   function exportCSV(){
     const source = filtered.length ? filtered : rows;
@@ -3008,7 +3045,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     try{ localStorage.setItem("agsus_dark_mode_v1", next ? "1" : "0"); }catch(e){}
     applyDarkMode(next);
     // re-renderiza o mapa para adaptar ao fundo
-    setTimeout(()=>{ if(currentView==="dashboard") renderMap(); }, 200);
+    setTimeout(()=>{ if(currentView==="dashboard") scheduleMapResize(80); }, 200);
   }
   function loadDarkModePreference(){
     try{
@@ -3139,8 +3176,8 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     }
   }
 
-  window.addEventListener("resize",()=>{ clearTimeout(window.__responsiveResize); window.__responsiveResize=setTimeout(()=>{ enforceResponsiveSidebar(); renderMap(); },220); });
-  window.addEventListener("orientationchange",()=>{ setTimeout(()=>{ enforceResponsiveSidebar(); renderMap(); },300); });
+  window.addEventListener("resize",()=>{ clearTimeout(window.__responsiveResize); window.__responsiveResize=setTimeout(()=>{ enforceResponsiveSidebar(); if(currentView==="dashboard") scheduleMapResize(80); },220); });
+  window.addEventListener("orientationchange",()=>{ setTimeout(()=>{ enforceResponsiveSidebar(); if(currentView==="dashboard") scheduleMapResize(80); },300); });
 
   // Indicador de conexão (offline)
   function updateOnlineStatus(){
