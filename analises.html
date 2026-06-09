@@ -217,6 +217,8 @@
   const THEME_KEY = "agsus_analises_theme_v3";
   const RPC_ACCESS_LOG = "registrar_evento_acesso";
   const APP_VERSION = "institucional-2026-06-09";
+  const CACHE_KEY = "agsus_analises_cache_v1";
+  const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutos
   const ACCESS_HEARTBEAT_MS = 5 * 60 * 1000;
   let sb, session, profile, canReadAnalisesRpc = null;
   let rows = [], editais = [], baseFilteredRows = [], panelRows = [], tableRows = [];
@@ -353,7 +355,7 @@
       return false;
     }
     hideAuth();
-    if(reloadData) await refreshData();
+    if(reloadData) await loadFromCacheOrPrompt();
     if(trackOpen){
       const openKey = currentOpenAuditKey();
       if(openKey && openKey !== lastTrackedOpenKey){
@@ -387,7 +389,7 @@
   }
 
   function bindEvents(){
-    $("themeBtn").onclick = toggleTheme; $("fullBtn").onclick = toggleFullscreen; $("refreshBtn").onclick = refreshData; $("exportBtn").onclick = exportCSV;
+    $("themeBtn").onclick = toggleTheme; $("fullBtn").onclick = toggleFullscreen; $("refreshBtn").onclick = manualRefresh; $("exportBtn").onclick = exportCSV;
     $("advancedBtn").onclick = () => { $("advancedFilters").classList.toggle("show"); $("advancedBtn").innerHTML = $("advancedFilters").classList.contains("show") ? '<i class="fa-solid fa-sliders"></i> Ocultar filtros' : '<i class="fa-solid fa-sliders"></i> Mais filtros'; };
     $("applyBtn").onclick = applyFilters; $("clearBtn").onclick = clearFilters;
     ["fUnidade","fEdital","fVaga","fStatus","fResponsavel","fCategoria","fModalidade","fPdf","fValidacao"].forEach(id => $(id).addEventListener("change", () => { currentPage=1; applyFilters(); }));
@@ -533,6 +535,59 @@
     return { outside:false, status:"DENTRO_PERIODO", label:"Dentro do período configurado" };
   }
 
+  // ---------------- Cache local (30 min) ----------------
+  function readCache(){
+    try{
+      const raw = localStorage.getItem(CACHE_KEY);
+      if(!raw) return null;
+      const parsed = JSON.parse(raw);
+      if(!parsed || !parsed.ts || !Array.isArray(parsed.rows)) return null;
+      return parsed;
+    }catch(e){ return null; }
+  }
+  function writeCache(rawRows, rawEditais){
+    try{
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), rows: rawRows, editais: rawEditais }));
+    }catch(e){
+      console.warn("Não foi possível gravar o cache local:", e);
+    }
+  }
+  function cacheAgeMs(cache){ return cache && cache.ts ? Date.now() - cache.ts : Infinity; }
+  function setUpdatedFromCache(ts){
+    const label = `Cache de ${fmtDateTime(new Date(ts).toISOString())}`;
+    $("updatedText").textContent = label;
+    $("footerUpdated").textContent = label;
+  }
+
+  // Carrega do cache se válido (< 30 min). NÃO dispara busca automática no Supabase.
+  async function loadFromCacheOrPrompt(){
+    const cache = readCache();
+    if(cache && cacheAgeMs(cache) < CACHE_TTL_MS){
+      editais = Array.isArray(cache.editais) ? cache.editais : [];
+      rows = hydrateRowsWithEditalWindows(Array.isArray(cache.rows) ? cache.rows : []);
+      hydrateFilters(); currentPage=1; applyFilters();
+      const mins = Math.round(cacheAgeMs(cache) / 60000);
+      setUpdatedFromCache(cache.ts);
+      toast(`Dados carregados do cache local (${mins} min). Clique em Atualizar para buscar dados novos.`, "info", 6000);
+      return true;
+    }
+    // Sem cache válido: não busca sozinho, apenas sinaliza para o usuário clicar em Atualizar.
+    rows = []; editais = []; currentPage=1; applyFilters();
+    $("updatedText").textContent = "Clique em Atualizar para carregar";
+    $("footerUpdated").textContent = "Aguardando atualização";
+    toast("Nenhum dado em cache válido. Clique em Atualizar para carregar os dados.", "warn", 7000);
+    return false;
+  }
+
+  // Atualização manual: sempre busca dados novos do Supabase (ignora cache) e regrava o cache.
+  async function manualRefresh(){
+    if(!canReadAnalises()){
+      toast("Sem permissão ou sessão para atualizar os dados.", "error", 6000);
+      return;
+    }
+    await refreshData();
+  }
+
   // ---------------- Leitura paginada do Supabase ----------------
   const SUPABASE_PAGE_SIZE = 1000;
   async function fetchAllSupabaseRows(tableName, columns, orderSpecs){
@@ -576,8 +631,11 @@
       }
       setProgress(42,`Montando filtros e janelas oficiais para ${fmtNum(baseResponse.data.length)} registros...`);
       editais = Array.isArray(editaisResponse.data) ? editaisResponse.data : [];
-      rows = hydrateRowsWithEditalWindows(Array.isArray(baseResponse.data) ? baseResponse.data : []);
+      const rawBaseRows = Array.isArray(baseResponse.data) ? baseResponse.data : [];
+      writeCache(rawBaseRows, editais);
+      rows = hydrateRowsWithEditalWindows(rawBaseRows);
       hydrateFilters(); setProgress(62,"Calculando indicadores..."); currentPage=1; applyFilters(); setUpdatedAt(); setProgress(100,`Painel pronto com ${fmtNum(rows.length)} registros.`); setTimeout(() => showLoading(false), 180);
+      toast(`Dados atualizados: ${fmtNum(rows.length)} registros carregados.`, "info", 5000);
       return true;
     })();
     try{ return await activeRefreshPromise; }finally{ activeRefreshPromise = null; }
