@@ -214,6 +214,7 @@
   const SUPABASE_URL = "https://gnudtaxhjfgtvwkwpsel.supabase.co";
   const SUPABASE_KEY = "sb_publishable_7uDcRD6KoroXlyHBp2K4rA_Ex242hpI";
   const VIEW_NAME = "vw_analises_dashboard_base";
+  const ANALISES_DASHBOARD_PAYLOAD_RPC = "get_analises_dashboard_payload";
   const THEME_KEY = "agsus_analises_theme_v3";
   const RPC_ACCESS_LOG = "registrar_evento_acesso";
   const APP_VERSION = "institucional-2026-06-09";
@@ -222,6 +223,7 @@
   const ACCESS_HEARTBEAT_MS = 5 * 60 * 1000;
   let sb, session, profile, canReadAnalisesRpc = null;
   let rows = [], editais = [], baseFilteredRows = [], panelRows = [], tableRows = [];
+  let analisesPayload = null;
   let tableRowsDirty = true;
   const multiSelectState = {};
   let currentPage = 1, rowsPerPage = 25, activeKpi = "total", activeResponsavel = "";
@@ -609,12 +611,23 @@
     return { data: allRows, error: null };
   }
 
+  async function loadAnalisesPayload(){
+    if(!sb) return null;
+    const { data, error } = await sb.rpc(ANALISES_DASHBOARD_PAYLOAD_RPC);
+    if(error){
+      console.warn("Payload consolidado de análises indisponível; usando carregamento legado:", error);
+      return null;
+    }
+    return data || null;
+  }
+
   async function refreshData(){
     if(activeRefreshPromise) return activeRefreshPromise;
     const runId = ++refreshRunCounter;
     activeRefreshPromise = (async () => {
       showLoading(true); setProgress(12,"Consultando Supabase em lotes...");
-      const [baseResponse, editaisResponse] = await Promise.all([
+      const [payloadResponse, baseResponse, editaisResponse] = await Promise.all([
+        loadAnalisesPayload(),
         fetchAllSupabaseRows(VIEW_NAME, "*", [
           { column: "unidade", ascending: true }, { column: "edital", ascending: true },
           { column: "codigo_vaga", ascending: true }, { column: "candidato", ascending: true }
@@ -624,6 +637,7 @@
         ])
       ]);
       if(runId !== refreshRunCounter) return false;
+      analisesPayload = payloadResponse || null;
       if(baseResponse.error){ showAuth("Erro ao carregar o painel: " + baseResponse.error.message); return false; }
       if(editaisResponse.error){
         console.warn("Não foi possível carregar analises_editais:", editaisResponse.error.message);
@@ -731,8 +745,22 @@
   function applyVisualFilters(source){ const statuses = kpiStatuses(activeKpi); return source.filter(r => (!statuses.length || statuses.includes(txt(r.status_consolidado))) && (!activeResponsavel || txt(r.responsavel_analise) === activeResponsavel)); }
   function kpiStatuses(k){ const m = { total:[], analisado:["Revisar","Aprovado","Reprovado"], pendente:["Pendente"], revisar:["Revisar"], aprovado:["Aprovado"], reprovado:["Reprovado"] }; return m[k] || []; }
   function renderAll(){ renderKpis(); renderContext(); renderWindowMeta(); renderPdfMetrics(); renderResponsavelChart(); renderTrendChart(); renderAttention(); renderTable(); }
+  function canUseAnalisesPayload(){
+    if(!analisesPayload) return false;
+    const hasSelectFilters = FILTER_IDS.some(id => selectedValues(id).length > 0);
+    const hasSearch = txt($("fBusca")?.value) || txt($("tableSearch")?.value);
+    return !hasSelectFilters && !hasSearch && activeKpi === "total" && !activeResponsavel;
+  }
 
   function renderKpis(){
+    if(canUseAnalisesPayload() && analisesPayload.kpis){
+      const k = analisesPayload.kpis;
+      const total = num(k.total_candidatos);
+      const apr = num(k.aprovados), rep = num(k.reprovados);
+      $("kTotal").textContent=fmt(k.total_candidatos); $("kAnalisado").textContent=fmt(k.analisados); $("kPendente").textContent=fmt(k.pendentes); $("kRevisar").textContent=fmt(k.revisar); $("kAprovado").textContent=fmt(k.aprovados); $("kReprovado").textContent=fmt(k.reprovados); $("kTaxa").textContent=total ? Math.round(((apr+rep)/total)*100)+"%" : "0%";
+      document.querySelectorAll("[data-kpi]").forEach(el => { el.classList.remove("is-active"); const btn = el.querySelector("button[aria-pressed]"); if(btn) btn.setAttribute("aria-pressed", "false"); });
+      return;
+    }
     const total=panelRows.length, pend=panelRows.filter(r=>txt(r.status_consolidado)==="Pendente").length, rev=panelRows.filter(r=>txt(r.status_consolidado)==="Revisar").length, apr=panelRows.filter(r=>txt(r.status_consolidado)==="Aprovado").length, rep=panelRows.filter(r=>txt(r.status_consolidado)==="Reprovado").length, analisado=rev+apr+rep;
     $("kTotal").textContent=fmt(total); $("kAnalisado").textContent=fmt(analisado); $("kPendente").textContent=fmt(pend); $("kRevisar").textContent=fmt(rev); $("kAprovado").textContent=fmt(apr); $("kReprovado").textContent=fmt(rep); $("kTaxa").textContent=total ? Math.round(((apr+rep)/total)*100)+"%" : "0%";
     document.querySelectorAll("[data-kpi]").forEach(el => { const on = el.dataset.kpi === activeKpi && activeKpi !== "total"; el.classList.toggle("is-active", on); const btn = el.querySelector("button[aria-pressed]"); if(btn) btn.setAttribute("aria-pressed", on ? "true" : "false"); });
@@ -756,11 +784,22 @@
   function statusClass(s){ const x=norm(s); if(x==="aprovado") return "aprovado"; if(x==="reprovado") return "reprovado"; if(x==="revisar") return "revisar"; if(x==="pendente") return "pendente"; return "neutro"; }
   function palette(){ const dark=document.documentElement.dataset.theme==="dark"; return { grid:dark?"rgba(255,255,255,.08)":"rgba(7,59,121,.09)", text:dark?"#dbe8f5":"#526780", ok:"#2ca25f", bad:"#e45757", warn:"#e2a400", review:"#2f74c0", blue:"#0f5db7", surface:dark?"#0f1c2e":"#fff" }; }
   function aggregateResponsavel(limit=12){ const map=new Map(); panelRows.forEach(r=>{ const label=txt(r.responsavel_analise)||"Sem responsável"; if(!map.has(label)) map.set(label,{label,Pendente:0,Revisar:0,Aprovado:0,Reprovado:0,total:0}); const e=map.get(label); const s=txt(r.status_consolidado)||"Pendente"; if(e[s]!==undefined) e[s]++; else e.Pendente++; e.total++; }); return [...map.values()].sort((a,b)=>b.total-a.total).slice(0,limit); }
+  function aggregateResponsavelFromPayload(limit=12){
+    if(!canUseAnalisesPayload() || !Array.isArray(analisesPayload.por_responsavel)) return null;
+    return analisesPayload.por_responsavel.slice(0,limit).map(r => ({
+      label: txt(r.responsavel_analise) || "Sem responsável",
+      Pendente: num(r.pendentes),
+      Revisar: num(r.revisar),
+      Aprovado: num(r.aprovados),
+      Reprovado: num(r.reprovados),
+      total: num(r.total)
+    }));
+  }
 
   // Gráficos: cria uma vez, depois apenas atualiza dados (update) em vez de destruir e recriar.
   let respItems = [];
   function renderResponsavelChart(){
-    respItems = aggregateResponsavel(); const p=palette();
+    respItems = aggregateResponsavelFromPayload() || aggregateResponsavel(); const p=palette();
     const labels = respItems.map(x=>truncate(x.label,22));
     const datasets = [
       {label:"Pendente",key:"Pendente",backgroundColor:p.warn,borderRadius:7},
@@ -778,9 +817,18 @@
     charts.resp = new Chart($("chartResponsavel"), { type:"bar", data:{ labels, datasets }, options:{ responsive:true, maintainAspectRatio:false, animation:{duration:380}, interaction:{mode:"index",intersect:false}, plugins:{legend:{position:"top",labels:{color:p.text,boxWidth:14,usePointStyle:true}},tooltip:{callbacks:{title:c=>respItems[c[0].dataIndex]?.label||"",afterBody:c=>[`Total: ${fmt(respItems[c[0].dataIndex]?.total||0)}`]}}}, scales:{x:{stacked:true,ticks:{color:p.text,maxRotation:0},grid:{display:false}},y:{stacked:true,beginAtZero:true,ticks:{color:p.text,precision:0},grid:{color:p.grid}}}, onClick:(_,els)=>{ if(!els.length) return; const item=respItems[els[0].index]; activeResponsavel = activeResponsavel === item.label ? "" : item.label; currentPage=1; applyFilters(); } } });
   }
   function aggregateDate(){ const map=new Map(); panelRows.forEach(r=>{ const key=fmtDate(r.data_analise); if(!key) return; if(!map.has(key)) map.set(key,{label:key,value:0,out:0,raw:dateObj(r.data_analise)}); const e=map.get(key); e.value++; if(txt(r.data_validacao_status)==="FORA_PERIODO") e.out++; }); return [...map.values()].sort((a,b)=>(a.raw?.getTime()||0)-(b.raw?.getTime()||0)); }
+  function aggregateDateFromPayload(){
+    if(!canUseAnalisesPayload() || !Array.isArray(analisesPayload.tendencia_diaria)) return null;
+    return analisesPayload.tendencia_diaria.map(r => ({
+      label: fmtDate(r.data_analise),
+      value: num(r.total_analises),
+      out: num(r.fora_periodo),
+      raw: dateObj(r.data_analise)
+    })).filter(r => r.label);
+  }
   let trendItems = [];
   function renderTrendChart(){
-    trendItems = aggregateDate(); const p=palette();
+    trendItems = aggregateDateFromPayload() || aggregateDate(); const p=palette();
     const labels = trendItems.map(x=>x.label);
     const data = trendItems.map(x=>x.value);
     const pointBg = trendItems.map(x=>x.out?p.bad:p.blue);
