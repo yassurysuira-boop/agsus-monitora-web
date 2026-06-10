@@ -1151,6 +1151,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   const RPC_SAVE_MONITORAMENTO = "salvar_monitoramento_indigena";
   const RPC_SAVE_CONFIG        = "salvar_configuracoes_e_paineis";
   const RPC_ACCESS_LOG         = "registrar_evento_acesso";
+  const MONITORAMENTO_DASHBOARD_PAYLOAD_RPC = "get_monitoramento_dashboard_payload";
   const ACCESS_HEARTBEAT_MS    = 5 * 60 * 1000;
   const DETAILS_TABLE_SOURCE_MODE = "client";
   const PASSWORD_RESET_ADMIN_MESSAGE = "Esqueceu sua senha? Solicite a redefinição ao administrador do sistema.";
@@ -1188,6 +1189,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   let appConfig = {...DEFAULT_CONFIG};
   let rows = [];
   let filtered = [];
+  let monitoramentoPayload = null;
   let unidadesCatalog = [];
   let tableSort = { field:"", direction:"" };
   const VIEW_STORAGE_KEY = "agsus_monitora_current_view_v268";
@@ -1673,6 +1675,16 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     renderPanelAdmin();
   }
 
+  async function loadMonitoramentoPayload(){
+    if(!sb) return null;
+    const { data, error } = await sb.rpc(MONITORAMENTO_DASHBOARD_PAYLOAD_RPC);
+    if(error){
+      console.warn("Payload consolidado de monitoramento indisponível; usando carregamento legado:", error);
+      return null;
+    }
+    return data || null;
+  }
+
   async function loadData(options={}){
     if(activeLoadDataPromise) return activeLoadDataPromise;
     const showOwnLoader = options.showLoader !== false;
@@ -1680,8 +1692,13 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     activeLoadDataPromise = (async () => {
       if(!can("ind")&&!can("cores")){ rows=[]; filtered=[]; buildNav(); return true; }
       if(showOwnLoader) loader(true,"Atualizando","Sincronizando dados...",62);
-      const { data, error } = await sb.from("monitoramento_indigena").select("aprovados_analise,aprovados_prova,aptos_analise,ativo,cancelados,cargos,ciclo,contratados,data_fim,data_inicio,edital,eliminados_nota,entrevistados,etapa,id,id_unidade,inscritos,link_edital,observacoes,observacoes_internas,processo,reprovados_analise,responsavel,risco,sigla_unidade,status,tipo_unidade,total_eliminados,uf,unidade,vagas_ociosas,vagas_total").eq("ativo",true).order("unidade",{ascending:true}).order("edital",{ascending:true});
+      const [payloadResponse, tableResponse] = await Promise.all([
+        loadMonitoramentoPayload(),
+        sb.from("monitoramento_indigena").select("aprovados_analise,aprovados_prova,aptos_analise,ativo,cancelados,cargos,ciclo,contratados,data_fim,data_inicio,edital,eliminados_nota,entrevistados,etapa,id,id_unidade,inscritos,link_edital,observacoes,observacoes_internas,processo,reprovados_analise,responsavel,risco,sigla_unidade,status,tipo_unidade,total_eliminados,uf,unidade,vagas_ociosas,vagas_total").eq("ativo",true).order("unidade",{ascending:true}).order("edital",{ascending:true})
+      ]);
       if(runId!==loadDataRunCounter) return false;
+      monitoramentoPayload = payloadResponse || null;
+      const { data, error } = tableResponse;
       if(error){ if(showOwnLoader) loader(false); toast("Erro ao carregar dados: "+friendlyError(error),"error"); return false; }
       rows = Array.isArray(data) ? data : [];
       dataLoadedAtLeastOnce = true;
@@ -1947,12 +1964,17 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
 
   function sum(field){ return filtered.reduce((acc,r)=>acc+n(r[field]),0); }
   function renderAll(){ renderKpis(); renderMultiUnits(); renderStatusSummary(); renderChart(); renderMap(); renderRisks(); renderTable(); if(currentView==="nucleo") renderNucleo(); }
+  function canUseMonitoramentoPayload(){
+    return !!monitoramentoPayload && !hasActiveFilter() && !hideClosed;
+  }
 
   function renderKpis(){
-    const vagas   = sum("vagas_total");
-    const contrat = sum("contratados");
-    const ociosas = sum("vagas_ociosas");
-    const inscritos = sum("inscritos");
+    const payloadKpis = canUseMonitoramentoPayload() ? monitoramentoPayload.kpis : null;
+    const vagas   = payloadKpis ? n(payloadKpis.vagas_total) : sum("vagas_total");
+    const contrat = payloadKpis ? n(payloadKpis.contratados) : sum("contratados");
+    const ociosas = payloadKpis ? n(payloadKpis.vagas_ociosas) : sum("vagas_ociosas");
+    const inscritos = payloadKpis ? n(payloadKpis.inscritos) : sum("inscritos");
+    const processos = payloadKpis ? n(payloadKpis.processos_ativos) : filtered.length;
     const kProcessos = $("kProcessos");
     const kVagas = $("kVagas");
     const kContratados = $("kContratados");
@@ -1960,7 +1982,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     const kCriticos = $("kCriticos");
     const kInscritos = $("kInscritos");
 
-    if(kProcessos) kProcessos.textContent = fmt(filtered.length);
+    if(kProcessos) kProcessos.textContent = fmt(processos);
     if(kVagas) kVagas.textContent = fmt(vagas);
     if(kContratados) kContratados.textContent = fmt(contrat);
     if(kOciosas) kOciosas.textContent = fmt(ociosas);
