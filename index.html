@@ -309,6 +309,28 @@ body:not(.sidebar-collapsed) .global-side-toggle i { transform: rotate(180deg); 
 body.sidebar-collapsed .global-side-toggle { left: calc(var(--sidebar-mini) - 15px); }
 body.external-clean   .global-side-toggle { top: 16px; }
 body.sidebar-locked   .global-side-toggle { left: calc(var(--sidebar-mini) - 15px); }
+/* Barra superior fixa para sair de um painel externo e voltar ao sistema.
+   Em modo external-clean a sidebar/topo somem; esta barra RESERVA espaço próprio
+   acima do painel (o painel é empurrado para baixo), então o botão nunca cobre o
+   título/conteúdo do painel externo. */
+#externalReturnBar { display: none; }
+body.external-clean #externalReturnBar {
+  display: flex; align-items: center; gap: 8px;
+  position: fixed; top: 0; left: 0; right: 0; height: 46px; z-index: 1300;
+  padding: 0 12px; box-sizing: border-box;
+  background: rgba(255,255,255,.97);
+  border-bottom: 1px solid rgba(0,36,72,.12);
+  box-shadow: 0 2px 10px rgba(0,36,72,.08);
+  backdrop-filter: blur(8px);
+}
+#externalBackBtn {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid rgba(0,212,255,.5); background: #ffffff;
+  color: #005b9f; font-weight: 800; font-size: 13px; line-height: 1;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,36,72,.14);
+}
+#externalBackBtn:hover { background: #f0f9ff; }
 .hamb { display: none !important; }
 
 .main { min-width: 0; }
@@ -596,13 +618,14 @@ body.external-clean .global-side-toggle { display: none !important; }
 body.external-clean .app { display: block !important; grid-template-columns: minmax(0,1fr) !important; }
 body.external-clean .main { width: 100vw !important; min-width: 0 !important; }
 body.external-clean .content { padding: 0 !important; height: 100vh !important; height: 100dvh !important; overflow: hidden !important; }
+body.external-clean #page-external { margin-top: 46px !important; } /* reserva a barra "Voltar ao sistema" */
 body.external-clean #page-external .table-card { margin: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; overflow: visible !important; }
 body.external-clean #page-external,
 body.external-clean #page-external .table-card,
 body.external-clean #page-external #externalMount,
-body.external-clean .external-panel { width: 100vw !important; height: 100vh !important; height: 100dvh !important; min-height: 100vh !important; min-height: 100dvh !important; border-radius: 0 !important; overflow: hidden !important; }
-body.external-clean .external-frame { width: 100vw !important; height: 100vh !important; height: 100dvh !important; min-height: 100vh !important; min-height: 100dvh !important; border-radius: 0 !important; }
-body.external-clean .external-placeholder { min-height: 100vh !important; min-height: 100dvh !important; border-radius: 0 !important; border: 0 !important; box-shadow: none !important; }
+body.external-clean .external-panel { width: 100vw !important; height: calc(100dvh - 46px) !important; min-height: calc(100dvh - 46px) !important; border-radius: 0 !important; overflow: hidden !important; }
+body.external-clean .external-frame { width: 100vw !important; height: calc(100dvh - 46px) !important; min-height: calc(100dvh - 46px) !important; border-radius: 0 !important; }
+body.external-clean .external-placeholder { min-height: calc(100dvh - 46px) !important; border-radius: 0 !important; border: 0 !important; box-shadow: none !important; }
 
 #page-nucleo .table-card { height: calc(100vh - 138px); min-height: 680px; display: flex; flex-direction: column; margin-top: 0; }
 #page-nucleo .table-wrap { flex: 1; max-height: none; min-height: 0; }
@@ -657,6 +680,13 @@ body.system-fullscreen-mode.external-clean .external-frame,
   border-radius: 0 !important;
 }
 body.system-fullscreen-mode.external-clean .global-side-toggle { top: 12px; }
+/* Em tela cheia a barra some e o painel ocupa 100% (sem o recuo de 46px). */
+body.system-fullscreen-mode #externalReturnBar { display: none !important; }
+body.system-fullscreen-mode.external-clean #page-external { margin-top: 0 !important; }
+body.system-fullscreen-mode.external-clean #page-external,
+body.system-fullscreen-mode.external-clean #page-external .table-card,
+body.system-fullscreen-mode.external-clean #page-external #externalMount,
+body.system-fullscreen-mode.external-clean .external-panel { height: 100vh !important; min-height: 100vh !important; }
 
 body.sidebar-locked { overflow-x: hidden; }
 body.sidebar-locked .app { grid-template-columns: var(--sidebar-mini) minmax(0,1fr); width: 100%; max-width: 100vw; overflow-x: hidden; }
@@ -804,6 +834,11 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     <button id="globalSidebarToggle" class="global-side-toggle" onclick="toggleSidebar()" title="Expandir ou recolher menu" aria-label="Expandir ou recolher menu">
       <i class="fa-solid fa-angles-right" aria-hidden="true"></i>
     </button>
+    <div id="externalReturnBar">
+      <button id="externalBackBtn" type="button" onclick="exitExternalPanel()" title="Voltar ao sistema" aria-label="Voltar ao sistema">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar ao sistema
+      </button>
+    </div>
     <aside class="sidebar">
       <div class="side-brand">
         <img id="sideLogo" class="side-logo" src="https://i.postimg.cc/HsbLdZ5q/Gemini-Generated-Image-usyawvusyawvusya-Photoroom.png" alt="Logo AgSUS" onerror="this.onerror=null;this.src='https://i.postimg.cc/7PztC6jq/79255fad-06f0-4963-81f5-1fa4a116475e.png';">
@@ -1317,7 +1352,35 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
       showAlert("configMsg","Não foi possível carregar a biblioteca do Supabase. Verifique a internet.","error");
       return false;
     }
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Em iframes de terceiros (ex.: Google Sites), o navegador pode bloquear ou
+    // particionar o localStorage, fazendo o acesso LANÇAR exceção. Sem tratamento,
+    // isso quebra o login/sessão do Supabase e "trava" o painel inteiro.
+    // Usamos um adaptador seguro: tenta localStorage; se falhar, cai para memória.
+    const safeAuthStorage = (() => {
+      let backing = null;
+      try {
+        const k = "__agsus_probe__";
+        window.localStorage.setItem(k, "1");
+        window.localStorage.removeItem(k);
+        backing = window.localStorage;
+      } catch (e) {
+        backing = null; // armazenamento indisponível no iframe -> usa memória
+      }
+      const mem = new Map();
+      return {
+        getItem(key){ try { return backing ? backing.getItem(key) : (mem.has(key) ? mem.get(key) : null); } catch(_) { return mem.has(key) ? mem.get(key) : null; } },
+        setItem(key, value){ try { backing ? backing.setItem(key, value) : mem.set(key, value); } catch(_) { mem.set(key, value); } },
+        removeItem(key){ try { backing ? backing.removeItem(key) : mem.delete(key); } catch(_) { mem.delete(key); } }
+      };
+    })();
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        storage: safeAuthStorage,
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
     return true;
   }
 
@@ -1471,13 +1534,20 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   }
   function rememberView(view){ if(!view) return; try{ localStorage.setItem(VIEW_STORAGE_KEY,view); }catch(e){} }
   function storedView(){ try{ return localStorage.getItem(VIEW_STORAGE_KEY)||""; }catch(e){ return ""; } }
-  function startView(){
-    const stored=storedView(); if(isViewAllowed(stored)) return stored;
+  function systemHomeView(){
+    // Tela inicial do SISTEMA (nunca um painel externo).
     if(can("ind"))    return "dashboard";
     if(can("cores"))  return "nucleo";
-    if(can("paineis") && panels.find(p=>p.ativo!==false)) return "panel:"+panels.find(p=>p.ativo!==false).codigo;
     if(can("config")) return "config";
+    if(can("paineis") && panels.find(p=>p.ativo!==false)) return "panel:"+panels.find(p=>p.ativo!==false).codigo;
     return "dashboard";
+  }
+  function startView(){
+    // Restaura a última tela — EXCETO painéis externos, para o app nunca abrir
+    // "preso" num painel externo (sem menu para voltar) ao recarregar.
+    const stored=storedView();
+    if(stored && !stored.startsWith("panel:") && isViewAllowed(stored)) return stored;
+    return systemHomeView();
   }
 
   async function loadProfile(){
@@ -2001,6 +2071,38 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   let _ptsZoom=null;  // pontos a enquadrar no zoom (DSEIs + CASAIs nacionais filtradas)
   let _heatMode=false; // mapa de calor de vagas ociosas
   const _BRASIL_VIEW = [[-33.5,-73.0],[5.5,-34.5]]; // enquadramento padrão (Brasil, justo)
+  let _saBounds=null;        // limites de navegação (derivados da vista do Brasil)
+  let _homeFlyTimer=null;    // controla reaplicação dos limites após enquadrar
+  let _suppressAutoFit=false; // evita o enquadramento instantâneo brigar com a animação
+  // Define os limites de navegação A PARTIR da vista atual do Brasil (quando no zoom
+  // mínimo), com uma folga. Como o zoom mínimo é o mais "afastado", qualquer outro
+  // zoom cabe dentro destes limites — então o mapa nunca "treme" tentando se corrigir,
+  // em qualquer tamanho de tela.
+  function setBrazilMaxBounds(){
+    if(!_leaflet) return;
+    try{
+      const z=_leaflet.getZoom(), mz=_leaflet.getMinZoom();
+      if(z<=mz+0.05){
+        // No zoom mínimo (vista do Brasil): limites justos derivados da própria vista.
+        _saBounds=_leaflet.getBounds().pad(0.12);
+        _leaflet.setMaxBounds(_saBounds);
+      } else if(_saBounds){
+        // Com zoom maior, mantém os limites já derivados da vista do Brasil
+        // (que contêm qualquer vista mais aproximada) — nunca deixa sem limite.
+        _leaflet.setMaxBounds(_saBounds);
+      }
+    }catch(e){}
+  }
+  // Volta à visão do Brasil sem tremer: solta os limites, enquadra na hora (sem
+  // animação concorrente) e recalcula os limites a partir da nova vista.
+  function flyToBrasil(bounds){
+    if(!_leaflet) return;
+    try{ _leaflet.stop(); }catch(e){}
+    try{ _leaflet.setMaxBounds(null); }catch(e){}
+    try{ _leaflet.fitBounds(bounds,{animate:false}); }catch(e){}
+    clearTimeout(_homeFlyTimer);
+    _homeFlyTimer=setTimeout(setBrazilMaxBounds, 0);
+  }
   function buscarLocalMapa(termo){
     if(!_leaflet) return;
     const norm=s=>txt(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
@@ -2044,10 +2146,23 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     u=u.replace(/[^A-Z0-9]+/g," ").replace(/\s+/g," ").trim();
     return u;
   }
+  // Casamento de nome como PALAVRA INTEIRA (evita "ANTA" casar dentro de "CANTAGALO").
+  function _wordContains(hay,needle){
+    if(!hay||!needle) return false;
+    return new RegExp("(^| )"+needle.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"( |$)").test(hay);
+  }
+  function _strongNameMatch(nk,pk){
+    if(!nk||!pk) return false;
+    if(nk===pk) return true;
+    const shorter = nk.length<pk.length ? nk : pk;
+    if(shorter.length<5) return false;            // tokens curtos só casam se idênticos
+    return _wordContains(nk,pk) || _wordContains(pk,nk);
+  }
   function findOfficialPoloCoord(d,p){
     const rede=REDE_CNES.rede[d.k]; if(!rede) return null;
     const poloKey=mapNameKey(p.n);
     const poloUf=txt(p.uf).toUpperCase();
+    // 1ª passada: registros que são "POLO BASE" no CNES (mais confiável)
     const candidates=(rede.u||[])
       .filter(a=>/\bPOLO\b/i.test(txt(a[0])))
       .map(a=>{
@@ -2062,7 +2177,22 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
       })
       .filter(x=>x.score>=70)
       .sort((a,b)=>b.score-a.score);
-    return candidates[0]?.a || null;
+    if(candidates[0]) return candidates[0].a;
+    // 2ª passada (fallback): qualquer estabelecimento (UBSI/POSTO) cujo NOME bate forte
+    // com o nome do polo. Usa a coordenada da unidade que atende o polo quando não há
+    // um "POLO BASE" cadastrado. Regra estrita p/ não casar nomes parecidos por acaso.
+    if(!poloKey) return null;
+    const fb=(rede.u||[])
+      .map(a=>{
+        const nameKey=mapNameKey(a[0]);
+        const uf=txt(a[5]).toUpperCase();
+        let score=_strongNameMatch(nameKey,poloKey)?100:0;
+        if(score && poloUf && uf && poloUf===uf) score+=10;
+        return {a,score};
+      })
+      .filter(x=>x.score>=100)
+      .sort((a,b)=>b.score-a.score);
+    return fb[0]?.a || null;
   }
   function polosCorrigidosPorCnes(d){
     return (d.polos||[]).map(p=>{
@@ -2105,24 +2235,24 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     const el=$("map"); if(!el || _mapInited) return;
     if(typeof L==="undefined"){ el.innerHTML='<div role="alert" style="padding:28px 24px;text-align:center;color:#5a6b82;font-size:13px;line-height:1.5"><div style="font-size:28px;margin-bottom:8px">🌐</div><b style="color:#10243e;display:block;margin-bottom:6px">Mapa indisponível offline</b>O fundo geográfico do mapa precisa de internet para carregar.<br>Os dados, KPIs e a tabela continuam funcionando normalmente.<br><button type="button" onclick="reloadExternal&&reloadExternal()" style="margin-top:12px;background:var(--agsus-azul);color:#fff;border:0;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">Tentar novamente</button></div>'; return; }
     _mapInited=true;
-    // Limites de navegação colados no Brasil — travam o mapa, sem deixar sair do país.
-    const SOUTH_AMERICA_BOUNDS = L.latLngBounds(
-      L.latLng(-35.0, -76.0),   // sudoeste (cobre o extremo sul/oeste do Brasil)
-      L.latLng(  6.5, -33.0)    // nordeste (cobre Roraima e a ponta do RN)
-    );
-    // Enquadramento inicial justo no Brasil
+    // Limites de navegação derivados da própria vista do Brasil (ver setBrazilMaxBounds).
+    // Não se define maxBounds na construção para não atrapalhar o enquadramento inicial.
     const BRASIL_BOUNDS = L.latLngBounds(_BRASIL_VIEW[0], _BRASIL_VIEW[1]);
     _leaflet=L.map(el,{
       zoomControl:true, scrollWheelZoom:true, attributionControl:true,
       minZoom:4, maxZoom:18,
-      maxBounds: SOUTH_AMERICA_BOUNDS,
       maxBoundsViscosity: 1.0,
       worldCopyJump:false
     });
     _leaflet.fitBounds(BRASIL_BOUNDS);
-    _leaflet.setMaxBounds(SOUTH_AMERICA_BOUNDS);
-    // Trava o zoom mínimo no nível que enquadra o Brasil (impede afastar e ver outros países)
-    _leaflet.whenReady(function(){ try{ _leaflet.setMinZoom(_leaflet.getZoom()); }catch(e){} });
+    // Trava o zoom mínimo no nível que enquadra o Brasil (impede afastar e ver outros
+    // países) e define os limites de pan a partir dessa vista.
+    _leaflet.whenReady(function(){
+      try{
+        _leaflet.setMinZoom(_leaflet.getZoom());
+        setBrazilMaxBounds();
+      }catch(e){}
+    });
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
       maxZoom:18, attribution:'© OpenStreetMap'
     }).addTo(_leaflet);
@@ -2175,6 +2305,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     clearTimeout(window.__mapResizeTimer);
     window.__mapResizeTimer = setTimeout(()=>{
       try{ _leaflet?.invalidateSize?.({ animate:false, pan:false }); }catch(e){}
+      setBrazilMaxBounds(); // re-deriva os limites após mudar o tamanho do mapa
     }, delay);
   }
 
@@ -2265,7 +2396,7 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
       .join("|");
     if(autoFitKey !== _lastMapAutoFitKey){
       _lastMapAutoFitKey = autoFitKey;
-      try{
+      if(!_suppressAutoFit) try{
         if(filtroAtivo && ptsVisiveis.length){
         if(ptsVisiveis.length===1){
           _leaflet.setView(ptsVisiveis[0], 7, {animate:false});
@@ -2413,9 +2544,10 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   function mapVoltar(){
     const s=$("tableSearch"); if(s) s.value="";
     filterState.uf=new Set(); lastMapUfKey=null; applyFilters();
-    if(_leaflet){ _layerPolos.clearLayers(); if(_layerUbsi)_layerUbsi.clearLayers(); if(_layerCasaiLocal)_layerCasaiLocal.clearLayers(); if(_layerUF) _layerUF.clearLayers(); _leaflet.flyToBounds(L.latLngBounds(_BRASIL_VIEW[0],_BRASIL_VIEW[1]),{duration:0.6}); }
+    if(_leaflet){ _layerPolos.clearLayers(); if(_layerUbsi)_layerUbsi.clearLayers(); if(_layerCasaiLocal)_layerCasaiLocal.clearLayers(); if(_layerUF) _layerUF.clearLayers(); flyToBrasil(L.latLngBounds(_BRASIL_VIEW[0],_BRASIL_VIEW[1]),{duration:0.6}); }
     { const _b=$("drillBackBtn"); if(_b) _b.style.display="none"; }
-    drawDSEIBubbles();
+    _suppressAutoFit=true;          // a câmera é controlada pelo flyToBrasil acima
+    try{ drawDSEIBubbles(); } finally { _suppressAutoFit=false; }
     toast("Visão geral do Brasil.");
   }
 
@@ -2423,8 +2555,8 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
   function mapVerBrasil(){
     if(!_leaflet) return;
     const pts=LMAP.dsei.map(d=>[d.lat,d.lon]).concat((REDE_CNES.nac||[]).map(a=>[a[2],a[3]]));
-    try{ _leaflet.flyToBounds(L.latLngBounds(pts),{padding:[30,30],duration:0.6}); }
-    catch(e){ _leaflet.flyToBounds(L.latLngBounds(_BRASIL_VIEW[0],_BRASIL_VIEW[1]),{duration:0.6}); }
+    try{ flyToBrasil(L.latLngBounds(pts),{padding:[30,30],duration:0.6}); }
+    catch(e){ flyToBrasil(L.latLngBounds(_BRASIL_VIEW[0],_BRASIL_VIEW[1]),{duration:0.6}); }
   }
 
   // ===== IMPORTAÇÃO DA REDE ASSISTENCIAL (UBSI + CASAI) DO JSON v4 =====
@@ -2971,6 +3103,20 @@ body.sidebar-locked #page-dashboard .details-table { width: 100%; min-width: 136
     try{ localStorage.setItem("agsus_monitora_executive_mode_v1",active?"1":"0"); }catch(e){}
     syncDisplayModeButtons(); if(currentView==="dashboard") scheduleMapResize(220);
     toast(active?"Modo executivo ativado: foco em KPIs, mapa e resumo por etapa.":"Modo executivo desativado.");
+  }
+
+  // Sai de um painel externo e volta para o sistema. Também encerra a tela cheia
+  // (nativa ou fallback) — atende "ao tirar a tela cheia, voltar para o sistema".
+  function exitExternalPanel(){
+    try{
+      if(document.fullscreenElement && document.exitFullscreen){
+        const p=document.exitFullscreen(); if(p&&p.catch) p.catch(()=>{});
+      }
+    }catch(e){}
+    if(document.body.classList.contains("app-fullscreen-fallback")) toggleAppFullscreenFallback(false);
+    document.body.classList.remove("external-clean");
+    currentPanel=null;
+    navigate(systemHomeView());
   }
 
   function getFullscreenTarget(){
