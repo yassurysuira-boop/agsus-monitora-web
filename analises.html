@@ -233,6 +233,7 @@
   let activeRefreshPromise = null;
   let refreshRunCounter = 0;
   let lastTrackedOpenKey = "";
+  let analisesDataLoadedAtLeastOnce = false;
 
   const $ = id => document.getElementById(id);
   const txt = v => String(v ?? "").trim();
@@ -334,6 +335,7 @@
     session = null; profile = null; canReadAnalisesRpc = null;
     rows = []; editais = []; baseFilteredRows = []; panelRows = []; tableRows = []; tableRowsDirty = true;
     currentPage = 1; activeKpi = "total"; activeResponsavel = "";
+    analisesDataLoadedAtLeastOnce = false;
     stopAccessHeartbeat(); lastTrackedOpenKey = "";
   }
 
@@ -563,11 +565,15 @@
 
   // Carrega do cache se válido (< 30 min). Se não houver cache, busca automaticamente no Supabase.
   async function loadFromCacheOrPrompt(){
+    if(analisesDataLoadedAtLeastOnce && rows.length){
+      return true;
+    }
     const cache = readCache();
     if(cache && cacheAgeMs(cache) < CACHE_TTL_MS){
       editais = Array.isArray(cache.editais) ? cache.editais : [];
       rows = hydrateRowsWithEditalWindows(Array.isArray(cache.rows) ? cache.rows : []);
       hydrateFilters(); currentPage=1; applyFilters();
+      analisesDataLoadedAtLeastOnce = true;
       const mins = Math.round(cacheAgeMs(cache) / 60000);
       setUpdatedFromCache(cache.ts);
       toast(`Dados carregados do cache local (${mins} min). Clique em Atualizar para buscar dados novos.`, "info", 6000);
@@ -646,6 +652,7 @@
       const rawBaseRows = Array.isArray(baseResponse.data) ? baseResponse.data : [];
       writeCache(rawBaseRows, editais);
       rows = hydrateRowsWithEditalWindows(rawBaseRows);
+      analisesDataLoadedAtLeastOnce = true;
       hydrateFilters(); setProgress(62,"Calculando indicadores..."); currentPage=1; applyFilters(); setUpdatedAt(); setProgress(100,`Painel pronto com ${fmtNum(rows.length)} registros.`); setTimeout(() => showLoading(false), 180);
       toast(`Dados atualizados: ${fmtNum(rows.length)} registros carregados.`, "info", 5000);
       return true;
