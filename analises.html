@@ -561,7 +561,7 @@
     $("footerUpdated").textContent = label;
   }
 
-  // Carrega do cache se válido (< 30 min). NÃO dispara busca automática no Supabase.
+  // Carrega do cache se válido (< 30 min). Se não houver cache, busca automaticamente no Supabase.
   async function loadFromCacheOrPrompt(){
     const cache = readCache();
     if(cache && cacheAgeMs(cache) < CACHE_TTL_MS){
@@ -573,12 +573,10 @@
       toast(`Dados carregados do cache local (${mins} min). Clique em Atualizar para buscar dados novos.`, "info", 6000);
       return true;
     }
-    // Sem cache válido: não busca sozinho, apenas sinaliza para o usuário clicar em Atualizar.
-    rows = []; editais = []; currentPage=1; applyFilters();
-    $("updatedText").textContent = "Clique em Atualizar para carregar";
-    $("footerUpdated").textContent = "Aguardando atualização";
-    toast("Nenhum dado em cache válido. Clique em Atualizar para carregar os dados.", "warn", 7000);
-    return false;
+    $("updatedText").textContent = "Carregando dados...";
+    $("footerUpdated").textContent = "Carregando dados...";
+    toast("Carregando dados atualizados do Supabase.", "info", 4000);
+    return refreshData();
   }
 
   // Atualização manual: sempre busca dados novos do Supabase (ignora cache) e regrava o cache.
