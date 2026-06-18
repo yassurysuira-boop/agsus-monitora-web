@@ -272,6 +272,19 @@
     box-shadow: 0 2px 5px rgba(15,23,42,0.04), 0 1px 2px rgba(15,23,42,0.04);
   }
   .btn-secondary:hover:not(:disabled) { background: #fff; border-color: color-mix(in srgb, var(--brand-blue-3) 62%, var(--panel-border)); color: var(--text-strong); box-shadow: 0 8px 18px rgba(15,23,42,0.08); }
+  .btn.secondary {
+    background: linear-gradient(180deg, #fff, var(--panel-soft));
+    color: var(--text);
+    border-color: var(--panel-border);
+    box-shadow: 0 2px 5px rgba(15,23,42,0.04), 0 1px 2px rgba(15,23,42,0.04);
+  }
+  .btn.green {
+    background: linear-gradient(180deg, #17b86c, var(--ok));
+    color: #fff;
+    border-color: rgba(21,160,90,0.18);
+    box-shadow: 0 8px 18px rgba(21,160,90,0.20), inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+  .btn.small { min-height: 32px; padding: 6px 11px; font-size: 11px; border-radius: 9px; }
 
   .summary-actions .btn,
   .topbar-actions .btn {
@@ -375,7 +388,7 @@
     gap: 12px;
   }
 
-  .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .field { position: relative; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
   .field label {
     font-size: 10px;
     font-weight: 600;
@@ -396,7 +409,22 @@
   }
   select:focus, .search-input:focus, input:focus { outline: none; border-color: var(--brand-blue-2); box-shadow: var(--ring); }
 
-  .legacy-select-hidden { display: none !important; }
+  .legacy-select-hidden,
+  .filter-select-native {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    min-width: 0 !important;
+    max-width: 1px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+  }
 
   .filter-action-stack { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
 
@@ -420,15 +448,30 @@
   }
   .multi-select-trigger:focus-visible { outline: none; box-shadow: var(--ring); }
   .multi-select.is-open .multi-select-trigger { border-color: var(--brand-blue-2); box-shadow: var(--ring); }
-  .multi-select-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .multi-select-trigger-label,
+  .multi-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
   .multi-select-trigger i { color: var(--muted); transition: transform var(--transition); font-size: 10.5px; }
   .multi-select.is-open .multi-select-trigger i { transform: rotate(180deg); }
+  .multi-select-trigger svg { width: 14px; height: 14px; color: var(--muted); flex-shrink: 0; transition: transform var(--transition); }
+  .multi-select.is-open .multi-select-trigger svg { transform: rotate(180deg); }
   .multi-select-trigger-count {
     display: inline-grid; place-items: center;
     min-width: 18px; height: 18px; padding: 0 5px;
     border-radius: 999px;
     background: var(--brand-blue-2); color: #fff;
     font-size: 9.5px; font-weight: 700;
+  }
+  .multi-select-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--brand-blue-2);
+    color: #fff;
+    font-size: 9.5px;
+    font-weight: 700;
   }
 
   .multi-select-menu {
@@ -486,6 +529,24 @@
   .filter-chip:hover { border-color: var(--danger); color: var(--danger); }
   .filter-chip .chip-label { font-weight: 600; }
   .filter-chip i { font-size: 10px; opacity: 0.7; }
+  .chip-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--panel-border);
+    background: var(--panel-soft);
+    color: var(--text);
+    font-size: 11px;
+  }
+  .chip-filter b {
+    color: var(--brand-blue-2);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .hint { color: var(--muted); font-size: 11px; }
 
   /* PDF bulk panel */
   .pdf-bulk-panel {
@@ -576,6 +637,7 @@
     border-radius: 10px;
     background: var(--brand-blue-2); color: #fff;
   }
+  .review-rule-icon svg { width: 19px; height: 19px; }
   .review-rule-panel strong { color: var(--text-strong); }
   .review-rule-panel p { margin-top: 4px; font-size: 11.5px; }
 
@@ -635,8 +697,8 @@
   .deadline-alert-item:focus-visible { outline: none; box-shadow: var(--ring); }
   .deadline-alert-item.alto { border-left-color: var(--danger); }
   .deadline-alert-item.is-active { box-shadow: var(--ring); }
-  .alert-title { font-weight: 700; color: var(--text-strong); font-size: 12px; }
-  .alert-subtitle { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+  .alert-title { display: block; font-weight: 700; color: var(--text-strong); font-size: 12px; line-height: 1.35; }
+  .alert-subtitle { display: block; font-size: 10.5px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
   .deadline-alert-badge {
     flex-shrink: 0;
     padding: 4px 9px;
@@ -690,11 +752,14 @@
   tbody tr.row-expanded { background: var(--review-soft); }
   .col-actions, .cell-actions { text-align: right; white-space: nowrap; }
 
-  .table-primary-text { font-weight: 600; color: var(--text-strong); }
-  .table-secondary-text { display: block; font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+  .table-primary-text,
+  .primary-text { font-weight: 600; color: var(--text-strong); }
+  .table-secondary-text,
+  .secondary-text { display: block; font-size: 10.5px; color: var(--muted); margin-top: 2px; }
   .table-inline-actions { display: inline-flex; gap: 6px; }
 
-  .details-row td { background: var(--panel-soft); }
+  .details-row td,
+  .detail-row td { background: var(--panel-soft); }
 
   /* Badges de status */
   .badge {
@@ -719,6 +784,10 @@
   .badge-revisar { background: var(--review-soft); color: var(--review); border-color: rgba(37,99,235,0.25); cursor: help; }
   .badge-aprovado { background: var(--ok-soft); color: var(--ok); border-color: rgba(21,160,90,0.25); }
   .badge-reprovado { background: var(--danger-soft); color: var(--danger); border-color: rgba(224,82,74,0.25); }
+  .badge.pendente { background: var(--warn-soft); color: var(--warn); border-color: rgba(208,135,0,0.25); }
+  .badge.revisar { background: var(--review-soft); color: var(--review); border-color: rgba(37,99,235,0.25); }
+  .badge.aprovado { background: var(--ok-soft); color: var(--ok); border-color: rgba(21,160,90,0.25); }
+  .badge.reprovado { background: var(--danger-soft); color: var(--danger); border-color: rgba(224,82,74,0.25); }
   /* o badge revisar tem ícone próprio (triângulo), então esconde a bolinha dele */
   .badge-revisar::before { display: none; }
 
@@ -754,9 +823,17 @@
     grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: 12px;
   }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+  }
   .detail-kv { display: flex; flex-direction: column; gap: 2px; }
+  .kv { display: flex; flex-direction: column; gap: 2px; }
   .detail-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  .kv-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
   .detail-value { font-size: 12px; color: var(--text-strong); font-weight: 500; }
+  .kv-value { font-size: 12px; color: var(--text-strong); font-weight: 500; }
   .detail-value.text-danger, .text-danger { color: var(--danger); }
 
   .detail-content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
@@ -772,6 +849,29 @@
     padding: 11px 13px;
     line-height: 1.6;
     white-space: normal;
+  }
+  .detail-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .analysis-text {
+    font-size: 11.5px;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    line-height: 1.6;
+    white-space: normal;
+  }
+  .mini-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--panel-soft);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    font-size: 10.5px;
+    font-weight: 600;
   }
 
   .source-cell { display: flex; flex-direction: column; gap: 4px; }
@@ -830,9 +930,17 @@
   .attention-item[data-severity="alto"] { border-left-color: var(--danger); }
   .attention-item[data-severity="medio"] { border-left-color: var(--warn); }
   .attention-item[data-severity="baixo"] { border-left-color: var(--brand-blue-3); }
+  .attention-item.high { border-left-color: var(--danger); }
+  .attention-item.medium { border-left-color: var(--warn); }
+  .attention-item.low { border-left-color: var(--brand-blue-3); }
+  .attention-item.high { background: color-mix(in srgb, var(--danger-soft) 72%, var(--panel)); }
+  .attention-item.medium { background: color-mix(in srgb, var(--warn-soft) 72%, var(--panel)); }
+  .attention-item.low { background: color-mix(in srgb, var(--review-soft) 72%, var(--panel)); }
   .attention-item-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .attention-title { font-weight: 700; color: var(--text-strong); font-size: 12px; }
   .attention-subtitle { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+  .attention-item b { display: block; color: var(--text-strong); font-size: 12px; line-height: 1.35; }
+  .attention-item small { display: block; color: var(--muted); font-size: 10.5px; line-height: 1.35; margin-top: 3px; }
 
   .severity-badge {
     flex-shrink: 0;
@@ -987,6 +1095,9 @@
     max-width: min(360px, calc(100vw - 40px));
   }
   .toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
     padding: 12px 15px;
     border-radius: var(--radius-md);
     background: var(--panel);
@@ -1000,9 +1111,10 @@
     transition: opacity 220ms ease, transform 220ms ease;
     animation: toast-in 220ms ease;
   }
+  .toast svg { width: 15px; height: 15px; flex: 0 0 auto; margin-top: 1px; stroke-width: 2.2; }
   .toast.success { border-left-color: var(--ok); }
-  .toast.warning { border-left-color: var(--warn); }
-  .toast.danger { border-left-color: var(--danger); }
+  .toast.warning, .toast.warn { border-left-color: var(--warn); }
+  .toast.danger, .toast.error { border-left-color: var(--danger); }
 
   /* ---------------------- Animations ---------------------- */
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -1043,8 +1155,10 @@
   .progress{height:8px;background:var(--panel-soft);border-radius:999px;overflow:hidden;}
   .bar{height:100%;background:linear-gradient(90deg,var(--brand-blue-2),var(--brand-blue-3));width:0;transition:width .25s ease;}
   .auth-warning{border:1px solid var(--danger-soft);background:var(--danger-soft);color:var(--danger);border-radius:var(--radius-md);padding:14px;font-weight:700;}
+  .empty{padding:18px 14px;text-align:center;color:var(--muted);font-size:11.5px;}
   .advanced{display:none!important;}
   .advanced.show{display:grid!important;}
+  i[class^="fa-"], i[class*=" fa-"]{display:none!important;}
 
   </style>
 </head>
@@ -1283,7 +1397,9 @@
         </div>
 
         <div class="review-rule-panel" id="reviewRulePanel" hidden>
-          <div class="review-rule-icon"><i class="fa-solid fa-code-branch"></i></div>
+          <div class="review-rule-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+          </div>
           <div>
             <strong>Quando um registro entra em “Revisar”?</strong>
             <p>
@@ -1471,7 +1587,10 @@
     sliders: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10"/><path d="M18 7h2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>',
     eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 2 20 20"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M7.4 7.5C4.9 8.8 3.1 10.9 2 12c2 2.7 5.5 6 10 6 1.7 0 3.3-.5 4.7-1.2"/><path d="M14.1 5.3C13.4 5.1 12.7 5 12 5c-4.5 0-8 3.3-10 7"/><path d="M21.7 12.3A14.3 14.3 0 0 0 18 8.6"/></svg>',
     eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>',
-    chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-3"/></svg>'
+    chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-3"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 10 18H2Z"/><path d="M12 9v5"/><path d="M12 17h.01"/></svg>',
+    error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6"/><path d="m9 9 6 6"/></svg>'
   };
 
   // ---- Validação de URL: só permite links http(s) seguros vindos da base ----
@@ -1515,8 +1634,8 @@
     const host = $("toastHost"); if(!host) return;
     const el = document.createElement("div");
     el.className = "toast" + (kind === "warn" ? " warn" : kind === "error" ? " error" : "");
-    const icon = kind === "error" ? "fa-circle-exclamation" : kind === "warn" ? "fa-triangle-exclamation" : "fa-circle-info";
-    el.innerHTML = `<i class="fa-solid ${icon}" style="margin-top:2px"></i><span>${esc(message)}</span>`;
+    const icon = kind === "error" ? iconSvg.error : kind === "warn" ? iconSvg.warn : iconSvg.info;
+    el.innerHTML = `${icon}<span>${esc(message)}</span>`;
     host.appendChild(el);
     setTimeout(() => { el.style.opacity = "0"; el.style.transform = "translateY(8px)"; setTimeout(() => el.remove(), 220); }, ms);
   }
@@ -1722,7 +1841,7 @@
       <button type="button" class="multi-select-trigger" id="ms-trigger-${id}" aria-haspopup="listbox" aria-expanded="false">
         <span class="multi-select-label" id="ms-label-${id}"></span>
         <span class="multi-select-count" id="ms-count-${id}" hidden>0</span>
-        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
       </button>
       <div class="multi-select-menu" id="ms-menu-${id}" hidden>
         <input type="search" class="multi-select-search" id="ms-search-${id}" placeholder="Buscar..." autocomplete="off" aria-label="Buscar opções">
@@ -2063,16 +2182,16 @@
   function renderWindowMeta(){
     const map = new Map(); panelRows.forEach(r => { const s=fmtDate(r.data_inicio_analise), e=fmtDate(r.data_fim_analise); if(s||e){ const key=s+"|"+e; if(!map.has(key)) map.set(key,{s,e,c:0}); map.get(key).c++; } });
     const fora = panelRows.filter(r=>txt(r.data_validacao_status)==="FORA_PERIODO").length; const semJanela = panelRows.filter(r=>txt(r.data_validacao_status)==="SEM_JANELA").length;
-    let html = ""; if(map.size===1){ const w=[...map.values()][0]; html += `<span class="meta-chip"><i class="fa-solid fa-calendar-days"></i> Janela oficial: ${esc(w.s||"--")} a ${esc(w.e||"--")}</span>`; } else if(map.size>1){ html += `<span class="meta-chip"><i class="fa-solid fa-calendar-days"></i> ${fmt(map.size)} janelas oficiais no recorte</span>`; }
-    html += `<span class="meta-chip ${fora?'warning':''}"><i class="fa-solid ${fora?'fa-triangle-exclamation':'fa-circle-check'}"></i> ${fmt(fora)} análise(s) fora do período</span>`;
-    if(semJanela) html += `<span class="meta-chip warning"><i class="fa-solid fa-circle-info"></i> ${fmt(semJanela)} sem janela configurada</span>`;
+    let html = ""; if(map.size===1){ const w=[...map.values()][0]; html += `<span class="meta-chip">Janela oficial: ${esc(w.s||"--")} a ${esc(w.e||"--")}</span>`; } else if(map.size>1){ html += `<span class="meta-chip">${fmt(map.size)} janelas oficiais no recorte</span>`; }
+    html += `<span class="meta-chip ${fora?'warning':''}">${fmt(fora)} análise(s) fora do período</span>`;
+    if(semJanela) html += `<span class="meta-chip warning">${fmt(semJanela)} sem janela configurada</span>`;
     $("windowMeta").innerHTML = html;
     if($("trendMetaLine")){
       $("trendMetaLine").hidden = !html;
       $("trendMetaLine").innerHTML = html;
     }
   }
-  function renderPdfMetrics(){ const com=panelRows.filter(r=>txt(r.link_pdf)).length, sem=panelRows.length-com, erro=panelRows.filter(r=>norm(r.pdf_status)==="erro").length, des=panelRows.filter(r=>norm(r.pdf_status)==="desatualizado").length; $("pdfMetrics").innerHTML = `<span class="mini-chip"><i class="fa-solid fa-file-pdf"></i> Com PDF: ${fmt(com)}</span><span class="mini-chip"><i class="fa-regular fa-file"></i> Sem PDF: ${fmt(sem)}</span><span class="mini-chip"><i class="fa-solid fa-triangle-exclamation"></i> Erro: ${fmt(erro)}</span><span class="mini-chip"><i class="fa-solid fa-clock-rotate-left"></i> Desatualizado: ${fmt(des)}</span>`; }
+  function renderPdfMetrics(){ const com=panelRows.filter(r=>txt(r.link_pdf)).length, sem=panelRows.length-com, erro=panelRows.filter(r=>norm(r.pdf_status)==="erro").length, des=panelRows.filter(r=>norm(r.pdf_status)==="desatualizado").length; $("pdfMetrics").innerHTML = `<span class="mini-chip">Com PDF: ${fmt(com)}</span><span class="mini-chip">Sem PDF: ${fmt(sem)}</span><span class="mini-chip">Erro: ${fmt(erro)}</span><span class="mini-chip">Desatualizado: ${fmt(des)}</span>`; }
 
   function statusClass(s){ const x=norm(s); if(x==="aprovado") return "aprovado"; if(x==="reprovado") return "reprovado"; if(x==="revisar") return "revisar"; if(x==="pendente") return "pendente"; return "neutro"; }
   function palette(){ const dark=document.documentElement.dataset.theme==="dark"; return { grid:dark?"rgba(255,255,255,.08)":"rgba(7,59,121,.09)", text:dark?"#dbe8f5":"#526780", ok:"#2ca25f", bad:"#e45757", warn:"#e2a400", review:"#2f74c0", blue:"#0f5db7", surface:dark?"#0f1c2e":"#fff" }; }
@@ -2096,7 +2215,7 @@
     const semResp = respItems.find(x => x.label === "Sem responsável");
     if($("chipUnassignedResponsavel")){
       $("chipUnassignedResponsavel").hidden = !semResp;
-      $("chipUnassignedResponsavel").innerHTML = semResp ? `<i class="fa-solid fa-user-slash"></i> Sem responsável: ${fmt(semResp.total)}` : "";
+      $("chipUnassignedResponsavel").innerHTML = semResp ? `Sem responsável: ${fmt(semResp.total)}` : "";
     }
     const labels = respItems.map(x=>truncate(x.label,22));
     const datasets = [
@@ -2149,7 +2268,7 @@
   function renderAttention(){
     const items=[]; const pend=panelRows.filter(r=>txt(r.status_consolidado)==="Pendente").length, rev=panelRows.filter(r=>txt(r.status_consolidado)==="Revisar").length, semResp=panelRows.filter(r=>!txt(r.responsavel_analise)).length, semData=panelRows.filter(r=>txt(r.etapa)&&!txt(r.data_analise)).length, fora=panelRows.filter(r=>txt(r.data_validacao_status)==="FORA_PERIODO").length, erro=panelRows.filter(r=>norm(r.pdf_status)==="erro").length, semPdf=panelRows.filter(r=>!txt(r.link_pdf)).length;
     if(fora) items.push({t:"Data fora do período",d:`${fmt(fora)} análise(s) fora da janela oficial do edital.`,c:"high"}); if(erro) items.push({t:"PDF com erro",d:`${fmt(erro)} espelho(s) com erro na última tentativa.`,c:"high"}); if(semResp) items.push({t:"Sem responsável",d:`${fmt(semResp)} registro(s) sem responsável de análise.`,c:"high"}); if(pend) items.push({t:"Pendentes",d:`${fmt(pend)} registro(s) pendentes no recorte atual.`,c:"medium"}); if(rev) items.push({t:"Em revisão",d:`${fmt(rev)} registro(s) aguardando revisão.`,c:"medium"}); if(semData) items.push({t:"Etapa sem data",d:`${fmt(semData)} registro(s) com etapa, mas sem data de análise.`,c:"medium"}); if(semPdf) items.push({t:"Espelho ausente",d:`${fmt(semPdf)} registro(s) sem link de PDF no recorte.`,c:"low"});
-    $("attentionList").innerHTML = items.length ? items.slice(0,8).map(x=>`<div class="attention-item ${x.c==='high'?'high':x.c==='low'?'low':''}"><b>${esc(x.t)}</b><small>${esc(x.d)}</small></div>`).join("") : `<div class="empty">Nenhuma pendência prioritária no recorte atual.</div>`;
+    $("attentionList").innerHTML = items.length ? items.slice(0,8).map(x=>`<div class="attention-item ${x.c==='high'?'high':x.c==='medium'?'medium':'low'}"><b>${esc(x.t)}</b><small>${esc(x.d)}</small></div>`).join("") : `<div class="empty">Nenhuma pendência prioritária no recorte atual.</div>`;
   }
 
   function rowDaysLeft(row){
@@ -2252,12 +2371,12 @@
   }
   function renderTable(){ const visible=getTableRows(); const pages=Math.max(1,Math.ceil(visible.length/rowsPerPage)); if(currentPage>pages) currentPage=pages; if(currentPage<1) currentPage=1; const start=(currentPage-1)*rowsPerPage, end=Math.min(start+rowsPerPage,visible.length), page=visible.slice(start,end); $("tableInfo").textContent = visible.length ? `Exibindo ${fmt(start+1)}-${fmt(end)} de ${fmt(visible.length)} registro(s) da busca` : "Exibindo 0 de 0 registros"; $("pageInfo").textContent = `Página ${fmt(currentPage)} de ${fmt(pages)} · Recorte: ${fmt(panelRows.length)} de ${fmt(rows.length)}`; $("tableBody").innerHTML = page.length ? page.map((r,i)=>rowHtml(r,start+i)).join("") : `<tr><td colspan="8" class="empty">Nenhum registro encontrado.</td></tr>`; renderPagination(pages); }
   function rowKey(r,i){ return [r.id,r.chave_natural,r.codigo_vaga,r.candidato,i].map(txt).join("|"); }
-  function rowHtml(r,i){ const key=rowKey(r,i), isOpen=expanded.has(key); return `<tr><td>${esc(r.grupo||'-')}</td><td>${esc(r.unidade||'-')}</td><td>${esc(r.edital||'-')}</td><td>${esc(r.codigo_vaga||'-')}</td><td><div class="primary-text">${esc(r.nome_vaga||'-')}</div><span class="secondary-text">${esc(r.categoria||'Sem categoria')}</span></td><td><div class="primary-text">${esc(r.candidato||'-')}</div><span class="secondary-text">${esc(r.responsavel_analise||'Sem responsável')}</span></td><td><span class="badge ${statusClass(r.status_consolidado)}">${esc(r.status_consolidado||'Pendente')}</span></td><td><button class="btn secondary small" aria-expanded="${isOpen}" onclick="toggleDetails('${attr(encodeURIComponent(key))}')"><i class="fa-solid ${isOpen?'fa-chevron-up':'fa-chevron-down'}"></i> ${isOpen?'Ocultar':'Detalhes'}</button></td></tr>${isOpen?`<tr class="detail-row"><td colspan="8">${detailHtml(r)}</td></tr>`:""}`; }
+  function rowHtml(r,i){ const key=rowKey(r,i), isOpen=expanded.has(key); return `<tr class="compact-row ${isOpen?'row-expanded':''}"><td>${esc(r.grupo||'-')}</td><td>${esc(r.unidade||'-')}</td><td>${esc(r.edital||'-')}</td><td>${esc(r.codigo_vaga||'-')}</td><td><div class="primary-text">${esc(r.nome_vaga||'-')}</div><span class="secondary-text">${esc(r.categoria||'Sem categoria')}</span></td><td><div class="primary-text">${esc(r.candidato||'-')}</div><span class="secondary-text">${esc(r.responsavel_analise||'Sem responsável')}</span></td><td><span class="badge ${statusClass(r.status_consolidado)}">${esc(r.status_consolidado||'Pendente')}</span></td><td><button class="btn btn-secondary btn-sm" aria-expanded="${isOpen}" onclick="toggleDetails('${attr(encodeURIComponent(key))}')">${isOpen?'Ocultar':'Detalhes'}</button></td></tr>${isOpen?`<tr class="detail-row"><td colspan="8">${detailHtml(r)}</td></tr>`:""}`; }
   function detailHtml(r){
     const origemId = txt(r.origem_arquivo_id);
     const origem = origemId ? safeUrl(`https://docs.google.com/spreadsheets/d/${encodeURIComponent(origemId)}/edit`) : "";
     const pdf = safeUrl(r.link_pdf);
-    return `<div class="detail-shell"><div class="detail-grid"><div class="kv"><div class="kv-label">Etapa</div><div class="kv-value">${esc(r.etapa||'-')}</div></div><div class="kv"><div class="kv-label">Data da análise</div><div class="kv-value">${esc(fmtDate(r.data_analise)||'-')}</div></div><div class="kv"><div class="kv-label">Nota final</div><div class="kv-value">${esc(r.nota_final_ajustada ?? '-')}</div></div><div class="kv"><div class="kv-label">Modalidade</div><div class="kv-value">${esc(r.modalidade_concorrencia||'-')}</div></div><div class="kv"><div class="kv-label">Validação</div><div class="kv-value">${esc(validationLabel(r.data_validacao_status))}</div></div><div class="kv"><div class="kv-label">Janela oficial</div><div class="kv-value">${esc(fmtDate(r.data_inicio_analise)||'--')} a ${esc(fmtDate(r.data_fim_analise)||'--')}</div></div><div class="kv"><div class="kv-label">Escolaridade</div><div class="kv-value">${esc(r.pontuacao_escolaridade ?? '-')}</div></div><div class="kv"><div class="kv-label">Cursos</div><div class="kv-value">${esc(r.pontuacao_cursos_aperfeicoamento ?? '-')}</div></div><div class="kv"><div class="kv-label">Experiência profissional</div><div class="kv-value">${esc(r.pontuacao_experiencia_profissional ?? '-')}</div></div><div class="kv"><div class="kv-label">Critério étnico</div><div class="kv-value">${esc(r.pontuacao_criterio_etnico ?? '-')}</div></div><div class="kv"><div class="kv-label">Exp. Saúde Indígena</div><div class="kv-value">${esc(r.experiencia_saude_indigena_total ?? '-')}</div></div><div class="kv"><div class="kv-label">Exp. Atenção Básica</div><div class="kv-value">${esc(r.experiencia_atencao_basica_total ?? '-')}</div></div></div><div class="detail-block"><div class="detail-actions">${origem?`<a class="btn secondary small" href="${attr(origem)}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir origem</a>`:""}${pdf?`<a class="btn green small" href="${attr(pdf)}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-file-pdf"></i> Abrir PDF</a>`:`<span class="mini-chip"><i class="fa-regular fa-file"></i> Sem PDF</span>`}${txt(r.erro_pdf)?`<span class="mini-chip" style="color:var(--red)"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(truncate(r.erro_pdf,80))}</span>`:""}</div><div class="analysis-text">${esc(r.analise||'Sem análise registrada.')}</div></div></div>`;
+    return `<div class="detail-shell"><div class="detail-grid"><div class="kv"><div class="kv-label">Etapa</div><div class="kv-value">${esc(r.etapa||'-')}</div></div><div class="kv"><div class="kv-label">Data da análise</div><div class="kv-value">${esc(fmtDate(r.data_analise)||'-')}</div></div><div class="kv"><div class="kv-label">Nota final</div><div class="kv-value">${esc(r.nota_final_ajustada ?? '-')}</div></div><div class="kv"><div class="kv-label">Modalidade</div><div class="kv-value">${esc(r.modalidade_concorrencia||'-')}</div></div><div class="kv"><div class="kv-label">Validação</div><div class="kv-value">${esc(validationLabel(r.data_validacao_status))}</div></div><div class="kv"><div class="kv-label">Janela oficial</div><div class="kv-value">${esc(fmtDate(r.data_inicio_analise)||'--')} a ${esc(fmtDate(r.data_fim_analise)||'--')}</div></div><div class="kv"><div class="kv-label">Escolaridade</div><div class="kv-value">${esc(r.pontuacao_escolaridade ?? '-')}</div></div><div class="kv"><div class="kv-label">Cursos</div><div class="kv-value">${esc(r.pontuacao_cursos_aperfeicoamento ?? '-')}</div></div><div class="kv"><div class="kv-label">Experiência profissional</div><div class="kv-value">${esc(r.pontuacao_experiencia_profissional ?? '-')}</div></div><div class="kv"><div class="kv-label">Critério étnico</div><div class="kv-value">${esc(r.pontuacao_criterio_etnico ?? '-')}</div></div><div class="kv"><div class="kv-label">Exp. Saúde Indígena</div><div class="kv-value">${esc(r.experiencia_saude_indigena_total ?? '-')}</div></div><div class="kv"><div class="kv-label">Exp. Atenção Básica</div><div class="kv-value">${esc(r.experiencia_atencao_basica_total ?? '-')}</div></div></div><div class="detail-block"><div class="detail-actions">${origem?`<a class="btn secondary small" href="${attr(origem)}" target="_blank" rel="noopener noreferrer">Abrir origem</a>`:""}${pdf?`<a class="btn green small" href="${attr(pdf)}" target="_blank" rel="noopener noreferrer">Abrir PDF</a>`:`<span class="mini-chip">Sem PDF</span>`}${txt(r.erro_pdf)?`<span class="mini-chip" style="color:var(--danger)">${esc(truncate(r.erro_pdf,80))}</span>`:""}</div><div class="analysis-text">${esc(r.analise||'Sem análise registrada.')}</div></div></div>`;
   }
   function toggleDetails(encoded){ const key=decodeURIComponent(encoded||""); if(expanded.has(key)) expanded.delete(key); else expanded.add(key); renderTable(); }
   function validationLabel(v){ return {DENTRO_PERIODO:"Dentro do período configurado",FORA_PERIODO:"Fora do período configurado",SEM_DATA:"Sem data de análise informada",SEM_JANELA:"Sem janela configurada no edital"}[txt(v)] || txt(v) || "-"; }
